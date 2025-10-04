@@ -5,7 +5,7 @@ from controller.chat_controller import ChatController
 from service.route_service import RouteService
 
 
-def render_chat_view(openai_api_key: str, openai_model: str, openai_max_tokens: int):
+def render_chat_view(openai_api_key: str, openai_model: str):
     """Renders the chat view."""
     st.title("Router expert")
 
@@ -14,7 +14,7 @@ def render_chat_view(openai_api_key: str, openai_model: str, openai_max_tokens: 
 
     route_service = RouteService("data/routes.json")
     context = route_service.get_routes_summary()
-    chat_controller = ChatController(openai_api_key, openai_model, openai_max_tokens)
+    chat_controller = ChatController(openai_api_key, openai_model)
 
     with st.form("input_form", clear_on_submit=True):
         user_prompt = st.text_input("O que você deseja saber:", key="input")

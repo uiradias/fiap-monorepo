@@ -4,10 +4,9 @@ from openai import OpenAI
 class ChatService:
     """Service for interacting with OpenAI's Chat API."""
 
-    def __init__(self, openai_api_key: str, openai_model: str, openai_max_tokens: int):
+    def __init__(self, openai_api_key: str, openai_model: str):
         self.openai_api_key = openai_api_key
         self.openai_model = openai_model
-        self.openai_max_tokens = openai_max_tokens
         self.client = OpenAI(api_key=self.openai_api_key)
 
     def submit(self, user_prompt: str, context: str, system_prompt: str):
@@ -19,7 +18,6 @@ class ChatService:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ],
-            max_tokens=self.openai_max_tokens,
         )
 
         return response.choices[0].message.content

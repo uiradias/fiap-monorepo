@@ -5,7 +5,6 @@ from openai import OpenAI
 
 class ChatService:
     """Service for interacting with OpenAI's Chat API."""
-
     def __init__(self, openai_api_key: str, openai_model: str, openai_max_tokens: int):
         self.openai_api_key = openai_api_key
         self.openai_model = openai_model

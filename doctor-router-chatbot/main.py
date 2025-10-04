@@ -4,13 +4,9 @@ from view.chat_view import render_chat_view
 
 def run_chat():
     config = load_config()
-    api_key = config["openai_api_key"]
     model = config["openai_model"]
 
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY env variable is not set.")
-
-    render_chat_view(api_key, model)
+    render_chat_view(model)
 
 
 if __name__ == '__main__':

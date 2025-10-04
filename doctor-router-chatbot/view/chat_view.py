@@ -1,30 +1,27 @@
 import streamlit as st
 
-from config.prompts import DRIVER_HELPER
 from controller.chat_controller import ChatController
 from service.route_service import RouteService
 
 
-def render_chat_view(openai_api_key: str, openai_model: str):
-    """Renders the chat view."""
+def render_chat_view(openai_model: str):
     st.title("Router expert")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
     route_service = RouteService("data/routes.json")
-    context = route_service.get_routes_summary()
-    chat_controller = ChatController(openai_api_key, openai_model)
+    context = route_service.get_routes_summary_as_list()
+    chat_controller = ChatController(openai_model, context)
 
     with st.form("input_form", clear_on_submit=True):
-        user_prompt = st.text_input("O que você deseja saber:", key="input")
+        user_question = st.text_input("O que você deseja saber:", key="input")
         submitted = st.form_submit_button("Enviar")
 
         if submitted:
-            response = chat_controller.submit(user_prompt, context, DRIVER_HELPER)
+            response = chat_controller.submit(user_question, driver="alirio")
             st.session_state.messages.append({"role": "assistant", "content": response})
-            st.session_state.messages.append({"role": "user", "content": user_prompt})
-
+            st.session_state.messages.append({"role": "user", "content": user_question})
 
     for msg in reversed(st.session_state.messages):
         if msg["role"] == "user":

@@ -1,29 +1,25 @@
-from openai import OpenAI
+from typing import List
+
+from langchain.prompts import PromptTemplate
+
+from config.prompts import driver_prompt_template
+from helper.llm_chain import build_chain
+from helper.vector_store import build_vector_store
 
 
 class ChatService:
-    """Service for interacting with OpenAI's Chat API."""
+    def __init__(self, openai_model: str, context: List[str]):
+        self.prompt = PromptTemplate(template=driver_prompt_template,
+                                     input_variables=["context", "question"])
+        self.vector_store = build_vector_store(context)
+        self.chain = build_chain(openai_model, self.vector_store, self.prompt)
 
-    def __init__(self, openai_api_key: str, openai_model: str):
-        self.openai_api_key = openai_api_key
-        self.openai_model = openai_model
-        self.client = OpenAI(api_key=self.openai_api_key)
+    def submit(self, question: str, driver: str = None):
+        if driver:
+            targeted_question = f"Foque somente na rota do motorista {driver}. {question}"
+        else:
+            targeted_question = question
 
-    def submit(self, user_prompt: str, context: str, system_prompt: str):
-        """Submits a message to OpenAI's Chat API."""
-        user_content = self._build_message(user_prompt, context)
-        response = self.client.chat.completions.create(
-            model=self.openai_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
-        )
-
-        return response.choices[0].message.content
-
-    # -----------------
-    # Private methods
-    # -----------------
-    def _build_message(self, user_prompt: str, context: str) -> str:
-        return f"Considere o seguinte contexto: {context}\n\nAtenda a seguinte solicitação: {user_prompt}"
+        return self.chain.invoke({
+            "query": targeted_question
+        })["result"]

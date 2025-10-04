@@ -1,19 +1,18 @@
-import json
-
 from openai import OpenAI
 
 
 class ChatService:
     """Service for interacting with OpenAI's Chat API."""
+
     def __init__(self, openai_api_key: str, openai_model: str, openai_max_tokens: int):
         self.openai_api_key = openai_api_key
         self.openai_model = openai_model
         self.openai_max_tokens = openai_max_tokens
         self.client = OpenAI(api_key=self.openai_api_key)
 
-    def submit(self, user_prompt: str, context_json: dict, system_prompt: str):
+    def submit(self, user_prompt: str, context: str, system_prompt: str):
         """Submits a message to OpenAI's Chat API."""
-        user_content = self._build_message(user_prompt, context_json)
+        user_content = self._build_message(user_prompt, context)
         response = self.client.chat.completions.create(
             model=self.openai_model,
             messages=[
@@ -25,10 +24,8 @@ class ChatService:
 
         return response.choices[0].message.content
 
-
     # -----------------
     # Private methods
     # -----------------
-    def _build_message(self, user_prompt: str, context_json: dict) -> str:
-        json_text = json.dumps(context_json, indent=2)
-        return f"Considere a seguinte rota no formato JSON: {json_text}\n\nAtenda a seguinte solicitação: {user_prompt}"
+    def _build_message(self, user_prompt: str, context: str) -> str:
+        return f"Considere o seguinte contexto: {context}\n\nAtenda a seguinte solicitação: {user_prompt}"

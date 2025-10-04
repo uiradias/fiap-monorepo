@@ -1,0 +1,175 @@
+{
+  "routes": [
+    {
+      "id": "1f8e2f9d-9f4d-4eaf-9b2e-2a4c5f4c8b1a",
+      "equipment": {
+        "id": "a3b2c1d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+        "name": "Van 01"
+      },
+      "driver": {
+        "key": "machado98"
+      },
+      "stops": [
+        {
+          "id": "b1c2d3e4-f5a6-7b8c-9d0e-1f2a3b4c5d6e",
+          "location": {
+            "id": "c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f",
+            "name": "Praia de Iracema",
+            "latitude": -3.715,
+            "longitude": -38.541
+          }
+        },
+        {
+          "id": "d1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a",
+          "location": {
+            "id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+            "name": "Mercado Central",
+            "latitude": -3.731,
+            "longitude": -38.526
+          }
+        },
+        {
+          "id": "f1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c",
+          "location": {
+            "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "name": "Catedral Metropolitana",
+            "latitude": -3.7315,
+            "longitude": -38.527
+          }
+        },
+        {
+          "id": "a2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d",
+          "location": {
+            "id": "b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e",
+            "name": "Parque do Cocó",
+            "latitude": -3.732,
+            "longitude": -38.496
+          }
+        },
+        {
+          "id": "c2d3e4f5-a6b7-9c0d-1e2f-3a4b5c6d7e8f",
+          "location": {
+            "id": "d2e3f4a5-b6c7-0d1e-2f3a-4b5c6d7e8f9a",
+            "name": "Praça do Ferreira",
+            "latitude": -3.729,
+            "longitude": -38.529
+          }
+        }
+      ]
+    },
+    {
+      "id": "2f9e3f8d-8d5c-4baf-8a1e-3b5d6e7f8a9b",
+      "equipment": {
+        "id": "b4c3d2e1-f6a5-8b7c-0d9e-2f3a4b5c6d7e",
+        "name": "Van 02"
+      },
+      "driver": {
+        "key": "alirio"
+      },
+      "stops": [
+        {
+          "id": "e3f4a5b6-c7d8-0e1f-2a3b-4c5d6e7f8a9b",
+          "location": {
+            "id": "f4a5b6c7-d8e9-1f2a-3b4c-5d6e7f8a9b0c",
+            "name": "Praia do Futuro",
+            "latitude": -3.717,
+            "longitude": -38.485
+          }
+        },
+        {
+          "id": "a5b6c7d8-e9f0-2a3b-4c5d-6e7f8a9b0c1d",
+          "location": {
+            "id": "b6c7d8e9-f0a1-3b4c-5d6e-7f8a9b0c1d2e",
+            "name": "Aterro da Praia de Iracema",
+            "latitude": -3.716,
+            "longitude": -38.543
+          }
+        },
+        {
+          "id": "c7d8e9f0-a1b2-4c5d-6e7f-8a9b0c1d2e3f",
+          "location": {
+            "id": "d8e9f0a1-b2c3-5d6e-7f8a-9b0c1d2e3f4a",
+            "name": "Dragão do Mar",
+            "latitude": -3.728,
+            "longitude": -38.526
+          }
+        },
+        {
+          "id": "e9f0a1b2-c3d4-6e7f-8a9b-0c1d2e3f4a5b",
+          "location": {
+            "id": "f0a1b2c3-d4e5-7f8a-9b0c-1d2e3f4a5b6c",
+            "name": "Jardim Japonês",
+            "latitude": -3.758,
+            "longitude": -38.519
+          }
+        },
+        {
+          "id": "a1b2c3d4-e5f6-8a9b-0c1d-2e3f4a5b6c7d",
+          "location": {
+            "id": "b2c3d4e5-f6a7-9a0b-1c2d-3e4f5a6b7c8d",
+            "name": "Avenida Beira Mar",
+            "latitude": -3.720,
+            "longitude": -38.534
+          }
+        }
+      ]
+    },
+    {
+      "id": "3f0e4f9d-7d6c-5baf-9b2e-4c6d7e8f9a0b",
+      "equipment": {
+        "id": "c5d4e3f2-a7b6-9c8d-0e1f-2a3b4c5d6e7f",
+        "name": "Van 03"
+      },
+      "driver": {
+        "key": "slash"
+      },
+      "stops": [
+        {
+          "id": "d3e4f5a6-b7c8-1d2e-3f4a-5b6c7d8e9f0a",
+          "location": {
+            "id": "e4f5a6b7-c8d9-2e3f-4a5b-6c7d8e9f0a1b",
+            "name": "Centro Dragão do Mar",
+            "latitude": -3.729,
+            "longitude": -38.526
+          }
+        },
+        {
+          "id": "f5a6b7c8-d9e0-3f4a-5b6c-7d8e9f0a1b2c",
+          "location": {
+            "id": "a6b7c8d9-e0f1-4a5b-6c7d-8e9f0a1b2c3d",
+            "name": "Mercado dos Pinhões",
+            "latitude": -3.730,
+            "longitude": -38.528
+          }
+        },
+        {
+          "id": "b7c8d9e0-f1a2-4b5c-6d7e-9f0a1b2c3d4e",
+          "location": {
+            "id": "c8d9e0f1-a2b3-5c6d-7e8f-0a1b2c3d4e5f",
+            "name": "Parque Adahil Barreto",
+            "latitude": -3.735,
+            "longitude": -38.525
+          }
+        },
+        {
+          "id": "d9e0f1a2-b3c4-6d7e-8f9a-0b1c2d3e4f5a",
+          "location": {
+            "id": "e0f1a2b3-c4d5-7e8f-9a0b-1c2d3e4f5a6b",
+            "name": "Praça Portugal",
+            "latitude": -3.732,
+            "longitude": -38.527
+          }
+        },
+        {
+          "id": "f1a2b3c4-d5e6-8f9a-0b1c-2d3e4f5a6b7c",
+          "location": {
+            "id": "a2b3c4d5-e6f7-9a0b-1c2d-3e4f5a6b7c8d",
+            "name": "Praça José de Alencar",
+            "latitude": -3.733,
+            "longitude": -38.523
+          }
+        }
+      ]
+    }
+  ]
+}

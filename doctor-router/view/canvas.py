@@ -1,6 +1,9 @@
 import pygame
+import itertools
+import random
 
-from algo.core import best_solution
+from algo.core import best_solution, crossover
+from algo.fitness import calculate_fitness
 from algo.population import generate_random_locations, generate_random_population
 from shared.constants import WHITE, N_LOCATIONS, WIDTH, HEIGHT, N_VEHICLES, SRC_LAT, SRC_LNG, POPULATION_SIZE, FPS, \
     ROUTE_PATH_COLORS
@@ -8,6 +11,7 @@ from view.drawing import draw_locations, draw_route, draw_src, draw_plot
 
 
 def init(screen, clock):
+    generation_counter = itertools.count(start=1)  # Start the counter at 1
     locations = generate_random_locations(N_LOCATIONS, WIDTH, HEIGHT, padding=10)
     population = generate_random_population(
         locations,
@@ -26,6 +30,8 @@ def init(screen, clock):
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
                     running = False
+
+        generation = next(generation_counter)
 
         # set background color
         screen.fill(WHITE)
@@ -49,6 +55,17 @@ def init(screen, clock):
         for route in the_best_population:
             color = ROUTE_PATH_COLORS[route.id]
             draw_route(screen, route, color, width=3)
+
+        print(f"Generation {generation}: Best fitness = {round(the_best_fitness, 2)}")
+
+        new_population = [the_best_population]  # Keep the best individual: ELITISM
+
+        while len(new_population) < POPULATION_SIZE:
+            parent1, parent2 = random.choices(population, k=2)
+            child1 = crossover(parent1, parent2)
+            new_population.append(child1)
+
+        population = new_population
 
         # draw current state
         pygame.display.flip()

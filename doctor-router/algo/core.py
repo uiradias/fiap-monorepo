@@ -4,14 +4,22 @@ from algo.fitness import calculate_fitness
 from domain.route import Route
 
 
-def best_solution(population: List[Route]) -> Route:
+def best_solution(population: List[List[Route]]) -> List[Route]:
     population, population_fitness = sort_population_by_fitness(population, calculate_population_fitness(population))
     return population[0]
 
 
-def calculate_population_fitness(population: List[Route]) -> List[float]:
-    return [calculate_fitness(route) for route in population]
+def calculate_population_fitness(population: List[List[Route]]) -> List[float]:
+    fitness = []
+    for solution in population:
+        solution_fitness = 0
+        for route in solution:
+            solution_fitness += calculate_fitness(route)
+        fitness.append(solution_fitness)
+
+    return fitness
 
 
-def sort_population_by_fitness(population: List[Route], fitness: List[float]) -> Tuple[List[Route], List[float]]:
-    return sorted(population, key=lambda route: fitness[population.index(route)]), sorted(fitness)
+def sort_population_by_fitness(population: List[List[Route]], fitness: List[float]) -> Tuple[
+    List[List[Route]], List[float]]:
+    return sorted(population, key=lambda solution: fitness[population.index(solution)]), sorted(fitness)

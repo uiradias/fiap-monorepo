@@ -1,18 +1,21 @@
 import pygame
 
 from algo.core import best_solution
-from algo.population import generate_random_routes, generate_random_locations
-from shared.constants import WHITE, N_LOCATIONS, WIDTH, HEIGHT, BLUE
-from view.drawing import draw_locations, draw_route
-
-# Define constant values
-# pygame
-FPS = 30
+from algo.population import generate_random_locations, generate_random_population
+from shared.constants import WHITE, N_LOCATIONS, WIDTH, HEIGHT, N_VEHICLES, SRC_LAT, SRC_LNG, POPULATION_SIZE, FPS, \
+    ROUTE_PATH_COLORS
+from view.drawing import draw_locations, draw_route, draw_src
 
 
 def init(screen, clock):
     locations = generate_random_locations(N_LOCATIONS, WIDTH, HEIGHT, padding=10)
-    pupulation = generate_random_routes(locations)
+    population = generate_random_population(
+        locations,
+        N_VEHICLES,
+        SRC_LAT,
+        SRC_LNG,
+        POPULATION_SIZE
+    )
 
     running = True
     while running:
@@ -26,8 +29,13 @@ def init(screen, clock):
         # set background color
         screen.fill(WHITE)
 
+        draw_src(screen, SRC_LAT, SRC_LNG)
         draw_locations(screen, locations)
-        draw_route(screen, best_solution(pupulation), BLUE, width=3)
+
+        the_best = best_solution(population)
+        for route in the_best:
+            color = ROUTE_PATH_COLORS[route.id]
+            draw_route(screen, route, color, width=3)
 
         # draw current state
         pygame.display.flip()

@@ -4,9 +4,9 @@ from algo.fitness import calculate_fitness
 from domain.route import Route
 
 
-def best_solution(population: List[List[Route]]) -> List[Route]:
+def best_solution(population: List[List[Route]]) -> Tuple[List[Route], float]:
     population, population_fitness = sort_population_by_fitness(population, calculate_population_fitness(population))
-    return population[0]
+    return population[0], population_fitness[0]
 
 
 def calculate_population_fitness(population: List[List[Route]]) -> List[float]:

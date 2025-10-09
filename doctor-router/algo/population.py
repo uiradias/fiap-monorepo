@@ -34,7 +34,7 @@ def generate_random_locations(n: int, width: int, height: int, padding: int = 0)
     locations = []
     for i in range(n):
         lat = random.uniform(padding, height - padding)
-        lng = random.uniform(padding, width - padding)
+        lng = random.uniform(width / 2 + padding, width - padding)
         locations.append(
             Location(
                 id=f"Location_{i + 1}",

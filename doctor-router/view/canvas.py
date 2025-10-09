@@ -4,7 +4,7 @@ from algo.core import best_solution
 from algo.population import generate_random_locations, generate_random_population
 from shared.constants import WHITE, N_LOCATIONS, WIDTH, HEIGHT, N_VEHICLES, SRC_LAT, SRC_LNG, POPULATION_SIZE, FPS, \
     ROUTE_PATH_COLORS
-from view.drawing import draw_locations, draw_route, draw_src
+from view.drawing import draw_locations, draw_route, draw_src, draw_plot
 
 
 def init(screen, clock):
@@ -16,6 +16,7 @@ def init(screen, clock):
         SRC_LNG,
         POPULATION_SIZE
     )
+    best_fitness_values = []
 
     running = True
     while running:
@@ -29,11 +30,23 @@ def init(screen, clock):
         # set background color
         screen.fill(WHITE)
 
+        the_best = best_solution(population)
+        the_best_population = the_best[0]
+        the_best_fitness = the_best[1]
+        best_fitness_values.append(the_best_fitness)
+
+        draw_plot(
+            screen,
+            list(range(len(best_fitness_values))),
+            best_fitness_values,
+            y_label="Fitness - Distance (pxls)",
+            region_horizontal="left",
+            region_vertical="center")
+
         draw_src(screen, SRC_LAT, SRC_LNG)
         draw_locations(screen, locations)
 
-        the_best = best_solution(population)
-        for route in the_best:
+        for route in the_best_population:
             color = ROUTE_PATH_COLORS[route.id]
             draw_route(screen, route, color, width=3)
 

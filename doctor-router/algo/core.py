@@ -1,7 +1,10 @@
+import random
 from typing import List, Tuple
 
 from algo.fitness import calculate_fitness
 from domain.route import Route
+from domain.location import Location
+from domain.stop import Stop
 
 
 def best_solution(population: List[List[Route]]) -> Tuple[List[Route], float]:
@@ -23,3 +26,63 @@ def calculate_population_fitness(population: List[List[Route]]) -> List[float]:
 def sort_population_by_fitness(population: List[List[Route]], fitness: List[float]) -> Tuple[
     List[List[Route]], List[float]]:
     return sorted(population, key=lambda solution: fitness[population.index(solution)]), sorted(fitness)
+
+
+def flatten_and_structure(individual: List[Route]):
+    structure = individual
+    flat = [c for r in individual for c in r.stops]
+    return flat, structure
+
+
+def rebuild(flat: List[Stop], structure: List[Route]) -> List[Route]:
+    routes = []
+    i = 0
+    for route in structure:
+        routes.append(Route(id=route.id,
+                            src_lat=route.src_lat,
+                            src_lng=route.src_lng,
+                            vehicle=route.vehicle,
+                            stops=flat[i:i + len(route.stops)]))
+        i += len(route.stops)
+    return routes
+
+
+def order_crossover(parent1: List[Stop], parent2: List[Stop]) -> List[Stop]:
+    """
+    Perform order crossover (OX) between two parent sequences to create a child sequence.
+
+    Parameters:
+    - parent1 (List[Stop]): The first parent sequence.
+    - parent2 (List[Stop]): The second parent sequence.
+
+    Returns:
+    List[Stop]: The child sequence resulting from the order crossover.
+    """
+    length = len(parent1)
+
+    # Choose two random indices for the crossover
+    start_index = random.randint(0, length - 1)
+    end_index = random.randint(start_index + 1, length)
+
+    # Initialize the child with a copy of the substring from parent1
+    child = parent1[start_index:end_index]
+
+    # Fill in the remaining positions with genes from parent2
+    remaining_positions = [i for i in range(length) if i < start_index or i >= end_index]
+    remaining_genes = [gene for gene in parent2 if gene not in child]
+
+    for position, gene in zip(remaining_positions, remaining_genes):
+        child.insert(position, gene)
+
+    return child
+
+
+def crossover(parent1: List[Route], parent2: List[Route]):
+    p1_flat, p1_structure = flatten_and_structure(parent1)
+    p2_flat, _ = flatten_and_structure(parent2)
+
+    child1_flat = order_crossover(p1_flat, p2_flat)
+
+    child1 = rebuild(child1_flat, p1_structure)
+
+    return child1

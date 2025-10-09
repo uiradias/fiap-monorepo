@@ -12,10 +12,10 @@ def best_solution(population: List[List[Route]]) -> List[Route]:
 def calculate_population_fitness(population: List[List[Route]]) -> List[float]:
     fitness = []
     for solution in population:
-        solution_fitness = 0
+        solution_fitness = []
         for route in solution:
-            solution_fitness += calculate_fitness(route)
-        fitness.append(solution_fitness)
+            solution_fitness.append(calculate_fitness(route))
+        fitness.append(max(solution_fitness))
 
     return fitness
 

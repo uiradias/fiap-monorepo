@@ -17,7 +17,7 @@ BLUE = (0, 0, 255)
 BROWN = (106, 51, 51)
 
 ROUTE_PATH_COLORS = {
-    "route_1001": YELLOW,
-    "route_1002": GREEN,
-    "route_1003": BLUE,
+    "route_1000": YELLOW,
+    "route_1001": GREEN,
+    "route_1002": BLUE,
 }

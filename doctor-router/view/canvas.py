@@ -1,11 +1,11 @@
-import pygame
 import itertools
 import random
 
+import pygame
+
 from algo.core import best_solution, crossover
-from algo.fitness import calculate_fitness
 from algo.population import generate_random_locations, generate_random_population
-from shared.constants import WHITE, N_LOCATIONS, WIDTH, HEIGHT, N_VEHICLES, SRC_LAT, SRC_LNG, POPULATION_SIZE, FPS, \
+from shared.constants import WHITE, N_LOCATIONS, WIDTH, HEIGHT, SRC_LAT, SRC_LNG, POPULATION_SIZE, FPS, \
     ROUTE_PATH_COLORS
 from view.drawing import draw_locations, draw_route, draw_src, draw_plot
 
@@ -13,15 +13,17 @@ from view.drawing import draw_locations, draw_route, draw_src, draw_plot
 def init(screen, clock):
     generation_counter = itertools.count(start=1)  # Start the counter at 1
     locations = generate_random_locations(N_LOCATIONS, WIDTH, HEIGHT, padding=10)
+    vehicles = ['equipment_1', 'equipment_2', 'equipment_3']
     population = generate_random_population(
         locations,
-        N_VEHICLES,
+        vehicles,
         SRC_LAT,
         SRC_LNG,
         POPULATION_SIZE
     )
     best_fitness_values = []
 
+    current_solution = None
     running = True
     while running:
         for event in pygame.event.get():
@@ -37,7 +39,7 @@ def init(screen, clock):
         screen.fill(WHITE)
 
         the_best = best_solution(population)
-        the_best_population = the_best[0]
+        the_best_solution = the_best[0]
         the_best_fitness = the_best[1]
         best_fitness_values.append(the_best_fitness)
 
@@ -52,13 +54,16 @@ def init(screen, clock):
         draw_src(screen, SRC_LAT, SRC_LNG)
         draw_locations(screen, locations)
 
-        for route in the_best_population:
+        for route in the_best_solution:
             color = ROUTE_PATH_COLORS[route.id]
             draw_route(screen, route, color, width=3)
 
         print(f"Generation {generation}: Best fitness = {round(the_best_fitness, 2)}")
 
-        new_population = [the_best_population]  # Keep the best individual: ELITISM
+        new_population = [the_best_solution]  # Keep the best individual: ELITISM
+        if current_solution is None or current_solution != the_best_solution:
+            current_solution = the_best_solution
+            print(current_solution)
 
         while len(new_population) < POPULATION_SIZE:
             parent1, parent2 = random.choices(population, k=2)

@@ -23,7 +23,6 @@ def init(screen, clock):
     )
     best_fitness_values = []
 
-    current_solution = None
     running = True
     while running:
         for event in pygame.event.get():
@@ -61,9 +60,6 @@ def init(screen, clock):
         print(f"Generation {generation}: Best fitness = {round(the_best_fitness, 2)}")
 
         new_population = [the_best_solution]  # Keep the best individual: ELITISM
-        if current_solution is None or current_solution != the_best_solution:
-            current_solution = the_best_solution
-            print(current_solution)
 
         while len(new_population) < POPULATION_SIZE:
             parent1, parent2 = random.choices(population, k=2)

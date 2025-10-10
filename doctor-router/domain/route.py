@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from domain.stop import Stop
+from domain.location import Location
 
 
 @dataclass(frozen=True)
@@ -10,4 +10,4 @@ class Route:
     vehicle: str
     src_lat: float
     src_lng: float
-    stops: List[Stop]
+    locations: List[Location]

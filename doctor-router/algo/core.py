@@ -2,8 +2,8 @@ import random
 from typing import List, Tuple
 
 from algo.fitness import calculate_fitness
+from domain.location import Location
 from domain.route import Route
-from domain.stop import Stop
 
 
 def best_solution(population: List[List[Route]]) -> Tuple[List[Route], float]:
@@ -27,11 +27,11 @@ def sort_population_by_fitness(population: List[List[Route]], fitness: List[floa
     return sorted(population, key=lambda solution: fitness[population.index(solution)]), sorted(fitness)
 
 
-def flatten_and_structure(individual: List[Route]) -> List[Stop]:
-    return [c for r in individual for c in r.stops]
+def flatten_and_structure(individual: List[Route]) -> List[Location]:
+    return [c for r in individual for c in r.locations]
 
 
-def rebuild(flat: List[Stop], structure: List[Route]) -> List[Route]:
+def rebuild(flat: List[Location], structure: List[Route]) -> List[Route]:
     routes = []
     i = 0
     for route in structure:
@@ -39,21 +39,21 @@ def rebuild(flat: List[Stop], structure: List[Route]) -> List[Route]:
                             src_lat=route.src_lat,
                             src_lng=route.src_lng,
                             vehicle=route.vehicle,
-                            stops=flat[i:i + len(route.stops)]))
-        i += len(route.stops)
+                            locations=flat[i:i + len(route.locations)]))
+        i += len(route.locations)
     return routes
 
 
-def order_crossover(parent1: List[Stop], parent2: List[Stop]) -> List[Stop]:
+def order_crossover(parent1: List[Location], parent2: List[Location]) -> List[Location]:
     """
     Perform order crossover (OX) between two parent sequences to create a child sequence.
 
     Parameters:
-    - parent1 (List[Stop]): The first parent sequence.
-    - parent2 (List[Stop]): The second parent sequence.
+    - parent1 (List[Location]): The first parent sequence.
+    - parent2 (List[Location]): The second parent sequence.
 
     Returns:
-    List[Stop]: The child sequence resulting from the order crossover.
+    List[Location]: The child sequence resulting from the order crossover.
     """
     length = len(parent1)
 

@@ -1,12 +1,10 @@
 import random
-import uuid
 from typing import List
 
 import math
 
 from domain.location import Location
 from domain.route import Route
-from domain.stop import Stop
 from shared.utils import euclidean_distance
 
 
@@ -74,11 +72,10 @@ def _generate_individual(locations: List[Location],
 
     routes = []
     for idx in range(n_vehicles):
-        ordered = _order_locations_by_nn(groups[idx])
-        stops = _build_stops_from_locations(ordered)
+        locations = _order_locations_by_nn(groups[idx])
         routes.append(Route(id=f"route_{idx + 1000}",
                             vehicle=f"vehicle_{idx + 1}",
-                            stops=random.sample(stops, len(stops)),
+                            locations=random.sample(locations, len(locations)),
                             src_lat=src_lat,
                             src_lng=src_lng))
     return routes
@@ -181,10 +178,3 @@ def _kmeans_geo(locations: List[Location], k: int, iters: int) -> List[List[Loca
         centroids = new_centroids
 
     return clusters
-
-
-def _build_stops_from_locations(locations: List[Location]):
-    return [
-        Stop(id=str(uuid.uuid4()), location=loc)
-        for i, loc in enumerate(locations)
-    ]

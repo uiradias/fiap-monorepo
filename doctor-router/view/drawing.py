@@ -1,6 +1,9 @@
 from typing import List, Tuple
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pygame
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from domain.location import Location
 from domain.route import Route
@@ -18,16 +21,10 @@ def draw_locations(screen: pygame.Surface, locations: List[Location]) -> None:
 
 def draw_route(screen: pygame.Surface, route: Route, rgb_color: Tuple[int, int, int], width: int = 1):
     path = [(route.src_lng, route.src_lat)]
-    for stop in route.stops:
-        path.append((stop.location.lng, stop.location.lat))
+    for location in route.locations:
+        path.append((location.lng, location.lat))
     path.append((route.src_lng, route.src_lat))
     pygame.draw.lines(screen, rgb_color, True, path, width=width)
-
-
-import pygame
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 
 def draw_plot(

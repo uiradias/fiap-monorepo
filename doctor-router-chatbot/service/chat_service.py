@@ -14,12 +14,7 @@ class ChatService:
         self.vector_store = build_vector_store(context)
         self.chain = build_chain(openai_model, self.vector_store, self.prompt)
 
-    def submit(self, question: str, driver: str = None):
-        if driver:
-            targeted_question = f"Foque somente na rota do motorista {driver}. {question}"
-        else:
-            targeted_question = question
-
+    def submit(self, question: str):
         return self.chain.invoke({
-            "query": targeted_question
+            "query": question
         })["result"]

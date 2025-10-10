@@ -16,13 +16,12 @@ class RouteService:
 
     @staticmethod
     def extract_route_summary(route: dict) -> str:
-        equip_name = route["equipment"]["name"]
-        driver_key = route["driver"]["key"]
+        equip_name = route["vehicle"]
         route_id = route["id"]
-        lines = [f"Rota {route_id} - Veículo: {equip_name} - Motorista: {driver_key}"]
-        for stop in route["stops"]:
-            loc = stop["location"]
-            lines.append(f"  - {loc['name']} (Lat: {loc['latitude']}, Lon: {loc['longitude']})")
+        lines = [
+            f"Rota {route_id} - Veículo: {equip_name} - Origem latitude: {route['src_lat']} - Origem longitude: {route['src_lng']}"]
+        for loc in route["locations"]:
+            lines.append(f"  - {loc['id']} (Latitude: {loc['lat']}, Longitude: {loc['lng']})")
         return "\n".join(lines)
 
     # -----------------
@@ -30,4 +29,4 @@ class RouteService:
     # -----------------
     def _load_routes(self):
         with open(self.file_path, "r", encoding="utf-8") as f:
-            return json.load(f).get("routes", [])
+            return json.load(f)

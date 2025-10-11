@@ -1,9 +1,19 @@
+from typing import Tuple, List
+
 from domain.route import Route
+from shared.constants import VEHICLE_AUTONOMY
 from shared.utils import euclidean_distance
 
 
-def calculate_fitness(route: Route) -> float:
-    return _calculate_distance(route)
+def calculate_fitness(individual: List[Route]) -> Tuple[int, float]:
+    violations = 0
+    total_distance = 0
+    for route in individual:
+        dist = _calculate_distance(route)
+        total_distance += dist
+        if dist > VEHICLE_AUTONOMY:
+            violations += 1
+    return violations, total_distance
 
 
 def _calculate_distance(route: Route) -> float:

@@ -31,7 +31,7 @@ def generate_random_population(locations: List[Location],
     population = []
     strategies = ['random', 'cluster']
     for i in range(population_size):
-        strat = random.choices(strategies, weights=[0.4, 0.6], k=1)[0]
+        strat = random.choices(strategies, weights=[0.2, 0.8], k=1)[0]
         individual = _generate_individual(locations, vehicles, src_lat, src_lng, strat)
         population.append(individual)
 
@@ -176,5 +176,16 @@ def _kmeans_geo(locations: List[Location], k: int, iters: int) -> List[List[Loca
                 new_centroid = Location('new-centroid', avg_lat, avg_lng)
                 new_centroids.append(new_centroid)
         centroids = new_centroids
+
+    # if any cluster has more than ceil(N / n_clusters), redistribute to the emptiest one (rebalance clusters)
+    target_size = len(locations) // k
+    extras = []
+    for cluster in clusters:
+        while len(cluster) > target_size + 1:
+            extras.append(cluster.pop())
+
+    for cluster in clusters:
+        while len(cluster) < target_size and extras:
+            cluster.append(extras.pop())
 
     return clusters

@@ -6,25 +6,29 @@ from domain.location import Location
 from domain.route import Route
 
 
-def best_solution(population: List[List[Route]]) -> Tuple[List[Route], float]:
-    population, population_fitness = sort_population_by_fitness(population, calculate_population_fitness(population))
+def best_solution(population: List[List[Route]]) -> Tuple[List[Route], Tuple[int, float]]:
+    population, population_fitness = _sort_population_by_fitness(population, calculate_population_fitness(population))
     return population[0], population_fitness[0]
 
 
-def calculate_population_fitness(population: List[List[Route]]) -> List[float]:
+def calculate_population_fitness(population: List[List[Route]]) -> List[Tuple[int, float]]:
     fitness = []
     for solution in population:
-        solution_fitness = []
-        for route in solution:
-            solution_fitness.append(calculate_fitness(route))
-        fitness.append(max(solution_fitness))
+        fitness.append(calculate_fitness(solution))
 
     return fitness
 
 
-def sort_population_by_fitness(population: List[List[Route]], fitness: List[float]) -> Tuple[
-    List[List[Route]], List[float]]:
-    return sorted(population, key=lambda solution: fitness[population.index(solution)]), sorted(fitness)
+def _sort_population_by_fitness(
+        population: List[List[Route]],
+        fitness: List[Tuple[int, float]]
+) -> Tuple[List[List[Route]], List[Tuple[int, float]]]:
+    paired = list(zip(population, fitness))
+    paired_sorted = sorted(paired, key=lambda x: x[1])
+
+    sorted_population, sorted_fitness = zip(*paired_sorted)
+
+    return list(sorted_population), list(sorted_fitness)
 
 
 def flatten_and_structure(individual: List[Route]) -> List[Location]:

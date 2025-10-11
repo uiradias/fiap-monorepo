@@ -19,9 +19,10 @@ def render_chat_view(openai_model: str):
         submitted = st.form_submit_button("Enviar")
 
         if submitted:
-            response = chat_controller.submit(user_question)
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            st.session_state.messages.append({"role": "user", "content": user_question})
+            with st.spinner("Processando sua requisição, aguarde..."):
+                response = chat_controller.submit(user_question)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state.messages.append({"role": "user", "content": user_question})
 
     for msg in reversed(st.session_state.messages):
         if msg["role"] == "user":

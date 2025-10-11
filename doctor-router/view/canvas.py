@@ -48,7 +48,8 @@ def init(screen, clock):
 
         the_best = best_solution(population)
         the_best_solution = the_best[0]
-        the_best_fitness = the_best[1]
+        the_best_fitness = the_best[1][1]
+        the_best_violations = the_best[1][0]
         best_fitness_values.append(the_best_fitness)
 
         draw_plot(
@@ -66,7 +67,7 @@ def init(screen, clock):
             color = ROUTE_PATH_COLORS[route.id]
             draw_route(screen, route, color, width=3)
 
-        print(f"Generation {generation}: Best fitness = {round(the_best_fitness, 2)}")
+        print(f"Generation {generation}: Best fitness (d) = {round(the_best_fitness, 2)} Best fitness (v) = {round(the_best_violations, 2)}")
 
         new_population = [the_best_solution]  # Keep the best individual: ELITISM
 

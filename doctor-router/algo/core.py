@@ -1,4 +1,5 @@
 import random
+import copy
 from typing import List, Tuple
 
 from algo.fitness import calculate_fitness
@@ -84,6 +85,52 @@ def crossover(parent1: List[Route], parent2: List[Route]):
 
     child1_flat = order_crossover(p1_flat, p2_flat)
 
+    return child1_flat
+
+
+def mutate(solution: List[Location], mutation_probability: float) -> List[Location]:
+    """
+    Mutate a solution by inverting a segment of the sequence with a given mutation probability.
+
+    Parameters:
+    - solution (List[int]): The solution sequence to be mutated.
+    - mutation_probability (float): The probability of mutation for each individual in the solution.
+
+    Returns:
+    List[int]: The mutated solution sequence.
+    """
+    mutated_solution = copy.deepcopy(solution)
+
+    # Check if mutation should occur
+    if random.random() < mutation_probability:
+
+        # Ensure there are at least two cities to perform a swap
+        if len(solution) < 2:
+            return solution
+
+        # Select a random index (excluding the last index) for swapping
+        index = random.randint(0, len(solution) - 2)
+
+        # Swap the cities at the selected index and the next index
+        mutated_solution[index], mutated_solution[index + 1] = solution[index + 1], solution[index]
+
+    return mutated_solution
+
+def crossover_no_mutation(parent1: List[Route], parent2: List[Route]):
+    child1_flat = crossover(parent1, parent2)
+    return rebuild(child1_flat, parent1)
+
+def crossover_and_mutate(parent1: List[Route], parent2: List[Route], mutation_probability: float):
+    child1_flat = crossover(parent1, parent2)
     child1 = rebuild(child1_flat, parent1)
 
-    return child1
+    mutated_solution = []
+    for route in child1:
+        mutated_locations = mutate(route.locations, mutation_probability)
+        mutated_solution.append(Route(id=route.id,
+                              vehicle=route.vehicle,
+                              src_lng=route.src_lng,
+                              src_lat=route.src_lat,
+                              locations=mutated_locations))
+
+    return mutated_solution

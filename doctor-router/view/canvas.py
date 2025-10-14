@@ -7,11 +7,11 @@ from typing import List
 
 import pygame
 
-from algo.core import best_solution, crossover
+from algo.core import best_solution, crossover_and_mutate, crossover_no_mutation
 from algo.population import generate_random_locations, generate_random_population
 from domain.route import Route
 from shared.constants import WHITE, N_LOCATIONS, WIDTH, HEIGHT, SRC_LAT, SRC_LNG, POPULATION_SIZE, FPS, \
-    ROUTE_PATH_COLORS
+    ROUTE_PATH_COLORS, MUTATION_PROBABILITY
 from view.drawing import draw_locations, draw_route, draw_src, draw_plot
 
 
@@ -77,7 +77,7 @@ def init(screen, clock):
 
         while len(new_population) < POPULATION_SIZE:
             parent1, parent2 = random.choices(population, k=2)
-            child1 = crossover(parent1, parent2)
+            child1 = crossover_and_mutate(parent1, parent2, MUTATION_PROBABILITY)
             new_population.append(child1)
 
         population = new_population

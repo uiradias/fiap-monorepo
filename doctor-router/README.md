@@ -66,3 +66,7 @@ Em resumo:
 - A operação consiste em trocar dois elementos aleatórios da rota. 
 - A mutação é aplicada com probabilidade de 10% por indivíduo.
 - Essa estratégia mantém a solução válida e, ao mesmo tempo, contribui para a exploração do espaço de busca do problema.
+
+## Restrições adicionais
+1. Multiplos veículos
+2. Autonomia dos veículos 

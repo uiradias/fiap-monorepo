@@ -22,7 +22,19 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## Geração de rotas
+## Contexto do Problema
+
+O problema em questão envolve a atribuição de um conjunto de paradas (locais) a um conjunto de veículos, de forma que:
+
+1. Cada parada seja atendida exatamente uma vez;
+2. Cada veículo percorra uma rota iniciando e terminando em um depósito (ou ponto base);
+3. O total de quilômetros percorridos seja minimizado;
+4. Nenhuma rota ultrapasse a autonomia máxima permitida para o veículo designado.
+
+Essa formulação é uma variação do Problema de Roteamento de Veículos (Vehicle Routing Problem – VRP), com uma restrição
+adicional de autonomia de veiculos.
+
+## Geração do arquivo de rotas
 Ao executar o programa, cada solução com melhor fitness do que a anterior, será armazenada em um arquivo JSON para ser 
 consumido pelo projeto [doctor-router-chatbot](https://github.com/uiradias/fiap-monorepo/tree/main/doctor-router-chatbot)
 
@@ -34,6 +46,23 @@ escolhidos em tempo de execução, baseado em pesos. Os algoritmos e pesos são:
 1. Split into chunks: faz um shuffle da lista de locations e divide as locations em chunks baseado no número de veículos. 
 Peso 20% dos individuos da população
 2. K-means: agrupa as locations em cluster de locations mais próximas. Peso 80% dos individuos da população
+
+### Fitness
+O cálculo de fitness é uma das etapas mais críticas em um algoritmo genético (AG), pois determina a qualidade das soluções 
+candidatas em relação ao problema a ser resolvido. Neste contexto, o objetivo é minimizar a distância total percorrida 
+em um conjunto de rotas e eliminar violações de restrições operacionais, especificamente as relacionadas à autonomia 
+dos veículos que executam as rotas.
+
+### Seleção
+Essa etapa consiste em determinar quais indivíduos da população atual serão preservados e utilizados para gerar a próxima geração.
+No contexto deste projeto — otimização de rotas de veículos com restrição de autonomia — a seleção tem papel crucial em 
+preservar as melhores soluções, ou seja, aquelas que:
+
+1. Minimizam a distância total percorrida, e
+2. Eliminam ou reduzem violações de autonomia.
+
+O método de seleção adotado neste caso é a seleção elitista baseada no melhor fitness, que prioriza a manutenção do 
+indivíduo mais apto em cada geração.
 
 ### Cruzamento
 Para implementar o operador de crossover no algoritmo genético, adotamos uma abordagem baseada na linearização das rotas. Em vez de realizar o cruzamento diretamente sobre a estrutura de múltiplas rotas (uma para cada veículo), primeiro transformamos o indivíduo em uma lista única (“lista flat”) contendo todas as locations em sequência.

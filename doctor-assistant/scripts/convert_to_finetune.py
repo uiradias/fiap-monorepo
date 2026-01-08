@@ -29,12 +29,11 @@ SYSTEM_PROMPT = """You are a medical decision support assistant helping doctors 
 
 CRITICAL GUIDELINES:
 1. You provide SUGGESTIONS and INSIGHTS only - never direct diagnoses or treatment plans
-2. Base your analysis on the provided medical research and context
-3. Cite evidence from the provided research when making observations
-4. Highlight relevant patterns, considerations, or concerns
-5. Always encourage verification with additional clinical judgment
+2. Cite the study year, if present
+3. Highlight relevant patterns, considerations, or concerns
+4. Always encourage verification with additional clinical judgment
 
-Remember: You are supporting clinical decision-making, not making decisions. Your responses are suggestions based on available evidence, not definitive medical advice."""
+Remember: You are supporting clinical decision-making, not making decisions. Your responses are suggestions, not definitive medical advice."""
 
 
 def format_contexts(contexts: list, labels: list) -> str:
@@ -57,21 +56,11 @@ def create_training_example(entry: dict) -> dict:
     meshes = entry.get("MESHES", [])
     year = entry.get("YEAR", "")
 
-    user_content = f"""Based on the following medical research context, please answer the clinical question.
-
-**Question**: {question}
+    # Format the assistant response with proper framing
+    assistant_content = f"""{answer}
 
 **Relevant Medical Terms**: {', '.join(meshes[:10]) if meshes else 'N/A'}
-**Study Year**: {year}"""
-
-    # Format the assistant response with proper framing
-    assistant_content = f"""Based on the provided research evidence, here is my analysis:
-
-## Summary
-{answer}
-
-## Evidence Basis
-This conclusion is drawn from the research context provided, which includes findings from a {year} study examining relevant clinical outcomes.
+**Study Year**: {year}
 
 ## Key Considerations
 - The evidence suggests specific patterns that may inform clinical decision-making
@@ -84,7 +73,7 @@ This conclusion is drawn from the research context provided, which includes find
     return {
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_content},
+            {"role": "user", "content": question},
             {"role": "assistant", "content": assistant_content}
         ]
     }

@@ -1,0 +1,836 @@
+{
+  "patients": [
+    {
+      "id": "P001",
+      "demographics": {
+        "name": "John Smith",
+        "age": 58,
+        "gender": "Male",
+        "blood_type": "A+",
+        "date_of_birth": "1967-03-15",
+        "contact": "+1-555-0101"
+      },
+      "conditions": [
+        {
+          "name": "Type 2 Diabetes Mellitus",
+          "diagnosed_date": "2018-06-20",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Initially diagnosed with HbA1c of 8.5%. Currently managed with medication and lifestyle changes."
+        },
+        {
+          "name": "Essential Hypertension",
+          "diagnosed_date": "2015-11-10",
+          "status": "ongoing",
+          "severity": "mild",
+          "notes": "Well-controlled with current medication regimen."
+        },
+        {
+          "name": "Hyperlipidemia",
+          "diagnosed_date": "2019-02-14",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Elevated LDL cholesterol, started on statin therapy."
+        }
+      ],
+      "medications": [
+        {
+          "name": "Metformin",
+          "dosage": "1000mg",
+          "frequency": "twice daily",
+          "start_date": "2018-06-25",
+          "purpose": "Blood sugar control"
+        },
+        {
+          "name": "Lisinopril",
+          "dosage": "10mg",
+          "frequency": "once daily",
+          "start_date": "2015-11-15",
+          "purpose": "Blood pressure control"
+        },
+        {
+          "name": "Atorvastatin",
+          "dosage": "20mg",
+          "frequency": "once daily at bedtime",
+          "start_date": "2019-02-20",
+          "purpose": "Cholesterol management"
+        }
+      ],
+      "allergies": [
+        {
+          "allergen": "Penicillin",
+          "reaction": "Skin rash, hives",
+          "severity": "moderate"
+        },
+        {
+          "allergen": "Sulfa drugs",
+          "reaction": "Difficulty breathing",
+          "severity": "severe"
+        }
+      ],
+      "lab_results": [
+        {
+          "test": "HbA1c",
+          "value": "7.2%",
+          "date": "2024-11-15",
+          "reference_range": "4.0-5.6%",
+          "status": "elevated"
+        },
+        {
+          "test": "Fasting Glucose",
+          "value": "142 mg/dL",
+          "date": "2024-11-15",
+          "reference_range": "70-100 mg/dL",
+          "status": "elevated"
+        },
+        {
+          "test": "LDL Cholesterol",
+          "value": "118 mg/dL",
+          "date": "2024-11-15",
+          "reference_range": "<100 mg/dL",
+          "status": "borderline high"
+        },
+        {
+          "test": "Blood Pressure",
+          "value": "128/82 mmHg",
+          "date": "2024-11-15",
+          "reference_range": "<120/80 mmHg",
+          "status": "slightly elevated"
+        },
+        {
+          "test": "Creatinine",
+          "value": "1.1 mg/dL",
+          "date": "2024-11-15",
+          "reference_range": "0.7-1.3 mg/dL",
+          "status": "normal"
+        }
+      ],
+      "visits": [
+        {
+          "date": "2024-11-15",
+          "reason": "Quarterly diabetes follow-up",
+          "provider": "Dr. Sarah Johnson",
+          "notes": "Patient reports good medication adherence. Occasional mild hypoglycemic episodes in the morning. Discussed importance of consistent meal timing. Blood sugar control has improved from last visit. Continue current regimen.",
+          "vitals": {
+            "weight": "198 lbs",
+            "height": "5'10\"",
+            "bmi": "28.4"
+          }
+        },
+        {
+          "date": "2024-08-12",
+          "reason": "Routine checkup",
+          "provider": "Dr. Sarah Johnson",
+          "notes": "Patient experiencing occasional fatigue. Lab work ordered. Encouraged increased physical activity - goal of 30 min walking daily. Diet review showed high carbohydrate intake in evenings."
+        },
+        {
+          "date": "2024-05-03",
+          "reason": "Blood pressure monitoring",
+          "provider": "Dr. Michael Chen",
+          "notes": "Blood pressure well controlled. Patient has been more consistent with low-sodium diet. Continue current antihypertensive regimen."
+        }
+      ]
+    },
+    {
+      "id": "P002",
+      "demographics": {
+        "name": "Maria Garcia",
+        "age": 42,
+        "gender": "Female",
+        "blood_type": "O-",
+        "date_of_birth": "1983-08-22",
+        "contact": "+1-555-0102"
+      },
+      "conditions": [
+        {
+          "name": "Asthma",
+          "diagnosed_date": "1995-04-10",
+          "status": "ongoing",
+          "severity": "moderate persistent",
+          "notes": "Childhood-onset asthma, triggered by cold air and exercise. Well-controlled with current inhaler regimen."
+        },
+        {
+          "name": "Generalized Anxiety Disorder",
+          "diagnosed_date": "2020-03-15",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Onset during COVID-19 pandemic. Responds well to combination of medication and therapy."
+        },
+        {
+          "name": "Migraine without Aura",
+          "diagnosed_date": "2010-07-20",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Approximately 4-5 episodes per month. Triggers include stress, lack of sleep, and certain foods."
+        }
+      ],
+      "medications": [
+        {
+          "name": "Fluticasone/Salmeterol (Advair)",
+          "dosage": "250/50 mcg",
+          "frequency": "twice daily",
+          "start_date": "2018-01-10",
+          "purpose": "Asthma maintenance"
+        },
+        {
+          "name": "Albuterol Inhaler",
+          "dosage": "90 mcg",
+          "frequency": "as needed",
+          "start_date": "1995-04-15",
+          "purpose": "Rescue inhaler for acute symptoms"
+        },
+        {
+          "name": "Sertraline",
+          "dosage": "100mg",
+          "frequency": "once daily",
+          "start_date": "2020-04-01",
+          "purpose": "Anxiety management"
+        },
+        {
+          "name": "Sumatriptan",
+          "dosage": "50mg",
+          "frequency": "as needed for migraines",
+          "start_date": "2015-03-20",
+          "purpose": "Migraine relief"
+        }
+      ],
+      "allergies": [
+        {
+          "allergen": "Aspirin",
+          "reaction": "Bronchospasm, wheezing",
+          "severity": "severe"
+        },
+        {
+          "allergen": "NSAIDs",
+          "reaction": "Worsening asthma symptoms",
+          "severity": "moderate"
+        }
+      ],
+      "lab_results": [
+        {
+          "test": "Peak Flow",
+          "value": "420 L/min",
+          "date": "2024-10-20",
+          "reference_range": "380-500 L/min (personal best: 480)",
+          "status": "acceptable"
+        },
+        {
+          "test": "IgE Total",
+          "value": "185 IU/mL",
+          "date": "2024-10-20",
+          "reference_range": "<100 IU/mL",
+          "status": "elevated"
+        },
+        {
+          "test": "Complete Blood Count",
+          "value": "Normal",
+          "date": "2024-10-20",
+          "reference_range": "Within normal limits",
+          "status": "normal"
+        }
+      ],
+      "visits": [
+        {
+          "date": "2024-10-20",
+          "reason": "Asthma management review",
+          "provider": "Dr. Emily Watson",
+          "notes": "Patient reports 2 rescue inhaler uses in past month - good control. Peak flow slightly below personal best but within acceptable range. Anxiety has been well-managed, sleeping better. Continue current medications. Flu shot administered.",
+          "vitals": {
+            "weight": "145 lbs",
+            "height": "5'6\"",
+            "bmi": "23.4"
+          }
+        },
+        {
+          "date": "2024-07-15",
+          "reason": "Anxiety follow-up",
+          "provider": "Dr. Robert Kim",
+          "notes": "Patient reports reduced anxiety symptoms with current sertraline dose. Continuing weekly therapy sessions. Sleep quality improved. Discussed stress management techniques."
+        },
+        {
+          "date": "2024-04-02",
+          "reason": "Migraine frequency increase",
+          "provider": "Dr. Emily Watson",
+          "notes": "Patient experiencing increased migraine frequency - 7 episodes last month. Identified potential triggers: increased work stress and irregular sleep schedule. Discussed preventive measures. Consider adding preventive medication if frequency doesn't improve."
+        }
+      ]
+    },
+    {
+      "id": "P003",
+      "demographics": {
+        "name": "Robert Williams",
+        "age": 72,
+        "gender": "Male",
+        "blood_type": "B+",
+        "date_of_birth": "1953-12-05",
+        "contact": "+1-555-0103"
+      },
+      "conditions": [
+        {
+          "name": "Atrial Fibrillation",
+          "diagnosed_date": "2019-09-18",
+          "status": "ongoing",
+          "severity": "paroxysmal",
+          "notes": "Paroxysmal AFib, on anticoagulation therapy. Episodes occur approximately once monthly, lasting 2-4 hours."
+        },
+        {
+          "name": "Chronic Kidney Disease Stage 3a",
+          "diagnosed_date": "2021-03-22",
+          "status": "stable",
+          "severity": "moderate",
+          "notes": "eGFR 52 mL/min. Likely secondary to long-standing hypertension. Requires medication dose adjustments."
+        },
+        {
+          "name": "Osteoarthritis",
+          "diagnosed_date": "2016-08-14",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Primarily affecting knees and hands. Managing with physical therapy and acetaminophen."
+        },
+        {
+          "name": "Benign Prostatic Hyperplasia",
+          "diagnosed_date": "2018-05-10",
+          "status": "ongoing",
+          "severity": "mild",
+          "notes": "Mild urinary symptoms, managed medically."
+        }
+      ],
+      "medications": [
+        {
+          "name": "Apixaban (Eliquis)",
+          "dosage": "2.5mg",
+          "frequency": "twice daily",
+          "start_date": "2019-09-25",
+          "purpose": "Stroke prevention in AFib (reduced dose for CKD)"
+        },
+        {
+          "name": "Metoprolol Succinate",
+          "dosage": "50mg",
+          "frequency": "once daily",
+          "start_date": "2019-09-25",
+          "purpose": "Heart rate control"
+        },
+        {
+          "name": "Amlodipine",
+          "dosage": "5mg",
+          "frequency": "once daily",
+          "start_date": "2017-02-10",
+          "purpose": "Blood pressure control"
+        },
+        {
+          "name": "Tamsulosin",
+          "dosage": "0.4mg",
+          "frequency": "once daily at bedtime",
+          "start_date": "2018-05-15",
+          "purpose": "BPH symptom relief"
+        },
+        {
+          "name": "Acetaminophen",
+          "dosage": "650mg",
+          "frequency": "every 6 hours as needed",
+          "start_date": "2016-08-20",
+          "purpose": "Arthritis pain relief (NSAID-sparing due to CKD)"
+        }
+      ],
+      "allergies": [
+        {
+          "allergen": "Codeine",
+          "reaction": "Severe nausea and vomiting",
+          "severity": "moderate"
+        }
+      ],
+      "lab_results": [
+        {
+          "test": "eGFR",
+          "value": "52 mL/min/1.73m²",
+          "date": "2024-12-01",
+          "reference_range": ">60 mL/min/1.73m²",
+          "status": "reduced (CKD Stage 3a)"
+        },
+        {
+          "test": "Creatinine",
+          "value": "1.4 mg/dL",
+          "date": "2024-12-01",
+          "reference_range": "0.7-1.3 mg/dL",
+          "status": "slightly elevated"
+        },
+        {
+          "test": "BUN",
+          "value": "28 mg/dL",
+          "date": "2024-12-01",
+          "reference_range": "7-20 mg/dL",
+          "status": "elevated"
+        },
+        {
+          "test": "INR",
+          "value": "N/A (on Apixaban)",
+          "date": "2024-12-01",
+          "reference_range": "N/A",
+          "status": "not applicable"
+        },
+        {
+          "test": "Potassium",
+          "value": "4.8 mEq/L",
+          "date": "2024-12-01",
+          "reference_range": "3.5-5.0 mEq/L",
+          "status": "normal"
+        },
+        {
+          "test": "ECG",
+          "value": "Normal sinus rhythm",
+          "date": "2024-12-01",
+          "reference_range": "N/A",
+          "status": "normal"
+        }
+      ],
+      "visits": [
+        {
+          "date": "2024-12-01",
+          "reason": "Cardiology follow-up",
+          "provider": "Dr. James Martinez",
+          "notes": "AFib episodes have decreased to approximately once monthly with current rate control. Kidney function stable. Reviewed fall risk due to anticoagulation - patient using handrails, no recent falls. Continue current regimen. Next echocardiogram scheduled in 6 months.",
+          "vitals": {
+            "weight": "185 lbs",
+            "height": "5'11\"",
+            "bmi": "25.8"
+          }
+        },
+        {
+          "date": "2024-09-15",
+          "reason": "Nephrology consultation",
+          "provider": "Dr. Linda Park",
+          "notes": "CKD Stage 3a stable over past year. No proteinuria. Advised continued avoidance of NSAIDs and contrast dye. Medication doses appropriate for renal function. Recheck labs in 3 months."
+        },
+        {
+          "date": "2024-06-20",
+          "reason": "Arthritis pain management",
+          "provider": "Dr. Sarah Johnson",
+          "notes": "Knee pain managed with acetaminophen and physical therapy. Patient avoiding NSAIDs due to CKD. Discussed potential for future joint injection if pain worsens. Encouraged continued low-impact exercise."
+        }
+      ]
+    },
+    {
+      "id": "P004",
+      "demographics": {
+        "name": "Sarah Chen",
+        "age": 35,
+        "gender": "Female",
+        "blood_type": "AB+",
+        "date_of_birth": "1990-05-18",
+        "contact": "+1-555-0104"
+      },
+      "conditions": [
+        {
+          "name": "Hashimoto's Thyroiditis",
+          "diagnosed_date": "2017-11-05",
+          "status": "ongoing",
+          "severity": "mild",
+          "notes": "Hypothyroid, on stable levothyroxine dose. TPO antibodies elevated."
+        },
+        {
+          "name": "Polycystic Ovary Syndrome (PCOS)",
+          "diagnosed_date": "2012-06-20",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Irregular menstrual cycles, hirsutism. Managing with lifestyle modifications and metformin."
+        },
+        {
+          "name": "Vitamin D Deficiency",
+          "diagnosed_date": "2019-01-15",
+          "status": "improving",
+          "severity": "mild",
+          "notes": "Previously severe deficiency, now improving with supplementation."
+        }
+      ],
+      "medications": [
+        {
+          "name": "Levothyroxine",
+          "dosage": "75 mcg",
+          "frequency": "once daily, morning on empty stomach",
+          "start_date": "2017-11-10",
+          "purpose": "Thyroid hormone replacement"
+        },
+        {
+          "name": "Metformin",
+          "dosage": "500mg",
+          "frequency": "twice daily with meals",
+          "start_date": "2018-02-15",
+          "purpose": "PCOS management, insulin sensitivity"
+        },
+        {
+          "name": "Vitamin D3",
+          "dosage": "2000 IU",
+          "frequency": "once daily",
+          "start_date": "2019-01-20",
+          "purpose": "Vitamin D supplementation"
+        },
+        {
+          "name": "Spironolactone",
+          "dosage": "50mg",
+          "frequency": "once daily",
+          "start_date": "2020-08-10",
+          "purpose": "Hirsutism management"
+        }
+      ],
+      "allergies": [],
+      "lab_results": [
+        {
+          "test": "TSH",
+          "value": "2.8 mIU/L",
+          "date": "2024-11-01",
+          "reference_range": "0.4-4.0 mIU/L",
+          "status": "normal"
+        },
+        {
+          "test": "Free T4",
+          "value": "1.2 ng/dL",
+          "date": "2024-11-01",
+          "reference_range": "0.8-1.8 ng/dL",
+          "status": "normal"
+        },
+        {
+          "test": "Vitamin D, 25-OH",
+          "value": "42 ng/mL",
+          "date": "2024-11-01",
+          "reference_range": "30-100 ng/mL",
+          "status": "normal"
+        },
+        {
+          "test": "Fasting Insulin",
+          "value": "14 uIU/mL",
+          "date": "2024-11-01",
+          "reference_range": "2-20 uIU/mL",
+          "status": "normal"
+        },
+        {
+          "test": "Testosterone, Total",
+          "value": "58 ng/dL",
+          "date": "2024-11-01",
+          "reference_range": "15-70 ng/dL (female)",
+          "status": "upper normal"
+        }
+      ],
+      "visits": [
+        {
+          "date": "2024-11-01",
+          "reason": "Annual thyroid and PCOS review",
+          "provider": "Dr. Amanda Foster",
+          "notes": "Thyroid function well-controlled on current levothyroxine dose. PCOS symptoms improved - menstrual cycles more regular (28-35 day cycles). Hirsutism improved with spironolactone. Vitamin D levels now normal. Patient interested in future pregnancy - discussed preconception planning. Will need to stop spironolactone and switch metformin approach if planning pregnancy.",
+          "vitals": {
+            "weight": "158 lbs",
+            "height": "5'5\"",
+            "bmi": "26.3"
+          }
+        },
+        {
+          "date": "2024-05-15",
+          "reason": "Follow-up labs review",
+          "provider": "Dr. Amanda Foster",
+          "notes": "Thyroid function stable. Vitamin D improving. Discussed continued lifestyle modifications for PCOS - regular exercise and low-glycemic diet showing benefits."
+        }
+      ]
+    },
+    {
+      "id": "P005",
+      "demographics": {
+        "name": "Michael Johnson",
+        "age": 28,
+        "gender": "Male",
+        "blood_type": "O+",
+        "date_of_birth": "1997-02-14",
+        "contact": "+1-555-0105"
+      },
+      "conditions": [
+        {
+          "name": "Attention Deficit Hyperactivity Disorder (ADHD)",
+          "diagnosed_date": "2008-09-10",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Combined type, diagnosed in childhood. Currently managing with medication and behavioral strategies."
+        },
+        {
+          "name": "Seasonal Allergic Rhinitis",
+          "diagnosed_date": "2015-04-20",
+          "status": "seasonal",
+          "severity": "mild to moderate",
+          "notes": "Symptoms primarily in spring and fall. Responds well to antihistamines."
+        }
+      ],
+      "medications": [
+        {
+          "name": "Adderall XR (Amphetamine/Dextroamphetamine)",
+          "dosage": "20mg",
+          "frequency": "once daily in morning",
+          "start_date": "2020-01-15",
+          "purpose": "ADHD management"
+        },
+        {
+          "name": "Cetirizine",
+          "dosage": "10mg",
+          "frequency": "once daily during allergy season",
+          "start_date": "2015-04-25",
+          "purpose": "Allergy symptom relief"
+        },
+        {
+          "name": "Fluticasone Nasal Spray",
+          "dosage": "50 mcg per spray",
+          "frequency": "2 sprays each nostril daily during allergy season",
+          "start_date": "2018-03-10",
+          "purpose": "Nasal allergy symptoms"
+        }
+      ],
+      "allergies": [
+        {
+          "allergen": "Amoxicillin",
+          "reaction": "Full body rash",
+          "severity": "moderate"
+        },
+        {
+          "allergen": "Tree pollen (environmental)",
+          "reaction": "Nasal congestion, sneezing, itchy eyes",
+          "severity": "moderate"
+        },
+        {
+          "allergen": "Ragweed (environmental)",
+          "reaction": "Nasal congestion, sneezing",
+          "severity": "mild"
+        }
+      ],
+      "lab_results": [
+        {
+          "test": "Complete Metabolic Panel",
+          "value": "All values normal",
+          "date": "2024-09-10",
+          "reference_range": "Within normal limits",
+          "status": "normal"
+        },
+        {
+          "test": "CBC with Differential",
+          "value": "Normal",
+          "date": "2024-09-10",
+          "reference_range": "Within normal limits",
+          "status": "normal"
+        },
+        {
+          "test": "Blood Pressure",
+          "value": "122/78 mmHg",
+          "date": "2024-09-10",
+          "reference_range": "<120/80 mmHg",
+          "status": "normal"
+        },
+        {
+          "test": "Heart Rate",
+          "value": "76 bpm",
+          "date": "2024-09-10",
+          "reference_range": "60-100 bpm",
+          "status": "normal"
+        }
+      ],
+      "visits": [
+        {
+          "date": "2024-09-10",
+          "reason": "ADHD medication management",
+          "provider": "Dr. David Lee",
+          "notes": "Patient reports good symptom control with current Adderall XR dose. Sleeping well, appetite slightly reduced but maintaining weight. No cardiovascular concerns - BP and HR within normal limits. Discussed importance of medication holidays if needed. Continue current regimen. Follow up in 6 months or sooner if issues arise.",
+          "vitals": {
+            "weight": "175 lbs",
+            "height": "6'0\"",
+            "bmi": "23.7"
+          }
+        },
+        {
+          "date": "2024-04-15",
+          "reason": "Allergy symptoms - seasonal",
+          "provider": "Dr. Emily Watson",
+          "notes": "Patient experiencing typical spring allergy symptoms. Current regimen of cetirizine and fluticasone nasal spray effective. Symptoms well-controlled. Discussed allergen avoidance strategies."
+        },
+        {
+          "date": "2023-09-20",
+          "reason": "Annual physical",
+          "provider": "Dr. David Lee",
+          "notes": "Healthy young adult. ADHD well-managed. All screening labs normal. Discussed maintaining healthy lifestyle - patient exercises regularly (gym 4x/week). No concerns at this time."
+        }
+      ]
+    },
+    {
+      "id": "P006",
+      "demographics": {
+        "name": "Eleanor Thompson",
+        "age": 67,
+        "gender": "Female",
+        "blood_type": "A-",
+        "date_of_birth": "1958-07-30",
+        "contact": "+1-555-0106"
+      },
+      "conditions": [
+        {
+          "name": "Rheumatoid Arthritis",
+          "diagnosed_date": "2010-03-15",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "Symmetric polyarthritis affecting hands and feet. Currently on DMARD therapy with good disease control."
+        },
+        {
+          "name": "Osteoporosis",
+          "diagnosed_date": "2019-08-20",
+          "status": "ongoing",
+          "severity": "moderate",
+          "notes": "T-score -2.8 at lumbar spine. On bisphosphonate therapy."
+        },
+        {
+          "name": "Gastroesophageal Reflux Disease (GERD)",
+          "diagnosed_date": "2015-11-10",
+          "status": "ongoing",
+          "severity": "mild",
+          "notes": "Well-controlled with PPI therapy."
+        },
+        {
+          "name": "Depression",
+          "diagnosed_date": "2012-04-22",
+          "status": "stable",
+          "severity": "mild",
+          "notes": "History of moderate depression following RA diagnosis. Currently stable on SNRI."
+        }
+      ],
+      "medications": [
+        {
+          "name": "Methotrexate",
+          "dosage": "15mg",
+          "frequency": "once weekly",
+          "start_date": "2010-04-01",
+          "purpose": "RA disease modification"
+        },
+        {
+          "name": "Folic Acid",
+          "dosage": "1mg",
+          "frequency": "once daily (except methotrexate day)",
+          "start_date": "2010-04-01",
+          "purpose": "Reduce methotrexate side effects"
+        },
+        {
+          "name": "Adalimumab (Humira)",
+          "dosage": "40mg",
+          "frequency": "every 2 weeks subcutaneous",
+          "start_date": "2018-06-15",
+          "purpose": "RA biologic therapy"
+        },
+        {
+          "name": "Alendronate",
+          "dosage": "70mg",
+          "frequency": "once weekly",
+          "start_date": "2019-09-01",
+          "purpose": "Osteoporosis treatment"
+        },
+        {
+          "name": "Omeprazole",
+          "dosage": "20mg",
+          "frequency": "once daily before breakfast",
+          "start_date": "2015-11-15",
+          "purpose": "GERD management"
+        },
+        {
+          "name": "Duloxetine",
+          "dosage": "60mg",
+          "frequency": "once daily",
+          "start_date": "2013-01-10",
+          "purpose": "Depression and pain management"
+        },
+        {
+          "name": "Calcium with Vitamin D",
+          "dosage": "600mg/400IU",
+          "frequency": "twice daily",
+          "start_date": "2019-09-01",
+          "purpose": "Bone health"
+        }
+      ],
+      "allergies": [
+        {
+          "allergen": "Shellfish",
+          "reaction": "Anaphylaxis",
+          "severity": "severe"
+        },
+        {
+          "allergen": "Iodine contrast dye",
+          "reaction": "Hives, difficulty breathing",
+          "severity": "severe"
+        }
+      ],
+      "lab_results": [
+        {
+          "test": "RF (Rheumatoid Factor)",
+          "value": "45 IU/mL",
+          "date": "2024-10-15",
+          "reference_range": "<14 IU/mL",
+          "status": "positive/elevated"
+        },
+        {
+          "test": "Anti-CCP Antibodies",
+          "value": "120 U/mL",
+          "date": "2024-10-15",
+          "reference_range": "<20 U/mL",
+          "status": "positive"
+        },
+        {
+          "test": "CRP",
+          "value": "0.8 mg/dL",
+          "date": "2024-10-15",
+          "reference_range": "<1.0 mg/dL",
+          "status": "normal (good disease control)"
+        },
+        {
+          "test": "ESR",
+          "value": "18 mm/hr",
+          "date": "2024-10-15",
+          "reference_range": "0-30 mm/hr",
+          "status": "normal"
+        },
+        {
+          "test": "Liver Function Tests",
+          "value": "AST 28, ALT 32 U/L",
+          "date": "2024-10-15",
+          "reference_range": "AST <40, ALT <56 U/L",
+          "status": "normal (monitoring for methotrexate)"
+        },
+        {
+          "test": "CBC",
+          "value": "WBC 5.8, Hgb 12.8, Plt 245",
+          "date": "2024-10-15",
+          "reference_range": "Within normal limits",
+          "status": "normal"
+        },
+        {
+          "test": "DEXA Scan",
+          "value": "Lumbar T-score -2.5, Hip T-score -2.1",
+          "date": "2024-07-20",
+          "reference_range": "T-score > -1.0 normal",
+          "status": "osteoporosis (improved from -2.8)"
+        }
+      ],
+      "visits": [
+        {
+          "date": "2024-10-15",
+          "reason": "Rheumatology follow-up",
+          "provider": "Dr. Patricia Moore",
+          "notes": "RA in good control on current MTX + Humira regimen. No active synovitis on exam. Inflammatory markers normal. Patient reports occasional morning stiffness lasting 15-20 minutes, much improved from prior. Continue current biologic therapy. Labs show stable liver function. Discussed infection prevention with immunosuppression - patient received flu and COVID vaccines.",
+          "vitals": {
+            "weight": "142 lbs",
+            "height": "5'4\"",
+            "bmi": "24.4"
+          }
+        },
+        {
+          "date": "2024-07-20",
+          "reason": "Osteoporosis follow-up and DEXA",
+          "provider": "Dr. Amanda Foster",
+          "notes": "DEXA scan shows improvement in bone density with alendronate therapy. T-score improved from -2.8 to -2.5 at lumbar spine. Continue current bisphosphonate. Emphasized weight-bearing exercise and fall prevention."
+        },
+        {
+          "date": "2024-04-10",
+          "reason": "Depression check-in",
+          "provider": "Dr. Robert Kim",
+          "notes": "Mood stable on duloxetine. PHQ-9 score 4 (minimal symptoms). Patient engaging in social activities and managing well. Continue current medication. Follow up in 6 months."
+        }
+      ]
+    }
+  ]
+}

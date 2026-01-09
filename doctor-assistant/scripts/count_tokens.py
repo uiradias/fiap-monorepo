@@ -36,7 +36,7 @@ def count_tokens_in_messages(messages: list, encoding) -> int:
     return total
 
 
-def count_tokens_in_file(filepath: str, model: str = "gpt-4o-mini") -> dict:
+def count_tokens_in_file(filepath: str, model: str = "gpt-4.1-mini") -> dict:
     """
     Count all tokens in a JSONL fine-tuning file.
 
@@ -89,22 +89,22 @@ def count_tokens_in_file(filepath: str, model: str = "gpt-4o-mini") -> dict:
     }
 
 
-def estimate_cost(total_tokens: int, model: str = "gpt-4o-mini") -> dict:
+def estimate_cost(total_tokens: int, model: str = "gpt-4.1-mini") -> dict:
     """
     Estimate fine-tuning cost based on current OpenAI pricing.
 
     Note: Prices may change. Check OpenAI's pricing page for current rates.
     """
-    # Approximate pricing per 1M tokens (as of 2024)
+    # Approximate pricing per 1M tokens (as of 2026)
     # Fine-tuning costs for training tokens
     pricing = {
-        "gpt-4o-mini": {"training": 3.00, "input": 0.30, "output": 1.20},
-        "gpt-4o": {"training": 25.00, "input": 3.75, "output": 15.00},
-        "gpt-3.5-turbo": {"training": 8.00, "input": 3.00, "output": 6.00},
+        "gpt-4.1-mini": {"training": 5.00, "input": 0.80, "output": 3.20},
+        "gpt-4.1-nano": {"training": 1.50, "input": 0.20, "output": 0.80},
+        "gpt-4.1": {"training": 25.00, "input": 3.00, "output": 12.00},
     }
 
     model_key = model.split("-2024")[0] if "-2024" in model else model
-    rates = pricing.get(model_key, pricing["gpt-4o-mini"])
+    rates = pricing.get(model_key, pricing["gpt-4.1-mini"])
 
     training_cost = (total_tokens / 1_000_000) * rates["training"]
 
@@ -126,8 +126,8 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="gpt-4o-mini",
-        help="Model to use for tokenization (default: gpt-4o-mini)"
+        default="gpt-4.1-mini",
+        help="Model to use for tokenization (default: gpt-4.1-mini)"
     )
 
     args = parser.parse_args()

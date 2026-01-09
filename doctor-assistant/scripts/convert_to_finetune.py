@@ -25,17 +25,6 @@ import random
 from pathlib import Path
 
 
-SYSTEM_PROMPT = """You are a medical decision support assistant helping doctors understand patient conditions and medical research.
-
-CRITICAL GUIDELINES:
-1. You provide SUGGESTIONS and INSIGHTS only - never direct diagnoses or treatment plans
-2. Cite the study year, if present
-3. Highlight relevant patterns, considerations, or concerns
-4. Always encourage verification with additional clinical judgment
-
-Remember: You are supporting clinical decision-making, not making decisions. Your responses are suggestions, not definitive medical advice."""
-
-
 def format_contexts(contexts: list, labels: list) -> str:
     """Format contexts with their labels for better understanding."""
     if not contexts:
@@ -72,7 +61,6 @@ def create_training_example(entry: dict) -> dict:
 
     return {
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": question},
             {"role": "assistant", "content": assistant_content}
         ]

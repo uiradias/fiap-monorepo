@@ -13,6 +13,15 @@ A terminal-based Medical Decision Support System using LangGraph with a multi-ag
 - **Vector Database**: ChromaDB for semantic search of patient records
 - **Explainability**: Chain-of-thought reasoning with source citations
 
+### Agents Graph
+
+```
+__start__ → router → lookup → reasoning → explainability → __end__
+                   ↘→ reasoning ↗
+```
+
+The dotted lines (-.->) indicate conditional edges from the router - it either goes to lookup or directly to reasoning depending on whether patient context is needed.
+
 ## Prerequisites
 
 - Python 3.10+

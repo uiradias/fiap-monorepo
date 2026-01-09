@@ -41,23 +41,15 @@ def format_contexts(contexts: list, labels: list) -> str:
 def create_training_example(entry: dict) -> dict:
     """Convert a single entry to OpenAI fine-tuning format."""
     question = entry.get("QUESTION", "")
-    answer = entry.get("LONG_ANSWER", "")
     meshes = entry.get("MESHES", [])
     year = entry.get("YEAR", "")
 
+    answer = entry.get("LONG_ANSWER", "")
+    if answer and not answer.endswith("."):
+        answer = answer + "."
+
     # Format the assistant response with proper framing
-    assistant_content = f"""{answer}
-
-**Relevant Medical Terms**: {', '.join(meshes[:10]) if meshes else 'N/A'}
-**Study Year**: {year}
-
-## Key Considerations
-- The evidence suggests specific patterns that may inform clinical decision-making
-- Results should be interpreted within the context of individual patient circumstances
-- Further clinical evaluation may be warranted for definitive conclusions
-
----
-**Important Notice**: This analysis is provided as clinical decision support only. It represents AI-generated suggestions based on the research provided and should not be considered a diagnosis or treatment recommendation. All clinical decisions should be made by qualified healthcare professionals using their professional judgment and current medical standards of care."""
+    assistant_content = f"""{answer} Relevant Medical Terms: {', '.join(meshes[:10]) if meshes else 'N/A'}. Study Year: {year}"""
 
     return {
         "messages": [
@@ -224,10 +216,6 @@ def main():
         validate_jsonl(str(output_path))
 
     print("\nDone!")
-    print("\nNext steps for fine-tuning:")
-    print("1. Upload the file: openai api files.create -f data/finetune_data.jsonl -p fine-tune")
-    print("2. Create fine-tune job: openai api fine_tuning.jobs.create -t <file-id> -m gpt-4o-mini-2024-07-18")
-    print("3. Once complete, update .env with: OPENAI_MODEL=ft:gpt-4o-mini-2024-07-18:<your-suffix>")
 
 
 if __name__ == "__main__":

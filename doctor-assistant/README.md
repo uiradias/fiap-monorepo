@@ -4,16 +4,14 @@ A terminal-based Medical Decision Support System using LangGraph with a multi-ag
 
 ## Features
 
-- **Multi-Agent Architecture**: Five specialized agents working together
+- **Multi-Agent Architecture**: Four specialized agents working together
   - Router Agent: Classifies queries and extracts patient identifiers
   - Lookup Agent: Retrieves relevant patient records from ChromaDB
   - Reasoning Agent: Provides clinical analysis and insights
   - Explainability Agent: Adds transparency and evidence citations
-  - Safety Agent: Ensures appropriate disclaimers and safety checks
 
 - **Vector Database**: ChromaDB for semantic search of patient records
 - **Explainability**: Chain-of-thought reasoning with source citations
-- **Safety First**: All responses include disclaimers clarifying these are suggestions, not diagnoses
 
 ## Prerequisites
 
@@ -101,8 +99,7 @@ doctor-assistant/
 │   ├── router_agent.py        # Query classification
 │   ├── lookup_agent.py        # Patient record retrieval
 │   ├── reasoning_agent.py     # Medical analysis
-│   ├── explainability_agent.py # Reasoning transparency
-│   └── safety_agent.py        # Disclaimer enforcement
+│   └── explainability_agent.py # Reasoning transparency
 ├── services/
 │   ├── graph_service.py       # LangGraph workflow orchestration
 │   └── indexing_service.py    # Patient data indexing
@@ -149,7 +146,6 @@ The application uses a JSON file with comprehensive patient records:
 
 This system is designed for **clinical decision support only**:
 
-- All responses include mandatory disclaimers
 - No direct diagnoses or treatment recommendations
 - Encourages professional medical judgment
 - Evidence-based responses with source citations

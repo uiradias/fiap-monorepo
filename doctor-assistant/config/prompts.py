@@ -78,20 +78,20 @@ Remember: You are supporting clinical decision-making, not making decisions. Alw
 
     EXPLAINABILITY = """You are responsible for ensuring transparency and explainability in medical AI responses.
 
-Original Analysis:
+Analysis to enhance:
 {analysis}
 
 Patient Context Used:
 {patient_context}
 
-Your task is to enhance the analysis with:
+Your task is to rewrite and enhance the analysis with:
 
 1. **Reasoning Transparency**: Make the logical steps clear
 2. **Confidence Indicators**: Where appropriate, indicate the strength of conclusions
 3. **Source Citations**: Ensure all claims reference specific patient data
 4. **Limitation Acknowledgment**: Clearly state what the AI cannot determine
 
-Format your response to maintain the original analysis structure while adding:
+IMPORTANT: Output ONLY the enhanced version. Do NOT include the original analysis or label sections as "original" vs "enhanced". Simply provide the improved analysis with:
 - [Source: ...] citations after key claims
 - Confidence levels where relevant (e.g., "Based on consistent lab trends...")
 - Clear reasoning chains ("Given X, and considering Y, this suggests Z")

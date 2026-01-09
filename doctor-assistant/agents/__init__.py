@@ -3,7 +3,6 @@ from .router_agent import RouterAgent
 from .lookup_agent import LookupAgent
 from .reasoning_agent import ReasoningAgent
 from .explainability_agent import ExplainabilityAgent
-from .safety_agent import SafetyAgent
 
 __all__ = [
     "BaseAgent",
@@ -11,5 +10,4 @@ __all__ = [
     "LookupAgent",
     "ReasoningAgent",
     "ExplainabilityAgent",
-    "SafetyAgent",
 ]

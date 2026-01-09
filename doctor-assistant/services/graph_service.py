@@ -11,7 +11,6 @@ from agents import (
     LookupAgent,
     ReasoningAgent,
     ExplainabilityAgent,
-    SafetyAgent,
 )
 
 
@@ -21,7 +20,7 @@ class GraphService:
 
     This service builds and manages the state graph that routes
     queries through the agent pipeline:
-    Router -> Lookup -> Reasoning -> Explainability -> Safety
+    Router -> Lookup -> Reasoning -> Explainability
     """
 
     def __init__(self, llm_client: LLMClient, vector_store: VectorStore):
@@ -40,7 +39,6 @@ class GraphService:
         self._lookup = LookupAgent(llm_client, vector_store)
         self._reasoning = ReasoningAgent(llm_client)
         self._explainability = ExplainabilityAgent(llm_client)
-        self._safety = SafetyAgent(llm_client)
 
         # Build the graph
         self._graph = self._build_graph()
@@ -60,7 +58,6 @@ class GraphService:
         workflow.add_node("lookup", self._lookup.execute)
         workflow.add_node("reasoning", self._reasoning.execute)
         workflow.add_node("explainability", self._explainability.execute)
-        workflow.add_node("safety", self._safety.execute)
 
         # Define the flow
         workflow.set_entry_point("router")
@@ -81,11 +78,8 @@ class GraphService:
         # After reasoning, go to explainability
         workflow.add_edge("reasoning", "explainability")
 
-        # After explainability, go to safety
-        workflow.add_edge("explainability", "safety")
-
-        # Safety is the final node
-        workflow.add_edge("safety", END)
+        # Explainability is the final node
+        workflow.add_edge("explainability", END)
 
         return workflow.compile()
 
@@ -108,7 +102,7 @@ class GraphService:
             query: The doctor's question about a patient.
 
         Returns:
-            The final response with explanations and disclaimers.
+            The final response with explanations.
         """
         # Initialize state
         initial_state: AssistantState = {
@@ -128,7 +122,7 @@ class GraphService:
         # Run the graph
         result = self._graph.invoke(initial_state)
 
-        return result.get("final_response", "Unable to process query.")
+        return result.get("explained_analysis", "Unable to process query.")
 
     def get_workflow_trace(self, query: str) -> dict:
         """

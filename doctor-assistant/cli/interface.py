@@ -1,5 +1,6 @@
 """Terminal interface for the doctor assistant using Rich for formatting."""
 
+import re
 from typing import Optional
 from rich.console import Console
 from rich.markdown import Markdown
@@ -15,6 +16,26 @@ THEME = Theme({
     "success": "green",
     "patient": "blue bold",
 })
+
+
+def _normalize_markdown(text: str) -> str:
+    """
+    Normalize markdown text for proper rendering.
+
+    Ensures blank lines before headers and proper formatting
+    for Rich's Markdown parser.
+    """
+    # Strip leading/trailing whitespace first
+    text = text.strip()
+    # Remove code fence wrappers if present (LLM sometimes wraps in ```)
+    text = re.sub(r'^```(?:markdown|md)?\s*\n?', '', text)
+    text = re.sub(r'\n?```\s*$', '', text)
+    # Ensure headers have blank line before them
+    text = re.sub(r'([^\n])\n(#{1,6}\s)', r'\1\n\n\2', text)
+    # Ensure blank line after headers
+    text = re.sub(r'(#{1,6}\s[^\n]+)\n([^#\n])', r'\1\n\n\2', text)
+    # Add leading newline for proper markdown parsing
+    return '\n' + text
 
 
 class CLIInterface:
@@ -108,8 +129,9 @@ All responses include:
             response: The response text (markdown formatted).
         """
         self._console.print()
+        normalized = _normalize_markdown(response)
         self._console.print(Panel(
-            Markdown(response),
+            Markdown(normalized),
             title="[bold green]Assistant Response[/bold green]",
             border_style="green",
             padding=(1, 2),

@@ -98,31 +98,6 @@ Format your response to maintain the original analysis structure while adding:
 
 The goal is to help the doctor understand HOW conclusions were reached, not just WHAT they are."""
 
-    SAFETY = """You are a safety and compliance checker for medical AI responses.
-
-Response to Review:
-{response}
-
-Your task is to ensure the response:
-1. Does NOT provide direct diagnoses
-2. Does NOT recommend specific treatments or dosages
-3. Includes appropriate disclaimers
-4. Encourages professional medical judgment
-5. Does not make claims beyond the available evidence
-
-REQUIRED ACTIONS:
-1. Review the response for any concerning statements
-2. Add the mandatory disclaimer at the end
-3. Flag any language that could be misinterpreted as medical advice
-
-MANDATORY DISCLAIMER (must be included at the end):
----
-**Important Notice**: This analysis is provided as clinical decision support only. It represents AI-generated suggestions based on available patient records and should not be considered a diagnosis or treatment recommendation. All clinical decisions should be made by qualified healthcare professionals using their professional judgment, complete patient evaluation, and current medical standards of care.
----
-
-If the response is appropriate, return it with the disclaimer added.
-If the response contains concerning elements, modify them to be appropriately cautious."""
-
     GENERAL_MEDICAL = """You are a medical knowledge assistant helping doctors with general medical questions.
 
 Query: {query}

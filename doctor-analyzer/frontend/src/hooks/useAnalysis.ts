@@ -1,0 +1,118 @@
+import { useState, useCallback } from 'react'
+import { useWebSocket } from './useWebSocket'
+import { api } from '../services/api'
+import type {
+  EmotionUpdateMessage,
+  TranscriptionUpdateMessage,
+  SentimentUpdateMessage,
+  AnalysisSessionFull,
+  AnalysisStatus,
+} from '../types/analysis'
+
+interface UseAnalysisOptions {
+  sessionId: string
+  onEmotionUpdate?: (update: EmotionUpdateMessage) => void
+}
+
+export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) {
+  const [progress, setProgress] = useState(0)
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [transcriptions, setTranscriptions] = useState<TranscriptionUpdateMessage[]>([])
+  const [sentiments, setSentiments] = useState<SentimentUpdateMessage[]>([])
+  const [results, setResults] = useState<AnalysisSessionFull | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleStatusUpdate = useCallback(
+    (update: { status: AnalysisStatus; progress?: number; message?: string }) => {
+      if (update.progress !== undefined) {
+        setProgress(update.progress)
+      }
+      if (update.message !== undefined) {
+        setStatusMessage(update.message)
+      }
+    },
+    []
+  )
+
+  const handleTranscriptionUpdate = useCallback(
+    (update: TranscriptionUpdateMessage) => {
+      setTranscriptions((prev) => [...prev, update])
+    },
+    []
+  )
+
+  const handleSentimentUpdate = useCallback(
+    (update: SentimentUpdateMessage) => {
+      setSentiments((prev) => [...prev, update])
+    },
+    []
+  )
+
+  const handleComplete = useCallback((results: AnalysisSessionFull) => {
+    setResults(results)
+    setProgress(1)
+  }, [])
+
+  const handleError = useCallback((message: string) => {
+    setError(message)
+  }, [])
+
+  const {
+    disconnect,
+    isConnected,
+    status,
+  } = useWebSocket({
+    sessionId,
+    onEmotionUpdate,
+    onStatusUpdate: handleStatusUpdate,
+    onTranscriptionUpdate: handleTranscriptionUpdate,
+    onSentimentUpdate: handleSentimentUpdate,
+    onComplete: handleComplete,
+    onError: handleError,
+  })
+
+  const startAnalysis = useCallback(async () => {
+    if (!sessionId) return
+
+    try {
+      setError(null)
+      setProgress(0)
+      setStatusMessage(null)
+      setTranscriptions([])
+      setSentiments([])
+      setResults(null)
+
+      // Start the analysis via REST API
+      await api.startAnalysis(sessionId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start analysis')
+    }
+  }, [sessionId])
+
+  const reset = useCallback(() => {
+    disconnect()
+    setProgress(0)
+    setStatusMessage(null)
+    setTranscriptions([])
+    setSentiments([])
+    setResults(null)
+    setError(null)
+  }, [disconnect])
+
+  return {
+    // State
+    status,
+    progress,
+    statusMessage,
+    transcriptions,
+    sentiments,
+    results,
+    error,
+    isConnected,
+
+    // Actions
+    disconnect,
+    startAnalysis,
+    reset,
+  }
+}

@@ -1,0 +1,180 @@
+/**
+ * Analysis type definitions matching backend domain models.
+ */
+
+export type AnalysisStatus =
+  | 'pending'
+  | 'uploading'
+  | 'processing_video'
+  | 'processing_audio'
+  | 'processing_documents'
+  | 'aggregating'
+  | 'completed'
+  | 'failed';
+
+export type EmotionType =
+  | 'discomfort'
+  | 'depression'
+  | 'anxiety'
+  | 'fear'
+  | 'calm'
+  | 'happy'
+  | 'confused'
+  | 'angry'
+  | 'surprised'
+  | 'disgusted'
+  | 'sad'
+  | 'neutral';
+
+export interface EmotionScore {
+  emotion: EmotionType;
+  confidence: number;
+}
+
+export interface BoundingBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface FaceDetection {
+  timestamp_ms: number;
+  bounding_box: BoundingBox;
+  emotions: EmotionScore[];
+  primary_emotion: EmotionScore | null;
+  age_range: { low: number; high: number } | null;
+  gender: string | null;
+}
+
+export interface VideoEmotionTimeline {
+  video_id: string;
+  duration_ms: number;
+  detection_count: number;
+  emotion_summary: Record<string, number>;
+}
+
+export interface SentimentResult {
+  sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL' | 'MIXED';
+  positive_score: number;
+  negative_score: number;
+  neutral_score: number;
+  mixed_score: number;
+}
+
+export interface TranscriptionSegment {
+  text: string;
+  start_time: number;
+  end_time: number;
+  confidence: number;
+  speaker_label: string | null;
+}
+
+export interface AudioAnalysis {
+  full_transcript: string;
+  segment_count: number;
+  overall_sentiment: SentimentResult | null;
+}
+
+export interface DocumentAnalysis {
+  document_id: string;
+  filename: string;
+  text_length: number;
+  sentiment: SentimentResult | null;
+  key_phrases: string[];
+  entity_count: number;
+}
+
+export interface ClinicalIndicator {
+  indicator_type: string;
+  confidence: number;
+  evidence: string[];
+  timestamp_ranges: Array<{ start: number; end: number }>;
+}
+
+export interface AnalysisSession {
+  session_id: string;
+  patient_id: string | null;
+  created_at: string;
+  updated_at: string | null;
+  status: AnalysisStatus;
+  video_s3_key: string | null;
+  documents_count: number;
+  has_text_input: boolean;
+  emotion_summary: Record<string, number>;
+  clinical_indicators: ClinicalIndicator[];
+  text_sentiment: SentimentResult | null;
+  error_message: string | null;
+}
+
+export interface AnalysisSessionFull extends AnalysisSession {
+  video_emotions: VideoEmotionTimeline | null;
+  audio_analysis: AudioAnalysis | null;
+  document_analyses: DocumentAnalysis[];
+  documents_s3_keys: string[];
+  text_input: string | null;
+  results_s3_key: string | null;
+}
+
+// WebSocket message types
+export interface EmotionUpdateMessage {
+  type: 'emotion_update';
+  timestamp_ms: number;
+  emotions: EmotionScore[];
+  bounding_box: BoundingBox;
+}
+
+export interface StatusUpdateMessage {
+  type: 'status_update';
+  status: AnalysisStatus;
+  progress?: number;
+  message?: string;
+}
+
+export interface TranscriptionUpdateMessage {
+  type: 'transcription_update';
+  text: string;
+  start_time: number;
+  end_time: number;
+}
+
+export interface SentimentUpdateMessage {
+  type: 'sentiment_update';
+  sentiment: SentimentResult;
+  source: 'audio' | 'document' | 'text';
+}
+
+export interface CompleteMessage {
+  type: 'complete';
+  results: AnalysisSessionFull;
+}
+
+export interface ErrorMessage {
+  type: 'error';
+  message: string;
+}
+
+export type WebSocketMessage =
+  | EmotionUpdateMessage
+  | StatusUpdateMessage
+  | TranscriptionUpdateMessage
+  | SentimentUpdateMessage
+  | CompleteMessage
+  | ErrorMessage;
+
+// Upload response types
+export interface UploadVideoResponse {
+  session_id: string;
+  video_s3_key: string;
+  status: AnalysisStatus;
+}
+
+export interface UploadDocumentsResponse {
+  session_id: string;
+  document_keys: string[];
+}
+
+export interface AddTextResponse {
+  session_id: string;
+  text_length: number;
+}

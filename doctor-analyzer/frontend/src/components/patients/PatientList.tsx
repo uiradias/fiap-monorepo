@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Users, Play } from 'lucide-react'
+import { Plus, Users, Play, List } from 'lucide-react'
 import { api } from '../../services/api'
 import type { Patient } from '../../types/analysis'
 
@@ -154,7 +154,14 @@ export function PatientList() {
                     <td className="py-3 text-sm text-gray-600">
                       {patient.sessionCount}
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-3 text-right space-x-2">
+                      <button
+                        onClick={() => navigate(`/patients/${patient.id}/sessions`)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                      >
+                        <List className="w-3.5 h-3.5" />
+                        View Sessions
+                      </button>
                       <button
                         onClick={() => navigate(`/patients/${patient.id}/upload`)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom'
 import { MainLayout } from './components/layout/MainLayout'
 import { PatientList } from './components/patients/PatientList'
+import { PatientSessions } from './components/patients/PatientSessions'
 import { UploadZone } from './components/upload/UploadZone'
 import { VideoPlayer } from './components/video/VideoPlayer'
 import { AnalysisPanel } from './components/analysis/AnalysisPanel'
@@ -255,6 +256,20 @@ function AnalysisPage() {
   )
 }
 
+function PatientSessionsPage() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        Doctor Analyzer
+      </h1>
+      <p className="text-gray-600 mb-8">
+        Upload patient videos for emotional and sentiment analysis
+      </p>
+      <PatientSessions />
+    </div>
+  )
+}
+
 function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -274,6 +289,7 @@ function App() {
     <MainLayout>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/patients/:patientId/sessions" element={<PatientSessionsPage />} />
         <Route path="/patients/:patientId/upload" element={<AnalysisPage />} />
       </Routes>
     </MainLayout>

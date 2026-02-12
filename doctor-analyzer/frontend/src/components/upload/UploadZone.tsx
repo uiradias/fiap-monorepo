@@ -4,12 +4,12 @@ import { api } from '../../services/api'
 import type { AnalysisSession } from '../../types/analysis'
 
 interface UploadZoneProps {
-  patientId: string
   onSessionCreated: (session: AnalysisSession, videoUrl: string) => void
 }
 
-export function UploadZone({ patientId, onSessionCreated }: UploadZoneProps) {
+export function UploadZone({ onSessionCreated }: UploadZoneProps) {
   const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [patientId, setPatientId] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,6 +35,11 @@ export function UploadZone({ patientId, onSessionCreated }: UploadZoneProps) {
   const handleSubmit = async () => {
     if (!videoFile) {
       setError('Please upload a video file')
+      return
+    }
+
+    if (!patientId.trim()) {
+      setError('Patient ID is required')
       return
     }
 
@@ -113,6 +118,20 @@ export function UploadZone({ patientId, onSessionCreated }: UploadZoneProps) {
         </div>
       </div>
 
+      {/* Patient ID */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Patient ID (Required)
+        </label>
+        <input
+          type="text"
+          value={patientId}
+          onChange={(e) => setPatientId(e.target.value)}
+          placeholder="Enter patient identifier..."
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
       {/* Error message */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
@@ -123,7 +142,7 @@ export function UploadZone({ patientId, onSessionCreated }: UploadZoneProps) {
       {/* Submit button */}
       <button
         onClick={handleSubmit}
-        disabled={!videoFile || isUploading}
+        disabled={!videoFile || !patientId.trim() || isUploading}
         className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isUploading ? (

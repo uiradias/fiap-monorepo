@@ -7,7 +7,6 @@ from datetime import datetime
 from domain.analysis import (
     AnalysisStatus,
     AudioAnalysis,
-    DocumentAnalysis,
     ClinicalIndicator,
 )
 from domain.emotion import VideoEmotionTimeline
@@ -24,19 +23,15 @@ class AnalysisSession:
 
     # S3 locations
     video_s3_key: Optional[str] = None
-    documents_s3_keys: List[str] = field(default_factory=list)
-    text_input: Optional[str] = None
     results_s3_key: Optional[str] = None
 
     # Analysis results
     video_emotions: Optional[VideoEmotionTimeline] = None
     audio_analysis: Optional[AudioAnalysis] = None
-    document_analyses: List[DocumentAnalysis] = field(default_factory=list)
 
     # Aggregated insights
     emotion_summary: Dict[str, float] = field(default_factory=dict)
     clinical_indicators: List[ClinicalIndicator] = field(default_factory=list)
-    text_sentiment: Optional[Dict] = None
 
     # Metadata
     updated_at: Optional[datetime] = None
@@ -49,11 +44,6 @@ class AnalysisSession:
         if error:
             self.error_message = error
 
-    def add_document(self, s3_key: str) -> None:
-        """Add a document S3 key to the session."""
-        self.documents_s3_keys.append(s3_key)
-        self.updated_at = datetime.utcnow()
-
     def to_dict(self) -> dict:
         """Convert to dictionary for API response."""
         return {
@@ -63,11 +53,8 @@ class AnalysisSession:
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "status": self.status.value,
             "video_s3_key": self.video_s3_key,
-            "documents_count": len(self.documents_s3_keys),
-            "has_text_input": self.text_input is not None,
             "emotion_summary": self.emotion_summary,
             "clinical_indicators": [c.to_dict() for c in self.clinical_indicators],
-            "text_sentiment": self.text_sentiment,
             "error_message": self.error_message,
         }
 
@@ -77,9 +64,6 @@ class AnalysisSession:
         base.update({
             "video_emotions": self.video_emotions.to_dict() if self.video_emotions else None,
             "audio_analysis": self.audio_analysis.to_dict() if self.audio_analysis else None,
-            "document_analyses": [d.to_dict() for d in self.document_analyses],
-            "documents_s3_keys": self.documents_s3_keys,
-            "text_input": self.text_input,
             "results_s3_key": self.results_s3_key,
         })
         return base

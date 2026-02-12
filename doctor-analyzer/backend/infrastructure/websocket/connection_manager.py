@@ -96,19 +96,6 @@ class ConnectionManager:
             "end_time": end_time,
         })
 
-    async def send_sentiment_update(
-        self,
-        session_id: str,
-        sentiment: dict,
-        source: str,
-    ) -> None:
-        """Send sentiment analysis update."""
-        await self.broadcast_to_session(session_id, {
-            "type": "sentiment_update",
-            "sentiment": sentiment,
-            "source": source,
-        })
-
     async def send_complete(self, session_id: str, results: dict) -> None:
         """Send analysis completion message."""
         await self.broadcast_to_session(session_id, {

@@ -70,62 +70,6 @@ class UploadService:
         logger.info(f"Uploaded video {file.filename} to {s3_key}")
         return s3_key
 
-    async def upload_document(
-        self,
-        session_id: str,
-        file: UploadFile,
-    ) -> str:
-        """
-        Upload PDF document to S3.
-
-        Args:
-            session_id: Session to attach document to
-            file: PDF file to upload
-
-        Returns:
-            S3 key of uploaded file
-        """
-        session = await self._sessions.get(session_id)
-        if not session:
-            raise ValueError(f"Session {session_id} not found")
-
-        s3_key = f"sessions/{session_id}/documents/{file.filename}"
-
-        # Upload to S3
-        await self._s3.upload_file(file.file, s3_key, 'application/pdf')
-
-        # Update session
-        session.add_document(s3_key)
-        await self._sessions.update(session)
-
-        logger.info(f"Uploaded document {file.filename} to {s3_key}")
-        return s3_key
-
-    async def add_text_input(
-        self,
-        session_id: str,
-        text: str,
-    ) -> None:
-        """
-        Add text input to session.
-
-        Args:
-            session_id: Session to add text to
-            text: Text input from doctor
-        """
-        session = await self._sessions.get(session_id)
-        if not session:
-            raise ValueError(f"Session {session_id} not found")
-
-        session.text_input = text
-        await self._sessions.update(session)
-
-        # Also save to S3 for backup
-        s3_key = f"sessions/{session_id}/text_input.txt"
-        await self._s3.upload_bytes(text.encode('utf-8'), s3_key, 'text/plain')
-
-        logger.info(f"Added text input to session {session_id}")
-
     async def get_session(self, session_id: str) -> Optional[AnalysisSession]:
         """Get session by ID."""
         return await self._sessions.get(session_id)

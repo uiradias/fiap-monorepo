@@ -4,7 +4,6 @@ import type {
   EmotionUpdateMessage,
   StatusUpdateMessage,
   TranscriptionUpdateMessage,
-  SentimentUpdateMessage,
   AnalysisSessionFull,
   AnalysisStatus,
 } from '../types/analysis'
@@ -14,7 +13,6 @@ interface UseWebSocketOptions {
   onEmotionUpdate?: (update: EmotionUpdateMessage) => void
   onStatusUpdate?: (update: StatusUpdateMessage) => void
   onTranscriptionUpdate?: (update: TranscriptionUpdateMessage) => void
-  onSentimentUpdate?: (update: SentimentUpdateMessage) => void
   onComplete?: (results: AnalysisSessionFull) => void
   onError?: (message: string) => void
 }
@@ -27,7 +25,6 @@ export function useWebSocket({
   onEmotionUpdate,
   onStatusUpdate,
   onTranscriptionUpdate,
-  onSentimentUpdate,
   onComplete,
   onError,
 }: UseWebSocketOptions) {
@@ -42,7 +39,6 @@ export function useWebSocket({
     onEmotionUpdate,
     onStatusUpdate,
     onTranscriptionUpdate,
-    onSentimentUpdate,
     onComplete,
     onError,
   })
@@ -50,7 +46,6 @@ export function useWebSocket({
     onEmotionUpdate,
     onStatusUpdate,
     onTranscriptionUpdate,
-    onSentimentUpdate,
     onComplete,
     onError,
   }
@@ -93,10 +88,6 @@ export function useWebSocket({
 
             case 'transcription_update':
               cb.onTranscriptionUpdate?.(message)
-              break
-
-            case 'sentiment_update':
-              cb.onSentimentUpdate?.(message)
               break
 
             case 'complete':

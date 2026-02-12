@@ -103,25 +103,6 @@ class AggregationService:
                 )
             )
 
-        # Analyze document sentiments
-        for doc in session.document_analyses:
-            if doc.sentiment:
-                indicators.extend(
-                    self._indicators_from_sentiment(
-                        doc.sentiment.to_dict(),
-                        source=f"document:{doc.filename}",
-                    )
-                )
-
-        # Analyze text input sentiment
-        if session.text_sentiment and 'sentiment' in session.text_sentiment:
-            indicators.extend(
-                self._indicators_from_sentiment(
-                    session.text_sentiment['sentiment'],
-                    source="doctor_notes",
-                )
-            )
-
         # Sort by confidence
         indicators.sort(key=lambda x: x.confidence, reverse=True)
 

@@ -21,7 +21,6 @@ async def analysis_websocket(
     - status_update: Analysis pipeline status changes
     - emotion_update: Real-time emotion detections with timestamps
     - transcription_update: Transcription segments as processed
-    - sentiment_update: Sentiment analysis results
     - complete: Final aggregated results
     - error: Error messages
 

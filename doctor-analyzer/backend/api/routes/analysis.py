@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
 from services.audio_analysis_service import AudioAnalysisService
-from services.document_analysis_service import DocumentAnalysisService
 from services.aggregation_service import AggregationService
 from domain.session import SessionStore
 from domain.analysis import AnalysisStatus
@@ -17,7 +16,6 @@ from api.dependencies import (
     get_upload_service,
     get_video_analysis_service,
     get_audio_analysis_service,
-    get_document_analysis_service,
     get_aggregation_service,
     get_session_store,
     get_connection_manager,
@@ -33,7 +31,6 @@ async def start_analysis(
     upload_service: UploadService = Depends(get_upload_service),
     video_service: VideoAnalysisService = Depends(get_video_analysis_service),
     audio_service: AudioAnalysisService = Depends(get_audio_analysis_service),
-    document_service: DocumentAnalysisService = Depends(get_document_analysis_service),
     aggregation_service: AggregationService = Depends(get_aggregation_service),
     session_store: SessionStore = Depends(get_session_store),
 ):
@@ -43,8 +40,7 @@ async def start_analysis(
     This endpoint triggers the full analysis pipeline:
     1. Video emotion detection (Rekognition)
     2. Audio transcription and sentiment (Transcribe + Comprehend)
-    3. Document text extraction and sentiment (Textract + Comprehend)
-    4. Results aggregation
+    3. Results aggregation
 
     The analysis runs in the background. Connect via WebSocket
     to receive real-time updates.
@@ -66,15 +62,13 @@ async def start_analysis(
     ws_manager = get_connection_manager()
     logger.info(
         f"Queuing analysis pipeline for session {session_id} "
-        f"(video={session.video_s3_key}, docs={len(session.documents_s3_keys)}, "
-        f"text={'yes' if session.text_input else 'no'})"
+        f"(video={session.video_s3_key})"
     )
     background_tasks.add_task(
         run_analysis_pipeline,
         session_id,
         video_service,
         audio_service,
-        document_service,
         aggregation_service,
         session_store,
         ws_manager,
@@ -91,7 +85,6 @@ async def run_analysis_pipeline(
     session_id: str,
     video_service: VideoAnalysisService,
     audio_service: AudioAnalysisService,
-    document_service: DocumentAnalysisService,
     aggregation_service: AggregationService,
     session_store: SessionStore,
     ws_manager: ConnectionManager,
@@ -116,18 +109,6 @@ async def run_analysis_pipeline(
             logger.info(f"[{session_id}] Starting audio analysis")
             await audio_service.analyze_audio(session)
             # Refresh session after audio analysis
-            session = await session_store.get(session_id)
-
-        # Run document analysis
-        if session.documents_s3_keys:
-            logger.info(f"[{session_id}] Starting document analysis ({len(session.documents_s3_keys)} docs)")
-            await document_service.analyze_documents(session)
-            session = await session_store.get(session_id)
-
-        # Analyze text input
-        if session.text_input:
-            logger.info(f"[{session_id}] Starting text input analysis")
-            await document_service.analyze_text_input(session)
             session = await session_store.get(session_id)
 
         # Aggregate results
@@ -160,8 +141,6 @@ async def get_analysis_status(
         "status": session.status.value,
         "error_message": session.error_message,
         "has_video": session.video_s3_key is not None,
-        "documents_count": len(session.documents_s3_keys),
-        "has_text_input": session.text_input is not None,
     }
 
 

@@ -17,7 +17,6 @@ function App() {
     statusMessage,
     isConnected,
     transcriptions,
-    sentiments,
     results,
     error,
     disconnect,
@@ -65,7 +64,7 @@ function App() {
           Doctor Analyzer
         </h1>
         <p className="text-gray-600 mb-8">
-          Upload patient videos and documents for emotional and sentiment analysis
+          Upload patient videos for emotional and sentiment analysis
         </p>
 
         {!session ? (
@@ -117,13 +116,11 @@ function App() {
                       const steps: { label: string; key: AnalysisStatus }[] = [
                         { label: 'Video Analysis', key: 'processing_video' },
                         { label: 'Audio Analysis', key: 'processing_audio' },
-                        { label: 'Documents', key: 'processing_documents' },
                         { label: 'Report', key: 'aggregating' },
                       ]
                       const statusOrder: AnalysisStatus[] = [
                         'processing_video',
                         'processing_audio',
-                        'processing_documents',
                         'aggregating',
                         'completed',
                       ]
@@ -239,7 +236,6 @@ function App() {
                 session={session}
                 status={status}
                 transcriptions={transcriptions}
-                sentiments={sentiments}
                 results={results}
                 emotionDetections={emotionDetections}
               />

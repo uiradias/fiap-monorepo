@@ -4,7 +4,6 @@ import { api } from '../services/api'
 import type {
   EmotionUpdateMessage,
   TranscriptionUpdateMessage,
-  SentimentUpdateMessage,
   AnalysisSessionFull,
   AnalysisStatus,
 } from '../types/analysis'
@@ -18,7 +17,6 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
   const [progress, setProgress] = useState(0)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [transcriptions, setTranscriptions] = useState<TranscriptionUpdateMessage[]>([])
-  const [sentiments, setSentiments] = useState<SentimentUpdateMessage[]>([])
   const [results, setResults] = useState<AnalysisSessionFull | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,13 +39,6 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
     []
   )
 
-  const handleSentimentUpdate = useCallback(
-    (update: SentimentUpdateMessage) => {
-      setSentiments((prev) => [...prev, update])
-    },
-    []
-  )
-
   const handleComplete = useCallback((results: AnalysisSessionFull) => {
     setResults(results)
     setProgress(1)
@@ -66,7 +57,6 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
     onEmotionUpdate,
     onStatusUpdate: handleStatusUpdate,
     onTranscriptionUpdate: handleTranscriptionUpdate,
-    onSentimentUpdate: handleSentimentUpdate,
     onComplete: handleComplete,
     onError: handleError,
   })
@@ -79,7 +69,6 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
       setProgress(0)
       setStatusMessage(null)
       setTranscriptions([])
-      setSentiments([])
       setResults(null)
 
       // Start the analysis via REST API
@@ -94,7 +83,6 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
     setProgress(0)
     setStatusMessage(null)
     setTranscriptions([])
-    setSentiments([])
     setResults(null)
     setError(null)
   }, [disconnect])
@@ -105,7 +93,6 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
     progress,
     statusMessage,
     transcriptions,
-    sentiments,
     results,
     error,
     isConnected,

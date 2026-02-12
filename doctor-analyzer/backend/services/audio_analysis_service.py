@@ -110,12 +110,6 @@ class AudioAnalysisService:
             )
             audio_analysis.overall_sentiment = overall_sentiment
 
-            await self._ws_manager.send_sentiment_update(
-                session.session_id,
-                overall_sentiment.to_dict(),
-                "audio",
-            )
-
             # Analyze sentiment of individual segments for detailed analysis
             segment_texts = [s.text for s in segments if len(s.text) > 20]
             if segment_texts:

@@ -13,7 +13,6 @@ class AnalysisStatus(str, Enum):
     UPLOADING = "uploading"
     PROCESSING_VIDEO = "processing_video"
     PROCESSING_AUDIO = "processing_audio"
-    PROCESSING_DOCUMENTS = "processing_documents"
     AGGREGATING = "aggregating"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -77,28 +76,6 @@ class AudioAnalysis:
             "full_transcript": self.full_transcript,
             "segment_count": len(self.transcription),
             "overall_sentiment": self.overall_sentiment.to_dict() if self.overall_sentiment else None,
-        }
-
-
-@dataclass
-class DocumentAnalysis:
-    """PDF/text document analysis result."""
-
-    document_id: str
-    filename: str
-    extracted_text: str
-    sentiment: Optional[SentimentResult] = None
-    key_phrases: List[str] = field(default_factory=list)
-    entities: List[Dict] = field(default_factory=list)
-
-    def to_dict(self) -> dict:
-        return {
-            "document_id": self.document_id,
-            "filename": self.filename,
-            "text_length": len(self.extracted_text),
-            "sentiment": self.sentiment.to_dict() if self.sentiment else None,
-            "key_phrases": self.key_phrases[:10],  # Limit to top 10
-            "entity_count": len(self.entities),
         }
 
 

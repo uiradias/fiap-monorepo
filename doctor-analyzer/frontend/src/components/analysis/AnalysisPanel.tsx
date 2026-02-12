@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle, Clock, FileText, Mic, Brain } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, Mic, Brain } from 'lucide-react'
 import type {
   AnalysisSession,
   AnalysisStatus,
   TranscriptionUpdateMessage,
-  SentimentUpdateMessage,
   AnalysisSessionFull,
   EmotionUpdateMessage,
 } from '../../types/analysis'
@@ -28,7 +27,6 @@ interface AnalysisPanelProps {
   session: AnalysisSession
   status: AnalysisStatus | null
   transcriptions: TranscriptionUpdateMessage[]
-  sentiments: SentimentUpdateMessage[]
   results: AnalysisSessionFull | null
   emotionDetections: EmotionUpdateMessage[]
 }
@@ -37,7 +35,6 @@ export function AnalysisPanel({
   session,
   status,
   transcriptions,
-  sentiments,
   results,
   emotionDetections,
 }: AnalysisPanelProps) {
@@ -128,10 +125,6 @@ export function AnalysisPanel({
             <p className="text-gray-500">Transcription Segments</p>
             <p className="font-medium">{transcriptions.length}</p>
           </div>
-          <div>
-            <p className="text-gray-500">Documents</p>
-            <p className="font-medium">{session.documents_count}</p>
-          </div>
         </div>
 
         {/* Top 10 Emotions */}
@@ -214,63 +207,6 @@ export function AnalysisPanel({
                   {t.start_time.toFixed(1)}s
                 </span>
                 <p className="text-gray-700">{t.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Sentiment Analysis */}
-      {sentiments.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <FileText className="w-5 h-5 text-green-500" />
-            <h2 className="text-lg font-semibold">Sentiment Analysis</h2>
-          </div>
-
-          <div className="space-y-3">
-            {sentiments.map((s, index) => (
-              <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-500 capitalize">{s.source}</span>
-                  <span
-                    className={`text-sm font-medium ${
-                      s.sentiment.sentiment === 'POSITIVE'
-                        ? 'text-green-600'
-                        : s.sentiment.sentiment === 'NEGATIVE'
-                        ? 'text-red-600'
-                        : 'text-gray-600'
-                    }`}
-                  >
-                    {s.sentiment.sentiment}
-                  </span>
-                </div>
-                <div className="grid grid-cols-4 gap-2 text-xs">
-                  <div>
-                    <p className="text-gray-500">Positive</p>
-                    <p className="font-medium text-green-600">
-                      {(s.sentiment.positive_score * 100).toFixed(0)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Negative</p>
-                    <p className="font-medium text-red-600">
-                      {(s.sentiment.negative_score * 100).toFixed(0)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Neutral</p>
-                    <p className="font-medium text-gray-600">
-                      {(s.sentiment.neutral_score * 100).toFixed(0)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Mixed</p>
-                    <p className="font-medium text-yellow-600">
-                      {(s.sentiment.mixed_score * 100).toFixed(0)}%
-                    </p>
-                  </div>
-                </div>
               </div>
             ))}
           </div>

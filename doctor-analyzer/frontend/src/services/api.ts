@@ -2,8 +2,6 @@ import axios from 'axios'
 import type {
   AnalysisSession,
   UploadVideoResponse,
-  UploadDocumentsResponse,
-  AddTextResponse,
 } from '../types/analysis'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -30,41 +28,6 @@ export const api = {
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       }
-    )
-    return response.data
-  },
-
-  async uploadDocuments(
-    sessionId: string,
-    files: File[]
-  ): Promise<UploadDocumentsResponse> {
-    const formData = new FormData()
-    formData.append('session_id', sessionId)
-    files.forEach((file) => {
-      formData.append('files', file)
-    })
-
-    const response = await client.post<UploadDocumentsResponse>(
-      '/api/upload/documents',
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    )
-    return response.data
-  },
-
-  async addTextInput(
-    sessionId: string,
-    text: string
-  ): Promise<AddTextResponse> {
-    const formData = new FormData()
-    formData.append('session_id', sessionId)
-    formData.append('text', text)
-
-    const response = await client.post<AddTextResponse>(
-      '/api/upload/text',
-      formData
     )
     return response.data
   },

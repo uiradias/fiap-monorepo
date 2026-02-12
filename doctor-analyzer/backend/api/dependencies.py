@@ -7,13 +7,11 @@ from infrastructure.aws.s3_client import S3Client
 from infrastructure.aws.rekognition_client import RekognitionClient
 from infrastructure.aws.transcribe_client import TranscribeClient
 from infrastructure.aws.comprehend_client import ComprehendClient
-from infrastructure.aws.textract_client import TextractClient
 from infrastructure.websocket.connection_manager import ConnectionManager
 from domain.session import SessionStore
 from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
 from services.audio_analysis_service import AudioAnalysisService
-from services.document_analysis_service import DocumentAnalysisService
 from services.aggregation_service import AggregationService
 
 
@@ -68,12 +66,6 @@ def get_comprehend_client() -> ComprehendClient:
     return ComprehendClient(settings.aws)
 
 
-def get_textract_client() -> TextractClient:
-    """Get Textract client."""
-    settings = get_cached_settings()
-    return TextractClient(settings.aws)
-
-
 def get_upload_service() -> UploadService:
     """Get upload service."""
     return UploadService(
@@ -96,17 +88,6 @@ def get_audio_analysis_service() -> AudioAnalysisService:
     """Get audio analysis service."""
     return AudioAnalysisService(
         transcribe=get_transcribe_client(),
-        comprehend=get_comprehend_client(),
-        s3=get_s3_client(),
-        ws_manager=get_connection_manager(),
-        session_store=get_session_store(),
-    )
-
-
-def get_document_analysis_service() -> DocumentAnalysisService:
-    """Get document analysis service."""
-    return DocumentAnalysisService(
-        textract=get_textract_client(),
         comprehend=get_comprehend_client(),
         s3=get_s3_client(),
         ws_manager=get_connection_manager(),

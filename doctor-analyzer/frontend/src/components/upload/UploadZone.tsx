@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Upload, FileVideo, FileText, MessageSquare, X, Loader2 } from 'lucide-react'
+import { Upload, FileVideo, X, Loader2 } from 'lucide-react'
 import { api } from '../../services/api'
 import type { AnalysisSession } from '../../types/analysis'
 
@@ -9,8 +9,6 @@ interface UploadZoneProps {
 
 export function UploadZone({ onSessionCreated }: UploadZoneProps) {
   const [videoFile, setVideoFile] = useState<File | null>(null)
-  const [pdfFiles, setPdfFiles] = useState<File[]>([])
-  const [textInput, setTextInput] = useState('')
   const [patientId, setPatientId] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,15 +32,6 @@ export function UploadZone({ onSessionCreated }: UploadZoneProps) {
     }
   }
 
-  const handlePdfSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setPdfFiles((prev) => [...prev, ...files])
-  }
-
-  const removePdf = (index: number) => {
-    setPdfFiles((prev) => prev.filter((_, i) => i !== index))
-  }
-
   const handleSubmit = async () => {
     if (!videoFile) {
       setError('Please upload a video file')
@@ -57,17 +46,7 @@ export function UploadZone({ onSessionCreated }: UploadZoneProps) {
       const uploadResult = await api.uploadVideo(videoFile, patientId || undefined)
       const sessionId = uploadResult.session_id
 
-      // 2. Upload PDF documents if any
-      if (pdfFiles.length > 0) {
-        await api.uploadDocuments(sessionId, pdfFiles)
-      }
-
-      // 3. Add text input if any
-      if (textInput.trim()) {
-        await api.addTextInput(sessionId, textInput.trim())
-      }
-
-      // 4. Get session details and video URL
+      // 2. Get session details and video URL
       const session = await api.getSession(sessionId)
       const videoUrl = await api.getVideoUrl(sessionId)
 
@@ -132,59 +111,6 @@ export function UploadZone({ onSessionCreated }: UploadZoneProps) {
             </>
           )}
         </div>
-      </div>
-
-      {/* PDF Documents */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-blue-600" />
-          Upload Documents (Optional)
-        </h2>
-
-        <div className="space-y-3">
-          {pdfFiles.map((file, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-            >
-              <FileText className="w-5 h-5 text-red-500" />
-              <span className="flex-1 text-sm">{file.name}</span>
-              <button
-                onClick={() => removePdf(index)}
-                className="p-1 hover:bg-gray-200 rounded"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-          ))}
-
-          <label className="flex items-center justify-center gap-2 p-4 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 transition">
-            <Upload className="w-5 h-5 text-gray-400" />
-            <span className="text-gray-600">Add PDF documents</span>
-            <input
-              type="file"
-              accept=".pdf"
-              multiple
-              onChange={handlePdfSelect}
-              className="hidden"
-            />
-          </label>
-        </div>
-      </div>
-
-      {/* Text Input */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-blue-600" />
-          Additional Notes (Optional)
-        </h2>
-
-        <textarea
-          value={textInput}
-          onChange={(e) => setTextInput(e.target.value)}
-          placeholder="Enter any additional observations, notes, or context about the patient..."
-          className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
       </div>
 
       {/* Patient ID */}

@@ -7,7 +7,6 @@ export type AnalysisStatus =
   | 'uploading'
   | 'processing_video'
   | 'processing_audio'
-  | 'processing_documents'
   | 'aggregating'
   | 'completed'
   | 'failed';
@@ -76,15 +75,6 @@ export interface AudioAnalysis {
   overall_sentiment: SentimentResult | null;
 }
 
-export interface DocumentAnalysis {
-  document_id: string;
-  filename: string;
-  text_length: number;
-  sentiment: SentimentResult | null;
-  key_phrases: string[];
-  entity_count: number;
-}
-
 export interface ClinicalIndicator {
   indicator_type: string;
   confidence: number;
@@ -99,20 +89,14 @@ export interface AnalysisSession {
   updated_at: string | null;
   status: AnalysisStatus;
   video_s3_key: string | null;
-  documents_count: number;
-  has_text_input: boolean;
   emotion_summary: Record<string, number>;
   clinical_indicators: ClinicalIndicator[];
-  text_sentiment: SentimentResult | null;
   error_message: string | null;
 }
 
 export interface AnalysisSessionFull extends AnalysisSession {
   video_emotions: VideoEmotionTimeline | null;
   audio_analysis: AudioAnalysis | null;
-  document_analyses: DocumentAnalysis[];
-  documents_s3_keys: string[];
-  text_input: string | null;
   results_s3_key: string | null;
 }
 
@@ -138,12 +122,6 @@ export interface TranscriptionUpdateMessage {
   end_time: number;
 }
 
-export interface SentimentUpdateMessage {
-  type: 'sentiment_update';
-  sentiment: SentimentResult;
-  source: 'audio' | 'document' | 'text';
-}
-
 export interface CompleteMessage {
   type: 'complete';
   results: AnalysisSessionFull;
@@ -158,7 +136,6 @@ export type WebSocketMessage =
   | EmotionUpdateMessage
   | StatusUpdateMessage
   | TranscriptionUpdateMessage
-  | SentimentUpdateMessage
   | CompleteMessage
   | ErrorMessage;
 
@@ -169,12 +146,3 @@ export interface UploadVideoResponse {
   status: AnalysisStatus;
 }
 
-export interface UploadDocumentsResponse {
-  session_id: string;
-  document_keys: string[];
-}
-
-export interface AddTextResponse {
-  session_id: string;
-  text_length: number;
-}

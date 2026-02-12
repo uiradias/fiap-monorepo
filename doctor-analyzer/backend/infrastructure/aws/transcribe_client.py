@@ -43,6 +43,7 @@ class TranscribeClient:
         s3_uri: str,
         language_code: str = 'en-US',
         output_bucket: Optional[str] = None,
+        output_key: Optional[str] = None,
     ) -> str:
         """
         Start an asynchronous transcription job.
@@ -52,6 +53,7 @@ class TranscribeClient:
             s3_uri: S3 URI of the audio/video file
             language_code: Language code (default: en-US)
             output_bucket: Optional S3 bucket for output
+            output_key: Optional S3 key for output (requires output_bucket)
 
         Returns:
             Job name for tracking
@@ -68,6 +70,8 @@ class TranscribeClient:
 
         if output_bucket:
             params['OutputBucketName'] = output_bucket
+            if output_key:
+                params['OutputKey'] = output_key
 
         await self._run_sync(self._client.start_transcription_job, **params)
         logger.info(f"Started transcription job: {job_name}")

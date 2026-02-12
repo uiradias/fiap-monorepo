@@ -62,10 +62,12 @@ class AudioAnalysisService:
 
         # Start transcription job (Transcribe can handle video files directly)
         s3_uri = f"s3://{self._s3.bucket_name}/{session.video_s3_key}"
+        output_key = f"sessions/{session.session_id}/results/transcribe_output.json"
         await self._transcribe.start_transcription_job(
             job_name=job_name,
             s3_uri=s3_uri,
             output_bucket=self._s3.bucket_name,
+            output_key=output_key,
         )
 
         logger.info(f"Started transcription job {job_name} for session {session.session_id}")

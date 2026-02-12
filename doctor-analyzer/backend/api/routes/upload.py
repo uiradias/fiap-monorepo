@@ -1,10 +1,10 @@
 """Upload API endpoints."""
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
-from typing import Optional
 
 from services.upload_service import UploadService
-from api.dependencies import get_upload_service
+from services.patient_service import PatientService
+from api.dependencies import get_upload_service, get_patient_service
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
@@ -20,8 +20,9 @@ ALLOWED_VIDEO_TYPES = [
 @router.post("/video")
 async def upload_video(
     file: UploadFile = File(...),
-    patient_id: Optional[str] = Form(None),
+    patient_id: str = Form(...),
     upload_service: UploadService = Depends(get_upload_service),
+    patient_service: PatientService = Depends(get_patient_service),
 ):
     """
     Upload a video file for analysis.
@@ -29,6 +30,13 @@ async def upload_video(
     Creates a new session and uploads the video to S3.
     Returns session_id for tracking the analysis.
     """
+    # Validate patient exists
+    if not await patient_service.patient_exists(patient_id):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Patient {patient_id} not found. Create the patient first.",
+        )
+
     # Validate file type
     if file.content_type not in ALLOWED_VIDEO_TYPES:
         raise HTTPException(
@@ -50,5 +58,3 @@ async def upload_video(
         "video_s3_key": s3_key,
         "status": session.status.value,
     }
-
-

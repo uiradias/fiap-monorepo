@@ -38,12 +38,17 @@ export function UploadZone({ onSessionCreated }: UploadZoneProps) {
       return
     }
 
+    if (!patientId.trim()) {
+      setError('Patient ID is required')
+      return
+    }
+
     setIsUploading(true)
     setError(null)
 
     try {
       // 1. Upload video and create session
-      const uploadResult = await api.uploadVideo(videoFile, patientId || undefined)
+      const uploadResult = await api.uploadVideo(videoFile, patientId)
       const sessionId = uploadResult.session_id
 
       // 2. Get session details and video URL
@@ -116,7 +121,7 @@ export function UploadZone({ onSessionCreated }: UploadZoneProps) {
       {/* Patient ID */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Patient ID (Optional)
+          Patient ID (Required)
         </label>
         <input
           type="text"
@@ -137,7 +142,7 @@ export function UploadZone({ onSessionCreated }: UploadZoneProps) {
       {/* Submit button */}
       <button
         onClick={handleSubmit}
-        disabled={!videoFile || isUploading}
+        disabled={!videoFile || !patientId.trim() || isUploading}
         className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isUploading ? (

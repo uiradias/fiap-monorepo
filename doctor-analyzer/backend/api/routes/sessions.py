@@ -1,9 +1,11 @@
 """Session management API endpoints."""
 
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from services.upload_service import UploadService
-from domain.session import SessionStore
+from domain.session import SessionStoreProtocol
 from api.dependencies import get_upload_service, get_session_store
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -11,10 +13,14 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 @router.get("")
 async def list_sessions(
-    session_store: SessionStore = Depends(get_session_store),
+    patient_id: Optional[str] = Query(None),
+    session_store: SessionStoreProtocol = Depends(get_session_store),
 ):
-    """List all analysis sessions."""
-    sessions = await session_store.list_all()
+    """List all analysis sessions, optionally filtered by patient_id."""
+    if patient_id:
+        sessions = await session_store.list_by_patient(patient_id)
+    else:
+        sessions = await session_store.list_all()
 
     return {
         "sessions": [s.to_dict() for s in sessions],

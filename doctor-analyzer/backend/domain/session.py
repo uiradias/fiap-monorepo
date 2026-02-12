@@ -1,5 +1,6 @@
 """Analysis session domain models."""
 
+import abc
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 from datetime import datetime
@@ -69,35 +70,58 @@ class AnalysisSession:
         return base
 
 
-# In-memory session store for development
-class SessionStore:
+class SessionStoreProtocol(abc.ABC):
+    """Abstract interface for session persistence."""
+
+    @abc.abstractmethod
+    async def create(self, session: AnalysisSession) -> AnalysisSession: ...
+
+    @abc.abstractmethod
+    async def get(self, session_id: str) -> Optional[AnalysisSession]: ...
+
+    @abc.abstractmethod
+    async def update(self, session: AnalysisSession) -> AnalysisSession: ...
+
+    @abc.abstractmethod
+    async def delete(self, session_id: str) -> bool: ...
+
+    @abc.abstractmethod
+    async def list_all(self) -> List[AnalysisSession]: ...
+
+    @abc.abstractmethod
+    async def list_by_patient(self, patient_id: str) -> List[AnalysisSession]: ...
+
+
+class InMemorySessionStore(SessionStoreProtocol):
     """Simple in-memory session store."""
 
     def __init__(self):
         self._sessions: Dict[str, AnalysisSession] = {}
 
     async def create(self, session: AnalysisSession) -> AnalysisSession:
-        """Create a new session."""
         self._sessions[session.session_id] = session
         return session
 
     async def get(self, session_id: str) -> Optional[AnalysisSession]:
-        """Get a session by ID."""
         return self._sessions.get(session_id)
 
     async def update(self, session: AnalysisSession) -> AnalysisSession:
-        """Update an existing session."""
         session.updated_at = datetime.utcnow()
         self._sessions[session.session_id] = session
         return session
 
     async def delete(self, session_id: str) -> bool:
-        """Delete a session."""
         if session_id in self._sessions:
             del self._sessions[session_id]
             return True
         return False
 
     async def list_all(self) -> List[AnalysisSession]:
-        """List all sessions."""
         return list(self._sessions.values())
+
+    async def list_by_patient(self, patient_id: str) -> List[AnalysisSession]:
+        return [s for s in self._sessions.values() if s.patient_id == patient_id]
+
+
+# Backward-compatible alias
+SessionStore = InMemorySessionStore

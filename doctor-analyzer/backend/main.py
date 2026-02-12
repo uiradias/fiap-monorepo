@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from config.settings import get_settings
-from api.routes import upload, analysis, sessions
+from api.routes import upload, analysis, sessions, patients
 from api.websocket import analysis_ws
+from infrastructure.database.engine import get_engine, dispose_engine
 
 # Configure logging
 logging.basicConfig(
@@ -39,6 +40,7 @@ app.add_middleware(
 app.include_router(upload.router, prefix="/api")
 app.include_router(analysis.router, prefix="/api")
 app.include_router(sessions.router, prefix="/api")
+app.include_router(patients.router, prefix="/api")
 app.include_router(analysis_ws.router)
 
 
@@ -60,16 +62,6 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/health",
-        "endpoints": {
-            "upload_video": "POST /api/upload/video",
-            "upload_documents": "POST /api/upload/documents",
-            "add_text": "POST /api/upload/text",
-            "start_analysis": "POST /api/analysis/{session_id}/start",
-            "get_status": "GET /api/analysis/{session_id}/status",
-            "get_results": "GET /api/analysis/{session_id}/results",
-            "list_sessions": "GET /api/sessions",
-            "websocket": "WS /ws/analysis/{session_id}",
-        },
     }
 
 
@@ -79,9 +71,12 @@ async def startup_event():
     logger.info(f"Starting {settings.app_name}")
     logger.info(f"Debug mode: {settings.debug}")
     logger.info(f"CORS origins: {settings.cors_origins}")
+    get_engine(settings.database.url)
+    logger.info("Database engine initialized")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event."""
+    await dispose_engine()
     logger.info("Shutting down Doctor Analyzer API")

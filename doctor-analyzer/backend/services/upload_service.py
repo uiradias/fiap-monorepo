@@ -7,7 +7,7 @@ import uuid
 import logging
 
 from infrastructure.aws.s3_client import S3Client
-from domain.session import AnalysisSession, SessionStore
+from domain.session import AnalysisSession, SessionStoreProtocol
 from domain.analysis import AnalysisStatus
 
 logger = logging.getLogger(__name__)
@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 class UploadService:
     """Orchestrates file uploads to S3 and session management."""
 
-    def __init__(self, s3_client: S3Client, session_store: SessionStore):
+    def __init__(self, s3_client: S3Client, session_store: SessionStoreProtocol):
         self._s3 = s3_client
         self._sessions = session_store
 
     async def create_session(
         self,
-        patient_id: Optional[str] = None,
+        patient_id: str,
     ) -> AnalysisSession:
         """Create a new analysis session."""
         session = AnalysisSession(

@@ -20,6 +20,13 @@ class AWSSettings:
 
 
 @dataclass(frozen=True)
+class DatabaseSettings:
+    """Database configuration."""
+
+    url: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/doctor_analyzer")
+
+
+@dataclass(frozen=True)
 class Settings:
     """Main application settings."""
 
@@ -27,9 +34,11 @@ class Settings:
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
     cors_origins: str = os.getenv("CORS_ORIGINS", "http://localhost:5173")
     aws: AWSSettings = None
+    database: DatabaseSettings = None
 
     def __post_init__(self):
         object.__setattr__(self, 'aws', AWSSettings())
+        object.__setattr__(self, 'database', DatabaseSettings())
 
     def validate(self) -> None:
         """Validate required settings."""

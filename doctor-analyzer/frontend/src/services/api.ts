@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type {
   AnalysisSession,
+  Patient,
   UploadVideoResponse,
 } from '../types/analysis'
 
@@ -11,16 +12,40 @@ const client = axios.create({
 })
 
 export const api = {
+  // Patient endpoints
+  async createPatient(
+    id: string,
+    codename: string
+  ): Promise<Patient> {
+    const response = await client.post<Patient>('/api/patients', { id, codename })
+    return response.data
+  },
+
+  async getPatients(): Promise<{ patients: Patient[]; total: number }> {
+    const response = await client.get('/api/patients')
+    return response.data
+  },
+
+  async getPatient(patientId: string): Promise<Patient> {
+    const response = await client.get<Patient>(`/api/patients/${patientId}`)
+    return response.data
+  },
+
+  async getPatientSessions(
+    patientId: string
+  ): Promise<{ sessions: AnalysisSession[]; total: number }> {
+    const response = await client.get(`/api/patients/${patientId}/sessions`)
+    return response.data
+  },
+
   // Upload endpoints
   async uploadVideo(
     file: File,
-    patientId?: string
+    patientId: string
   ): Promise<UploadVideoResponse> {
     const formData = new FormData()
     formData.append('file', file)
-    if (patientId) {
-      formData.append('patient_id', patientId)
-    }
+    formData.append('patient_id', patientId)
 
     const response = await client.post<UploadVideoResponse>(
       '/api/upload/video',

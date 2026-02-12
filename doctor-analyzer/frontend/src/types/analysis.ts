@@ -82,9 +82,15 @@ export interface ClinicalIndicator {
   timestamp_ranges: Array<{ start: number; end: number }>;
 }
 
+export interface Patient {
+  id: string;
+  codename: string;
+  created_at: string;
+}
+
 export interface AnalysisSession {
   session_id: string;
-  patient_id: string | null;
+  patient_id: string;
   created_at: string;
   updated_at: string | null;
   status: AnalysisStatus;

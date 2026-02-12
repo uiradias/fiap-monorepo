@@ -8,16 +8,21 @@ from infrastructure.aws.rekognition_client import RekognitionClient
 from infrastructure.aws.transcribe_client import TranscribeClient
 from infrastructure.aws.comprehend_client import ComprehendClient
 from infrastructure.websocket.connection_manager import ConnectionManager
-from domain.session import SessionStore
+from domain.session import SessionStoreProtocol
+from infrastructure.database.session_repository import PostgresSessionStore
+from infrastructure.database.patient_repository import PatientRepository
 from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
 from services.audio_analysis_service import AudioAnalysisService
 from services.aggregation_service import AggregationService
+from services.patient_service import PatientService
 
 
 # Singleton instances
 _connection_manager: ConnectionManager = None
-_session_store: SessionStore = None
+_session_store: SessionStoreProtocol = None
+_patient_repository: PatientRepository = None
+_patient_service: PatientService = None
 
 
 @lru_cache()
@@ -34,12 +39,28 @@ def get_connection_manager() -> ConnectionManager:
     return _connection_manager
 
 
-def get_session_store() -> SessionStore:
+def get_session_store() -> SessionStoreProtocol:
     """Get session store singleton."""
     global _session_store
     if _session_store is None:
-        _session_store = SessionStore()
+        _session_store = PostgresSessionStore()
     return _session_store
+
+
+def get_patient_repository() -> PatientRepository:
+    """Get patient repository singleton."""
+    global _patient_repository
+    if _patient_repository is None:
+        _patient_repository = PatientRepository()
+    return _patient_repository
+
+
+def get_patient_service() -> PatientService:
+    """Get patient service singleton."""
+    global _patient_service
+    if _patient_service is None:
+        _patient_service = PatientService(repository=get_patient_repository())
+    return _patient_service
 
 
 def get_s3_client() -> S3Client:

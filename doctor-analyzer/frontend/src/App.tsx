@@ -241,7 +241,7 @@ function App() {
                 transcriptions={transcriptions}
                 sentiments={sentiments}
                 results={results}
-                emotionCount={emotionDetections.length}
+                emotionDetections={emotionDetections}
               />
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { AlertTriangle, CheckCircle, Clock, FileText, Mic, Brain } from 'lucide-react'
 import type {
   AnalysisSession,
@@ -5,7 +6,23 @@ import type {
   TranscriptionUpdateMessage,
   SentimentUpdateMessage,
   AnalysisSessionFull,
+  EmotionUpdateMessage,
 } from '../../types/analysis'
+
+const EMOTION_COLORS: Record<string, string> = {
+  discomfort: '#ef4444',
+  depression: '#6366f1',
+  anxiety: '#f59e0b',
+  fear: '#dc2626',
+  calm: '#22c55e',
+  happy: '#10b981',
+  confused: '#8b5cf6',
+  angry: '#b91c1c',
+  sad: '#6366f1',
+  surprised: '#f97316',
+  disgusted: '#84cc16',
+  neutral: '#94a3b8',
+}
 
 interface AnalysisPanelProps {
   session: AnalysisSession
@@ -13,7 +30,7 @@ interface AnalysisPanelProps {
   transcriptions: TranscriptionUpdateMessage[]
   sentiments: SentimentUpdateMessage[]
   results: AnalysisSessionFull | null
-  emotionCount: number
+  emotionDetections: EmotionUpdateMessage[]
 }
 
 export function AnalysisPanel({
@@ -22,8 +39,36 @@ export function AnalysisPanel({
   transcriptions,
   sentiments,
   results,
-  emotionCount,
+  emotionDetections,
 }: AnalysisPanelProps) {
+  const topEmotions = useMemo(() => {
+    if (emotionDetections.length > 0) {
+      const totals: Record<string, { sum: number; count: number }> = {}
+      for (const detection of emotionDetections) {
+        for (const e of detection.emotions) {
+          if (!totals[e.emotion]) {
+            totals[e.emotion] = { sum: 0, count: 0 }
+          }
+          totals[e.emotion].sum += e.confidence
+          totals[e.emotion].count += 1
+        }
+      }
+      return Object.entries(totals)
+        .map(([emotion, { sum, count }]) => ({ emotion, confidence: sum / count }))
+        .sort((a, b) => b.confidence - a.confidence)
+        .slice(0, 10)
+    }
+    // Fallback: use emotion_summary from session/results for completed sessions
+    const summary = results?.emotion_summary || session.emotion_summary
+    if (summary && Object.keys(summary).length > 0) {
+      return Object.entries(summary)
+        .map(([emotion, confidence]) => ({ emotion, confidence }))
+        .sort((a, b) => b.confidence - a.confidence)
+        .slice(0, 10)
+    }
+    return []
+  }, [emotionDetections, results, session.emotion_summary])
+
   const getStatusIcon = () => {
     switch (status) {
       case 'completed':
@@ -77,7 +122,7 @@ export function AnalysisPanel({
           </div>
           <div>
             <p className="text-gray-500">Emotion Detections</p>
-            <p className="font-medium">{emotionCount}</p>
+            <p className="font-medium">{emotionDetections.length}</p>
           </div>
           <div>
             <p className="text-gray-500">Transcription Segments</p>
@@ -88,6 +133,33 @@ export function AnalysisPanel({
             <p className="font-medium">{session.documents_count}</p>
           </div>
         </div>
+
+        {/* Top 10 Emotions */}
+        {topEmotions.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Top Emotions</h3>
+            <div className="space-y-2">
+              {topEmotions.map((item, index) => (
+                <div key={item.emotion} className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-400 w-5 text-right text-xs">{index + 1}.</span>
+                  <span className="w-20 font-medium capitalize truncate">{item.emotion}</span>
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${item.confidence * 100}%`,
+                        backgroundColor: EMOTION_COLORS[item.emotion] || '#94a3b8',
+                      }}
+                    />
+                  </div>
+                  <span className="text-gray-600 w-10 text-right text-xs">
+                    {(item.confidence * 100).toFixed(0)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Clinical Indicators */}

@@ -4,12 +4,13 @@ import { api } from '../../services/api'
 import type { AnalysisSession } from '../../types/analysis'
 
 interface UploadZoneProps {
+  patientId?: string
   onSessionCreated: (session: AnalysisSession, videoUrl: string) => void
 }
 
-export function UploadZone({ onSessionCreated }: UploadZoneProps) {
+export function UploadZone({ patientId: initialPatientId, onSessionCreated }: UploadZoneProps) {
   const [videoFile, setVideoFile] = useState<File | null>(null)
-  const [patientId, setPatientId] = useState('')
+  const [patientId, setPatientId] = useState(initialPatientId || '')
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -118,19 +119,21 @@ export function UploadZone({ onSessionCreated }: UploadZoneProps) {
         </div>
       </div>
 
-      {/* Patient ID */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Patient ID (Required)
-        </label>
-        <input
-          type="text"
-          value={patientId}
-          onChange={(e) => setPatientId(e.target.value)}
-          placeholder="Enter patient identifier..."
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </div>
+      {/* Patient ID - only show input if not provided via props */}
+      {!initialPatientId && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Patient ID (Required)
+          </label>
+          <input
+            type="text"
+            value={patientId}
+            onChange={(e) => setPatientId(e.target.value)}
+            placeholder="Enter patient identifier..."
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      )}
 
       {/* Error message */}
       {error && (

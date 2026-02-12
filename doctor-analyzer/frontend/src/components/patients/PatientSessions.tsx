@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Play } from 'lucide-react'
+import { ArrowLeft, Play, Eye } from 'lucide-react'
 import { api } from '../../services/api'
 import type { AnalysisSession, Patient } from '../../types/analysis'
 
@@ -101,11 +101,16 @@ export function PatientSessions() {
                   <th className="pb-3 text-sm font-medium text-gray-500">Status</th>
                   <th className="pb-3 text-sm font-medium text-gray-500">Created</th>
                   <th className="pb-3 text-sm font-medium text-gray-500">Updated</th>
+                  <th className="pb-3 text-sm font-medium text-gray-500"></th>
                 </tr>
               </thead>
               <tbody>
                 {sessions.map((session) => (
-                  <tr key={session.session_id} className="border-b border-gray-100 last:border-0">
+                  <tr
+                    key={session.session_id}
+                    onClick={() => navigate(`/patients/${patientId}/sessions/${session.session_id}`)}
+                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition"
+                  >
                     <td className="py-3 font-mono text-sm text-gray-600">
                       {session.session_id.slice(0, 8)}...
                     </td>
@@ -123,6 +128,12 @@ export function PatientSessions() {
                       {session.updated_at
                         ? new Date(session.updated_at).toLocaleString()
                         : '—'}
+                    </td>
+                    <td className="py-3 text-right">
+                      <span className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                        <Eye className="w-4 h-4" />
+                        View
+                      </span>
                     </td>
                   </tr>
                 ))}

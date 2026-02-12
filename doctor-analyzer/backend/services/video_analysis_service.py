@@ -107,6 +107,13 @@ class VideoAnalysisService:
         results_key = f"sessions/{session.session_id}/results/video_emotions.json"
         await self._s3.upload_json(timeline.to_dict(), results_key)
 
+        # Save individual face detections for video overlay on session review
+        detections_key = f"sessions/{session.session_id}/results/face_detections.json"
+        await self._s3.upload_json(
+            [detection.to_dict() for detection in timeline.detections],
+            detections_key,
+        )
+
         # Update session
         session.video_emotions = timeline
         session.emotion_summary = timeline.get_emotion_summary()

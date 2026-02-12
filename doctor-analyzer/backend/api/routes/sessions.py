@@ -1,12 +1,16 @@
 """Session management API endpoints."""
 
+import json
 from typing import Optional
 
+from botocore.exceptions import ClientError
 from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi.responses import JSONResponse
 
 from services.upload_service import UploadService
+from infrastructure.aws.s3_client import S3Client
 from domain.session import SessionStoreProtocol
-from api.dependencies import get_upload_service, get_session_store
+from api.dependencies import get_upload_service, get_session_store, get_s3_client
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -68,6 +72,24 @@ async def get_video_url(
         )
 
     return {"video_url": url}
+
+
+@router.get("/{session_id}/face-detections")
+async def get_face_detections(
+    session_id: str,
+    s3_client: S3Client = Depends(get_s3_client),
+):
+    """Get individual face detection records for video overlay."""
+    s3_key = f"sessions/{session_id}/results/face_detections.json"
+    try:
+        data = await s3_client.download_file(s3_key)
+        detections = json.loads(data)
+        return JSONResponse(content=detections)
+    except ClientError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No face detections found for session {session_id}",
+        )
 
 
 @router.delete("/{session_id}")

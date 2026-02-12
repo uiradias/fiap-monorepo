@@ -1,6 +1,8 @@
 import axios from 'axios'
 import type {
   AnalysisSession,
+  AnalysisSessionFull,
+  EmotionUpdateMessage,
   Patient,
   UploadVideoResponse,
 } from '../types/analysis'
@@ -77,6 +79,16 @@ export const api = {
     return response.data.video_url
   },
 
+  async getFaceDetections(sessionId: string): Promise<EmotionUpdateMessage[]> {
+    const response = await client.get(`/api/sessions/${sessionId}/face-detections`)
+    return response.data.map((d: Record<string, unknown>) => ({
+      type: 'emotion_update' as const,
+      timestamp_ms: d.timestamp_ms,
+      emotions: d.emotions,
+      bounding_box: d.bounding_box,
+    }))
+  },
+
   async deleteSession(sessionId: string): Promise<void> {
     await client.delete(`/api/sessions/${sessionId}`)
   },
@@ -96,8 +108,8 @@ export const api = {
     return response.data
   },
 
-  async getAnalysisResults(sessionId: string): Promise<AnalysisSession> {
-    const response = await client.get(`/api/analysis/${sessionId}/results`)
+  async getAnalysisResults(sessionId: string): Promise<AnalysisSessionFull> {
+    const response = await client.get<AnalysisSessionFull>(`/api/analysis/${sessionId}/results`)
     return response.data
   },
 }

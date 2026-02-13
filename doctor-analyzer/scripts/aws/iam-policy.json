@@ -22,7 +22,9 @@
       "Action": [
         "rekognition:StartFaceDetection",
         "rekognition:GetFaceDetection",
-        "rekognition:DetectFaces"
+        "rekognition:DetectFaces",
+        "rekognition:StartContentModeration",
+        "rekognition:GetContentModeration"
       ],
       "Resource": "*"
     },

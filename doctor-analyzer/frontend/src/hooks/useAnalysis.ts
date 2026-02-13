@@ -8,6 +8,10 @@ import type {
   AnalysisStatus,
 } from '../types/analysis'
 
+export interface StartAnalysisOptions {
+  enableSelfInjuryCheck?: boolean
+}
+
 interface UseAnalysisOptions {
   sessionId: string
   onEmotionUpdate?: (update: EmotionUpdateMessage) => void
@@ -61,22 +65,23 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
     onError: handleError,
   })
 
-  const startAnalysis = useCallback(async () => {
-    if (!sessionId) return
+  const startAnalysis = useCallback(
+    async (options?: StartAnalysisOptions) => {
+      if (!sessionId) return
 
-    try {
-      setError(null)
-      setProgress(0)
-      setStatusMessage(null)
-      setTranscriptions([])
-      setResults(null)
-
-      // Start the analysis via REST API
-      await api.startAnalysis(sessionId)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start analysis')
-    }
-  }, [sessionId])
+      try {
+        setError(null)
+        setProgress(0)
+        setStatusMessage(null)
+        setTranscriptions([])
+        setResults(null)
+        await api.startAnalysis(sessionId, options)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to start analysis')
+      }
+    },
+    [sessionId]
+  )
 
   const reset = useCallback(() => {
     disconnect()

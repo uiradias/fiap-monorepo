@@ -1,7 +1,7 @@
-"""AWS Rekognition client for video emotion analysis."""
+"""AWS Rekognition client for video emotion analysis and content moderation."""
 
 import boto3
-from typing import List, AsyncIterator, Optional
+from typing import List, AsyncIterator, Optional, Dict, Any
 import asyncio
 from functools import partial
 import logging
@@ -136,6 +136,84 @@ class RekognitionClient:
                 job_complete = True
 
         logger.info(f"Completed processing face detection job: {job_id}")
+
+    async def start_content_moderation(self, s3_bucket: str, s3_key: str) -> str:
+        """
+        Start asynchronous content moderation job on a video in S3.
+
+        Returns:
+            Job ID for tracking the analysis.
+        """
+        params = {
+            'Video': {
+                'S3Object': {
+                    'Bucket': s3_bucket,
+                    'Name': s3_key,
+                }
+            },
+        }
+        if self._settings.sns_topic_arn and self._settings.rekognition_role_arn:
+            params['NotificationChannel'] = {
+                'SNSTopicArn': self._settings.sns_topic_arn,
+                'RoleArn': self._settings.rekognition_role_arn,
+            }
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None, partial(self._client.start_content_moderation, **params)
+        )
+        job_id = response['JobId']
+        logger.info(f"Started content moderation job: {job_id}")
+        return job_id
+
+    async def get_content_moderation_results(
+        self,
+        job_id: str,
+        poll_interval: float = 5.0,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """
+        Poll for and yield content moderation results as they become available.
+
+        Yields dicts with: name, confidence (0-1), timestamp_ms, parent_name.
+        """
+        next_token = None
+        job_complete = False
+
+        while not job_complete:
+            kwargs = {'JobId': job_id, 'MaxResults': 100}
+            if next_token:
+                kwargs['NextToken'] = next_token
+
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None, partial(self._client.get_content_moderation, **kwargs)
+            )
+            status = response['JobStatus']
+
+            if status == 'FAILED':
+                error_msg = response.get('StatusMessage', 'Unknown error')
+                logger.error(f"Content moderation job failed: {error_msg}")
+                raise RuntimeError(f"Content moderation job failed: {error_msg}")
+
+            if status == 'IN_PROGRESS':
+                logger.debug(f"Content moderation job {job_id} still in progress, waiting...")
+                await asyncio.sleep(poll_interval)
+                continue
+
+            for mod_record in response.get('ModerationLabels', []):
+                label = mod_record.get('ModerationLabel', {})
+                timestamp = mod_record.get('Timestamp', 0)
+                yield {
+                    'name': label.get('Name', ''),
+                    'confidence': label.get('Confidence', 0) / 100.0,
+                    'timestamp_ms': timestamp,
+                    'parent_name': label.get('ParentName', ''),
+                }
+
+            next_token = response.get('NextToken')
+            if not next_token:
+                job_complete = True
+
+        logger.info(f"Completed processing content moderation job: {job_id}")
 
     def _parse_emotions(self, emotions_data: list) -> List[EmotionScore]:
         """Parse Rekognition emotions and add derived emotions."""

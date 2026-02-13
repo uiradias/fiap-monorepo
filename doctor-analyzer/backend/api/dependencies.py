@@ -15,6 +15,7 @@ from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
 from services.audio_analysis_service import AudioAnalysisService
 from services.aggregation_service import AggregationService
+from services.self_injury_check_service import SelfInjuryCheckService
 from services.patient_service import PatientService
 
 
@@ -122,4 +123,13 @@ def get_aggregation_service() -> AggregationService:
         s3=get_s3_client(),
         ws_manager=get_connection_manager(),
         session_store=get_session_store(),
+    )
+
+
+def get_self_injury_check_service() -> SelfInjuryCheckService:
+    """Get self-injury check service (Rekognition content moderation only)."""
+    return SelfInjuryCheckService(
+        rekognition=get_rekognition_client(),
+        s3=get_s3_client(),
+        ws_manager=get_connection_manager(),
     )

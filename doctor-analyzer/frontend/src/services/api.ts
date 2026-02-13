@@ -95,9 +95,12 @@ export const api = {
 
   // Analysis endpoints
   async startAnalysis(
-    sessionId: string
+    sessionId: string,
+    options?: { enableSelfInjuryCheck?: boolean }
   ): Promise<{ session_id: string; status: string }> {
-    const response = await client.post(`/api/analysis/${sessionId}/start`)
+    const response = await client.post(`/api/analysis/${sessionId}/start`, {
+      enable_self_injury_check: options?.enableSelfInjuryCheck ?? false,
+    })
     return response.data
   },
 

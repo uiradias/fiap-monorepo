@@ -1,7 +1,7 @@
 """Analysis result domain models."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -12,6 +12,7 @@ class AnalysisStatus(str, Enum):
     PENDING = "pending"
     UPLOADING = "uploading"
     PROCESSING_VIDEO = "processing_video"
+    PROCESSING_SELF_INJURY = "processing_self_injury"
     PROCESSING_AUDIO = "processing_audio"
     AGGREGATING = "aggregating"
     COMPLETED = "completed"
@@ -94,4 +95,27 @@ class ClinicalIndicator:
             "confidence": self.confidence,
             "evidence": self.evidence,
             "timestamp_ranges": self.timestamp_ranges,
+        }
+
+
+@dataclass
+class SelfInjuryCheckResult:
+    """Result of optional self-injury check (Rekognition content moderation only)."""
+
+    enabled: bool
+    rekognition_labels: List[Dict[str, Any]]  # name, confidence, timestamp_ms, parent_name
+    has_signals: bool  # derived from labels (e.g. Self-Harm, Violence above threshold)
+    summary: str
+    confidence: float  # max confidence of relevant labels or 0
+    error_message: Optional[str] = None
+
+    def to_dict(self) -> dict:
+        # Frontend expects bedrock_* names; we fill from Rekognition-only logic
+        return {
+            "enabled": self.enabled,
+            "rekognition_labels": self.rekognition_labels,
+            "bedrock_has_signals": self.has_signals,
+            "bedrock_summary": self.summary,
+            "bedrock_confidence": self.confidence,
+            "error_message": self.error_message,
         }

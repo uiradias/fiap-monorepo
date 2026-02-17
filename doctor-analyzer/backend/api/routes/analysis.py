@@ -1,25 +1,35 @@
 """Analysis API endpoints."""
 
 import logging
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Body
 
 logger = logging.getLogger(__name__)
+from pydantic import BaseModel
 
 from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
 from services.audio_analysis_service import AudioAnalysisService
 from services.aggregation_service import AggregationService
+from services.self_injury_check_service import SelfInjuryCheckService
 from domain.session import SessionStore
-from domain.analysis import AnalysisStatus
+from domain.analysis import AnalysisStatus, SelfInjuryCheckResult
 from infrastructure.websocket.connection_manager import ConnectionManager
 from api.dependencies import (
     get_upload_service,
     get_video_analysis_service,
     get_audio_analysis_service,
     get_aggregation_service,
+    get_self_injury_check_service,
     get_session_store,
     get_connection_manager,
 )
+
+
+class StartAnalysisRequest(BaseModel):
+    """Optional body for starting analysis."""
+
+    enable_self_injury_check: bool = False
+
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -28,37 +38,35 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 async def start_analysis(
     session_id: str,
     background_tasks: BackgroundTasks,
+    body: StartAnalysisRequest = Body(default_factory=StartAnalysisRequest),
     upload_service: UploadService = Depends(get_upload_service),
     video_service: VideoAnalysisService = Depends(get_video_analysis_service),
     audio_service: AudioAnalysisService = Depends(get_audio_analysis_service),
     aggregation_service: AggregationService = Depends(get_aggregation_service),
+    self_injury_check_service: SelfInjuryCheckService = Depends(get_self_injury_check_service),
     session_store: SessionStore = Depends(get_session_store),
 ):
     """
     Start the analysis pipeline for a session.
 
-    This endpoint triggers the full analysis pipeline:
-    1. Video emotion detection (Rekognition)
-    2. Audio transcription and sentiment (Transcribe + Comprehend)
-    3. Results aggregation
-
-    The analysis runs in the background. Connect via WebSocket
-    to receive real-time updates.
+    Pipeline: video emotion (Rekognition), optional self-injury check (Rekognition content moderation),
+    audio transcription/sentiment, aggregation.
     """
-    logger.info(f"Received start analysis request for session {session_id}")
+    logger.info(
+        f"Received start analysis request for session {session_id} "
+        f"(enable_self_injury_check={body.enable_self_injury_check})"
+    )
 
     session = await upload_service.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
-    # Check if analysis already started
     if session.status not in [AnalysisStatus.PENDING, AnalysisStatus.UPLOADING, AnalysisStatus.FAILED]:
         raise HTTPException(
             status_code=400,
             detail=f"Analysis already started. Current status: {session.status.value}",
         )
 
-    # Start analysis in background
     ws_manager = get_connection_manager()
     logger.info(
         f"Queuing analysis pipeline for session {session_id} "
@@ -70,8 +78,10 @@ async def start_analysis(
         video_service,
         audio_service,
         aggregation_service,
+        self_injury_check_service,
         session_store,
         ws_manager,
+        body.enable_self_injury_check,
     )
 
     return {
@@ -86,8 +96,10 @@ async def run_analysis_pipeline(
     video_service: VideoAnalysisService,
     audio_service: AudioAnalysisService,
     aggregation_service: AggregationService,
+    self_injury_check_service: SelfInjuryCheckService,
     session_store: SessionStore,
     ws_manager: ConnectionManager,
+    enable_self_injury_check: bool = False,
 ):
     """Run the complete analysis pipeline."""
     logger.info(f"Pipeline started for session {session_id}")
@@ -99,19 +111,34 @@ async def run_analysis_pipeline(
         return
 
     try:
-        # Run video and audio analysis (can run in parallel in future)
         if session.video_s3_key:
             logger.info(f"[{session_id}] Starting video analysis: {session.video_s3_key}")
             await video_service.analyze_video(session)
-            # Refresh session after video analysis
             session = await session_store.get(session_id)
+
+            if enable_self_injury_check:
+                logger.info(f"[{session_id}] Running self-injury check (Rekognition only)")
+                try:
+                    result = await self_injury_check_service.run_self_injury_check(session)
+                    session.self_injury_check = result
+                    await session_store.update(session)
+                except Exception as e:
+                    logger.exception(f"Self-injury check failed for session {session_id}: %s", e)
+                    session.self_injury_check = SelfInjuryCheckResult(
+                        enabled=True,
+                        rekognition_labels=[],
+                        has_signals=False,
+                        summary="",
+                        confidence=0.0,
+                        error_message=str(e),
+                    )
+                    await session_store.update(session)
+                session = await session_store.get(session_id)
 
             logger.info(f"[{session_id}] Starting audio analysis")
             await audio_service.analyze_audio(session)
-            # Refresh session after audio analysis
             session = await session_store.get(session_id)
 
-        # Aggregate results
         logger.info(f"[{session_id}] Starting aggregation")
         await aggregation_service.aggregate_results(session)
         logger.info(f"[{session_id}] Pipeline completed successfully")

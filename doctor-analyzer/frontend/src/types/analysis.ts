@@ -6,6 +6,7 @@ export type AnalysisStatus =
   | 'pending'
   | 'uploading'
   | 'processing_video'
+  | 'processing_self_injury'
   | 'processing_audio'
   | 'aggregating'
   | 'completed'
@@ -82,6 +83,22 @@ export interface ClinicalIndicator {
   timestamp_ranges: Array<{ start: number; end: number }>;
 }
 
+export interface ModerationLabelItem {
+  name: string;
+  confidence: number;
+  timestamp_ms?: number;
+  parent_name?: string;
+}
+
+export interface SelfInjuryCheckResult {
+  enabled: boolean;
+  rekognition_labels: ModerationLabelItem[];
+  bedrock_has_signals: boolean;
+  bedrock_summary: string;
+  bedrock_confidence: number;
+  error_message?: string;
+}
+
 export interface Patient {
   id: string;
   codename: string;
@@ -98,12 +115,14 @@ export interface AnalysisSession {
   emotion_summary: Record<string, number>;
   clinical_indicators: ClinicalIndicator[];
   error_message: string | null;
+  self_injury_check?: SelfInjuryCheckResult | null;
 }
 
 export interface AnalysisSessionFull extends AnalysisSession {
   video_emotions: VideoEmotionTimeline | null;
   audio_analysis: AudioAnalysis | null;
   results_s3_key: string | null;
+  self_injury_check: SelfInjuryCheckResult | null;
 }
 
 // WebSocket message types

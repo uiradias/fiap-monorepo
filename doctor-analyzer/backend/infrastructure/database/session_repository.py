@@ -6,7 +6,7 @@ import uuid
 
 from sqlalchemy import select
 
-from domain.analysis import AnalysisStatus, ClinicalIndicator
+from domain.analysis import AnalysisStatus, ClinicalIndicator, SelfInjuryCheckResult
 from domain.session import AnalysisSession, SessionStoreProtocol
 from infrastructure.database.engine import get_session_factory
 from infrastructure.database.models import AnalysisSessionModel
@@ -19,6 +19,17 @@ class PostgresSessionStore(SessionStoreProtocol):
 
     @staticmethod
     def _to_domain(row: AnalysisSessionModel) -> AnalysisSession:
+        self_injury = None
+        if row.self_injury_check:
+            d = row.self_injury_check
+            self_injury = SelfInjuryCheckResult(
+                enabled=d.get("enabled", False),
+                rekognition_labels=d.get("rekognition_labels", []),
+                has_signals=d.get("bedrock_has_signals", d.get("has_signals", False)),
+                summary=d.get("bedrock_summary", d.get("summary", "")),
+                confidence=float(d.get("bedrock_confidence", d.get("confidence", 0))),
+                error_message=d.get("error_message"),
+            )
         return AnalysisSession(
             session_id=str(row.session_id),
             patient_id=str(row.patient_id),
@@ -32,7 +43,7 @@ class PostgresSessionStore(SessionStoreProtocol):
                 ClinicalIndicator(**ci) for ci in (row.clinical_indicators or [])
             ],
             error_message=row.error_message,
-            # These stay None — populated in-memory during pipeline, persisted to S3
+            self_injury_check=self_injury,
             video_emotions=None,
             audio_analysis=None,
         )
@@ -49,6 +60,7 @@ class PostgresSessionStore(SessionStoreProtocol):
             results_s3_key=session.results_s3_key,
             emotion_summary=session.emotion_summary or {},
             clinical_indicators=[ci.to_dict() for ci in session.clinical_indicators],
+            self_injury_check=session.self_injury_check.to_dict() if session.self_injury_check else None,
             error_message=session.error_message,
         )
 
@@ -82,6 +94,7 @@ class PostgresSessionStore(SessionStoreProtocol):
             row.results_s3_key = session.results_s3_key
             row.emotion_summary = session.emotion_summary or {}
             row.clinical_indicators = [ci.to_dict() for ci in session.clinical_indicators]
+            row.self_injury_check = session.self_injury_check.to_dict() if session.self_injury_check else None
             row.error_message = session.error_message
             await db.commit()
             await db.refresh(row)

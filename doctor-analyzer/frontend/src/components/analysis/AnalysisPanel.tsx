@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle, Clock, Mic, Brain } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, Mic, Brain, ShieldAlert } from 'lucide-react'
 import type {
   AnalysisSession,
   AnalysisStatus,
@@ -125,6 +125,22 @@ export function AnalysisPanel({
             <p className="text-gray-500">Transcription Segments</p>
             <p className="font-medium">{transcriptions.length}</p>
           </div>
+          {(results?.self_injury_check ?? session.self_injury_check) && (
+            <div className="col-span-2">
+              <p className="text-gray-500">Self-injury check</p>
+              <p className="font-medium">
+                {(() => {
+                  const check = results?.self_injury_check ?? session.self_injury_check
+                  if (!check) return '—'
+                  if (check.error_message) return `Error: ${check.error_message}`
+                  if (check.bedrock_has_signals) {
+                    return `Potential signals (${(check.bedrock_confidence * 100).toFixed(0)}% confidence)`
+                  }
+                  return `No signals indicated (${(check.bedrock_confidence * 100).toFixed(0)}% confidence)`
+                })()}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Top 10 Emotions */}
@@ -151,6 +167,63 @@ export function AnalysisPanel({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Self injury results — only when the self-injury check was run */}
+        {(results?.self_injury_check ?? session.self_injury_check) && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-500" />
+              Self injury results
+            </h3>
+            {(() => {
+              const check = results?.self_injury_check ?? session.self_injury_check
+              if (!check) return null
+              if (check.error_message) {
+                return (
+                  <p className="text-sm text-amber-700">
+                    Check was requested but could not be completed: {check.error_message}
+                  </p>
+                )
+              }
+              return (
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={`px-2 py-1 rounded text-sm font-medium ${
+                        check.bedrock_has_signals
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}
+                    >
+                      {check.bedrock_has_signals
+                        ? 'Potential signals noted'
+                        : 'No signals indicated'}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      (confidence: {(check.bedrock_confidence * 100).toFixed(0)}%)
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700">{check.bedrock_summary}</p>
+                  {check.rekognition_labels && check.rekognition_labels.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs font-medium text-gray-500 mb-1">Content moderation labels</p>
+                      <div className="flex flex-wrap gap-1">
+                        {check.rekognition_labels.map((l, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700"
+                          >
+                            {l.name} ({(l.confidence * 100).toFixed(0)}%)
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </div>
         )}
       </div>

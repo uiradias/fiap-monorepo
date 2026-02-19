@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Play, Eye } from 'lucide-react'
+import { Play, Eye } from 'lucide-react'
 import { api } from '../../services/api'
+import { Breadcrumb } from '../layout/Breadcrumb'
 import type { AnalysisSession, Patient } from '../../types/analysis'
 
 export function PatientSessions() {
@@ -52,22 +53,20 @@ export function PatientSessions() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: 'Patients', href: '/' },
+          { label: patient?.codename ?? '...' },
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/')}
-            className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Patients
-          </button>
-          {patient && (
-            <h2 className="text-xl font-semibold text-gray-900">
-              Sessions for {patient.codename}
-            </h2>
-          )}
-        </div>
+        {patient && (
+          <h2 className="text-xl font-semibold text-gray-900">
+            Sessions for {patient.codename}
+          </h2>
+        )}
         <button
           onClick={() => navigate(`/patients/${patientId}/upload`)}
           className="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"

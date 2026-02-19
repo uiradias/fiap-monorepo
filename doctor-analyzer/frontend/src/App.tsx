@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Routes, Route, useParams } from 'react-router-dom'
 import { MainLayout } from './components/layout/MainLayout'
+import { Breadcrumb } from './components/layout/Breadcrumb'
 import { PatientList } from './components/patients/PatientList'
 import { PatientSessions } from './components/patients/PatientSessions'
 import { SessionResults } from './components/sessions/SessionResults'
@@ -8,15 +9,21 @@ import { UploadZone } from './components/upload/UploadZone'
 import { VideoPlayer } from './components/video/VideoPlayer'
 import { AnalysisPanel } from './components/analysis/AnalysisPanel'
 import { useAnalysis } from './hooks/useAnalysis'
-import type { AnalysisSession, AnalysisStatus, EmotionUpdateMessage } from './types/analysis'
+import { api } from './services/api'
+import type { AnalysisSession, AnalysisStatus, EmotionUpdateMessage, Patient } from './types/analysis'
 
 function AnalysisPage() {
   const { patientId } = useParams<{ patientId: string }>()
-  const navigate = useNavigate()
 
+  const [patient, setPatient] = useState<Patient | null>(null)
   const [session, setSession] = useState<AnalysisSession | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [emotionDetections, setEmotionDetections] = useState<EmotionUpdateMessage[]>([])
+
+  useEffect(() => {
+    if (!patientId) return
+    api.getPatient(patientId).then(setPatient).catch(() => {})
+  }, [patientId])
 
 
   const {
@@ -27,7 +34,6 @@ function AnalysisPage() {
     transcriptions,
     results,
     error,
-    disconnect,
     startAnalysis,
   } = useAnalysis({
     sessionId: session?.session_id || '',
@@ -42,29 +48,11 @@ function AnalysisPage() {
     setEmotionDetections([])
   }
 
-  const canStartAnalysis =
-    status === null || status === 'pending' || status === 'uploading' || status === 'failed'
-
-  const isAnalyzing =
-    status !== null &&
-    status !== 'pending' &&
-    status !== 'uploading' &&
-    status !== 'failed' &&
-    status !== 'completed'
-
-  const handleStartAnalysis = () => {
+  useEffect(() => {
     if (session) {
       startAnalysis()
     }
-  }
-
-  const handleReset = () => {
-    disconnect()
-    setSession(null)
-    setVideoUrl(null)
-    setEmotionDetections([])
-    navigate('/')
-  }
+  }, [session])
 
   if (!patientId) {
     return null
@@ -72,6 +60,13 @@ function AnalysisPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <Breadcrumb
+        items={[
+          { label: 'Patients', href: '/' },
+          { label: patient?.codename ?? '...', href: `/patients/${patientId}/sessions` },
+          { label: 'New Analysis' },
+        ]}
+      />
       <h1 className="text-3xl font-bold text-gray-900 mb-2">
         Doctor Analyzer
       </h1>
@@ -98,34 +93,9 @@ function AnalysisPage() {
 
             {/* Analysis controls */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Session ID</p>
-                  <p className="font-mono text-sm">{session.session_id.slice(0, 8)}...</p>
-                </div>
-                <div className="flex gap-2">
-                  {status === 'completed' && (
-                    <button
-                      onClick={() => navigate(`/patients/${patientId}/sessions`)}
-                      className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                    >
-                      Back to Sessions
-                    </button>
-                  )}
-                  <button
-                    onClick={handleReset}
-                    className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                  >
-                    New Session
-                  </button>
-                  <button
-                    onClick={handleStartAnalysis}
-                    disabled={!canStartAnalysis}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isAnalyzing ? 'Analyzing...' : 'Start Analysis'}
-                  </button>
-                </div>
+              <div>
+                <p className="text-sm text-gray-600">Session ID</p>
+                <p className="font-mono text-sm">{session.session_id.slice(0, 8)}...</p>
               </div>
 
               {/* Pipeline stepper + progress */}

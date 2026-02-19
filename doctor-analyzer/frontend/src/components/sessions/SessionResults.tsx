@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, FileText, MessageSquare } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { FileText, MessageSquare } from 'lucide-react'
 import { api } from '../../services/api'
 import { VideoPlayer } from '../video/VideoPlayer'
 import { AnalysisPanel } from '../analysis/AnalysisPanel'
+import { Breadcrumb } from '../layout/Breadcrumb'
 import type { AnalysisSessionFull, EmotionUpdateMessage, Patient } from '../../types/analysis'
 
 export function SessionResults() {
   const { patientId, sessionId } = useParams<{ patientId: string; sessionId: string }>()
-  const navigate = useNavigate()
 
   const [patient, setPatient] = useState<Patient | null>(null)
   const [session, setSession] = useState<AnalysisSessionFull | null>(null)
@@ -67,13 +67,13 @@ export function SessionResults() {
   if (error || !session) {
     return (
       <div className="space-y-4">
-        <button
-          onClick={() => navigate(`/patients/${patientId}/sessions`)}
-          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Sessions
-        </button>
+        <Breadcrumb
+          items={[
+            { label: 'Patients', href: '/' },
+            { label: patient?.codename ?? '...', href: `/patients/${patientId}/sessions` },
+            { label: `Session ${sessionId}` },
+          ]}
+        />
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error || 'Session not found'}
         </div>
@@ -86,21 +86,20 @@ export function SessionResults() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: 'Patients', href: '/' },
+          { label: patient?.codename ?? '...', href: `/patients/${patientId}/sessions` },
+          { label: `Session ${session.session_id}` },
+        ]}
+      />
+
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate(`/patients/${patientId}/sessions`)}
-          className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Sessions
-        </button>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            Session Results {patient ? `- ${patient.codename}` : ''}
-          </h2>
-          <p className="text-sm text-gray-500 font-mono">{session.session_id}</p>
-        </div>
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">
+          Session Results {patient ? `- ${patient.codename}` : ''}
+        </h2>
+        <p className="text-sm text-gray-500 font-mono">{session.session_id}</p>
       </div>
 
       {/* Two-column grid */}

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Play, Eye } from 'lucide-react'
+import { Play, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../../services/api'
 import { Breadcrumb } from '../layout/Breadcrumb'
 import type { AnalysisSession, Patient } from '../../types/analysis'
@@ -34,6 +34,16 @@ export function PatientSessions() {
 
     fetchData()
   }, [patientId])
+
+  const [page, setPage] = useState(0)
+  const sessionsPerPage = 10
+
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(sessions.length / sessionsPerPage)), [sessions.length])
+  const currentPage = Math.min(page, totalPages - 1)
+  const paginatedSessions = useMemo(
+    () => sessions.slice(currentPage * sessionsPerPage, (currentPage + 1) * sessionsPerPage),
+    [sessions, currentPage]
+  )
 
   if (!patientId) return null
 
@@ -92,53 +102,80 @@ export function PatientSessions() {
             No sessions yet. Click "New Session" to get started.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="pb-3 text-sm font-medium text-gray-500">Session ID</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">Status</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">Created</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">Updated</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session) => (
-                  <tr
-                    key={session.session_id}
-                    onClick={() => navigate(`/patients/${patientId}/sessions/${session.session_id}`)}
-                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition"
-                  >
-                    <td className="py-3 font-mono text-sm text-gray-600">
-                      {session.session_id.slice(0, 8)}...
-                    </td>
-                    <td className="py-3">
-                      <span
-                        className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${statusColor(session.status)}`}
-                      >
-                        {session.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-sm text-gray-600">
-                      {new Date(session.created_at).toLocaleString()}
-                    </td>
-                    <td className="py-3 text-sm text-gray-600">
-                      {session.updated_at
-                        ? new Date(session.updated_at).toLocaleString()
-                        : '—'}
-                    </td>
-                    <td className="py-3 text-right">
-                      <span className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
-                        <Eye className="w-4 h-4" />
-                        View
-                      </span>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="pb-3 text-sm font-medium text-gray-500">Session ID</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Status</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Created</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Updated</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {paginatedSessions.map((session) => (
+                    <tr
+                      key={session.session_id}
+                      onClick={() => navigate(`/patients/${patientId}/sessions/${session.session_id}`)}
+                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition"
+                    >
+                      <td className="py-3 font-mono text-sm text-gray-600">
+                        {session.session_id}
+                      </td>
+                      <td className="py-3">
+                        <span
+                          className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${statusColor(session.status)}`}
+                        >
+                          {session.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-sm text-gray-600">
+                        {new Date(session.created_at).toLocaleString()}
+                      </td>
+                      <td className="py-3 text-sm text-gray-600">
+                        {session.updated_at
+                          ? new Date(session.updated_at).toLocaleString()
+                          : '—'}
+                      </td>
+                      <td className="py-3 text-right">
+                        <span className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                          <Eye className="w-4 h-4" />
+                          View
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-4">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+                <span className="text-sm text-gray-500">
+                  Page {currentPage + 1} of {totalPages} ({sessions.length} sessions)
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage >= totalPages - 1}
+                  className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

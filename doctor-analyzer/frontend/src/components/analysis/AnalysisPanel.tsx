@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { AlertTriangle, CheckCircle, Clock, Mic, Brain, ShieldAlert } from 'lucide-react'
+import { useMemo, useState, useCallback } from 'react'
+import { AlertTriangle, CheckCircle, Clock, Mic, Brain, ShieldAlert, ChevronLeft, ChevronRight } from 'lucide-react'
 import type {
   AnalysisSession,
   AnalysisStatus,
@@ -24,12 +24,139 @@ const EMOTION_COLORS: Record<string, string> = {
   neutral: '#94a3b8',
 }
 
+const ITEMS_PER_PAGE = 10
+
+function TranscriptionCard({ transcriptions }: { transcriptions: TranscriptionUpdateMessage[] }) {
+  const [page, setPage] = useState(0)
+  const [sliderTime, setSliderTime] = useState(0)
+  const [filterByTime, setFilterByTime] = useState(false)
+
+  const maxTime = useMemo(() => {
+    if (transcriptions.length === 0) return 0
+    return Math.ceil(Math.max(...transcriptions.map((t) => t.end_time)))
+  }, [transcriptions])
+
+  const filtered = useMemo(() => {
+    if (!filterByTime) return transcriptions
+    return transcriptions.filter(
+      (t) => t.start_time <= sliderTime && t.end_time >= sliderTime
+    )
+  }, [transcriptions, sliderTime, filterByTime])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const currentPage = Math.min(page, totalPages - 1)
+  const pageItems = filtered.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE)
+
+  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = Number(e.target.value)
+    setSliderTime(val)
+    setFilterByTime(val > 0)
+    setPage(0)
+  }, [])
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col" style={{ height: '420px' }}>
+      <div className="flex items-center gap-3 mb-3">
+        <Mic className="w-5 h-5 text-blue-500" />
+        <h2 className="text-lg font-semibold">Transcription</h2>
+        {transcriptions.length > 0 && (
+          <span className="text-xs text-gray-400 ml-auto">{filtered.length} segments</span>
+        )}
+      </div>
+
+      {transcriptions.length === 0 ? (
+        <p className="text-sm text-gray-400">Transcription not processed yet</p>
+      ) : (
+        <>
+          {/* Time slider */}
+          {maxTime > 0 && (
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                <span>0:00</span>
+                <span className="font-medium text-gray-700">
+                  {filterByTime ? formatTime(sliderTime) : 'All'}
+                </span>
+                <span>{formatTime(maxTime)}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={maxTime}
+                step={0.1}
+                value={filterByTime ? sliderTime : 0}
+                onChange={handleSliderChange}
+                className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+              />
+              {filterByTime && (
+                <button
+                  onClick={() => { setFilterByTime(false); setSliderTime(0); setPage(0) }}
+                  className="text-xs text-blue-600 hover:underline mt-1"
+                >
+                  Show all
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Transcription content */}
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+            {pageItems.length > 0 ? (
+              pageItems.map((t, index) => (
+                <div key={currentPage * ITEMS_PER_PAGE + index} className="flex gap-2 text-sm">
+                  <span className="text-gray-400 text-xs whitespace-nowrap">
+                    {t.start_time.toFixed(1)}s
+                  </span>
+                  <p className="text-gray-700">{t.text}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-400">No segments at this time</p>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+                className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Prev
+              </button>
+              <span className="text-xs text-gray-500">
+                {currentPage + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={currentPage >= totalPages - 1}
+                className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 interface AnalysisPanelProps {
   session: AnalysisSession
   status: AnalysisStatus | null
   transcriptions: TranscriptionUpdateMessage[]
   results: AnalysisSessionFull | null
   emotionDetections: EmotionUpdateMessage[]
+  mode?: 'sidebar' | 'main'
 }
 
 export function AnalysisPanel({
@@ -38,6 +165,7 @@ export function AnalysisPanel({
   transcriptions,
   results,
   emotionDetections,
+  mode,
 }: AnalysisPanelProps) {
   const topEmotions = useMemo(() => {
     if (emotionDetections.length > 0) {
@@ -102,10 +230,13 @@ export function AnalysisPanel({
     return indicators
   }
 
+  const showSidebar = !mode || mode === 'sidebar'
+  const showMain = !mode || mode === 'main'
+
   return (
     <div className="space-y-4">
       {/* Status card */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      {showMain && <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center gap-3 mb-4">
           {getStatusIcon()}
           <h2 className="text-lg font-semibold">Analysis Status</h2>
@@ -171,119 +302,125 @@ export function AnalysisPanel({
           </div>
         )}
 
-        {/* Injury detection results — only when the injury check was run */}
-        {(results?.injury_check ?? session.injury_check) && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-500" />
-              Injury detection results
-            </h3>
-            {(() => {
-              const check = results?.injury_check ?? session.injury_check
-              if (!check) return null
-              if (check.error_message) {
-                return (
-                  <p className="text-sm text-amber-700">
-                    Check was requested but could not be completed: {check.error_message}
-                  </p>
-                )
-              }
-              const severityColors: Record<string, string> = {
-                critical: 'bg-red-200 text-red-900',
-                high: 'bg-orange-200 text-orange-900',
-                moderate: 'bg-yellow-200 text-yellow-900',
-                low: 'bg-blue-200 text-blue-900',
-              }
+      </div>}
+
+      {/* Transcription */}
+      {showSidebar && (
+        <TranscriptionCard transcriptions={transcriptions} />
+      )}
+
+      {/* Injury detection results */}
+      {showMain && (results?.injury_check ?? session.injury_check) && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <ShieldAlert className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-semibold">Injury Detection Results</h2>
+          </div>
+          {(() => {
+            const check = results?.injury_check ?? session.injury_check
+            if (!check) return null
+            if (check.error_message) {
               return (
-                <>
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <p className="text-sm text-amber-700">
+                  Check was requested but could not be completed: {check.error_message}
+                </p>
+              )
+            }
+            const severityColors: Record<string, string> = {
+              critical: 'bg-red-200 text-red-900',
+              high: 'bg-orange-200 text-orange-900',
+              moderate: 'bg-yellow-200 text-yellow-900',
+              low: 'bg-blue-200 text-blue-900',
+            }
+            return (
+              <>
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span
+                    className={`px-2 py-1 rounded text-sm font-medium ${
+                      check.bedrock_has_signals
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}
+                  >
+                    {check.bedrock_has_signals
+                      ? 'Potential signals noted'
+                      : 'No signals indicated'}
+                  </span>
+                  {check.bedrock_severity && (
                     <span
-                      className={`px-2 py-1 rounded text-sm font-medium ${
-                        check.bedrock_has_signals
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-green-100 text-green-800'
+                      className={`px-2 py-1 rounded text-xs font-bold ${
+                        severityColors[check.bedrock_severity] || 'bg-gray-200 text-gray-900'
                       }`}
                     >
-                      {check.bedrock_has_signals
-                        ? 'Potential signals noted'
-                        : 'No signals indicated'}
+                      {check.bedrock_severity.toUpperCase()} SEVERITY
                     </span>
-                    {check.bedrock_severity && (
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-bold ${
-                          severityColors[check.bedrock_severity] || 'bg-gray-200 text-gray-900'
-                        }`}
-                      >
-                        {check.bedrock_severity.toUpperCase()} SEVERITY
-                      </span>
-                    )}
-                    <span className="text-sm text-gray-500">
-                      (confidence: {(check.bedrock_confidence * 100).toFixed(0)}%)
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700">{check.bedrock_summary}</p>
-                  {check.bedrock_clinical_rationale && (
-                    <p className="text-sm text-gray-600 mt-2 italic">
-                      {check.bedrock_clinical_rationale}
+                  )}
+                  <span className="text-sm text-gray-500">
+                    (confidence: {(check.bedrock_confidence * 100).toFixed(0)}%)
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700">{check.bedrock_summary}</p>
+                {check.bedrock_clinical_rationale && (
+                  <p className="text-sm text-gray-600 mt-2 italic">
+                    {check.bedrock_clinical_rationale}
+                  </p>
+                )}
+                {check.bedrock_transcript_analysis?.has_verbal_signals && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs font-medium text-amber-600 mb-1">
+                      Verbal indicators detected
                     </p>
-                  )}
-                  {check.bedrock_transcript_analysis?.has_verbal_signals && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <p className="text-xs font-medium text-amber-600 mb-1">
-                        Verbal indicators detected
-                      </p>
-                      <ul className="text-sm text-gray-700 list-disc pl-4">
-                        {check.bedrock_transcript_analysis.findings.map((f, i) => (
-                          <li key={i}>{f}</li>
-                        ))}
-                      </ul>
-                      {check.bedrock_transcript_analysis.evidence_quotes.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs text-gray-500">Evidence from transcript:</p>
-                          {check.bedrock_transcript_analysis.evidence_quotes.map((q, i) => (
-                            <blockquote
-                              key={i}
-                              className="text-xs text-gray-600 border-l-2 border-gray-300 pl-2 mt-1 italic"
-                            >
-                              &ldquo;{q}&rdquo;
-                            </blockquote>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {check.rekognition_labels && check.rekognition_labels.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 mb-1">Content moderation labels</p>
-                      <div className="flex flex-wrap gap-1">
-                        {Array.from(
-                          check.rekognition_labels.reduce((map, l) => {
-                            const prev = map.get(l.name)
-                            if (!prev || l.confidence > prev.confidence) {
-                              map.set(l.name, l)
-                            }
-                            return map
-                          }, new Map<string, typeof check.rekognition_labels[number]>()).values()
-                        ).map((l) => (
-                          <span
-                            key={l.name}
-                            className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700"
+                    <ul className="text-sm text-gray-700 list-disc pl-4">
+                      {check.bedrock_transcript_analysis.findings.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                    {check.bedrock_transcript_analysis.evidence_quotes.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500">Evidence from transcript:</p>
+                        {check.bedrock_transcript_analysis.evidence_quotes.map((q, i) => (
+                          <blockquote
+                            key={i}
+                            className="text-xs text-gray-600 border-l-2 border-gray-300 pl-2 mt-1 italic"
                           >
-                            {l.name} ({(l.confidence * 100).toFixed(0)}%)
-                          </span>
+                            &ldquo;{q}&rdquo;
+                          </blockquote>
                         ))}
                       </div>
+                    )}
+                  </div>
+                )}
+                {check.rekognition_labels && check.rekognition_labels.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs font-medium text-gray-500 mb-1">Content moderation labels</p>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.from(
+                        check.rekognition_labels.reduce((map, l) => {
+                          const prev = map.get(l.name)
+                          if (!prev || l.confidence > prev.confidence) {
+                            map.set(l.name, l)
+                          }
+                          return map
+                        }, new Map<string, typeof check.rekognition_labels[number]>()).values()
+                      ).map((l) => (
+                        <span
+                          key={l.name}
+                          className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700"
+                        >
+                          {l.name} ({(l.confidence * 100).toFixed(0)}%)
+                        </span>
+                      ))}
                     </div>
-                  )}
-                </>
-              )
-            })()}
-          </div>
-        )}
-      </div>
+                  </div>
+                )}
+              </>
+            )
+          })()}
+        </div>
+      )}
 
       {/* Clinical Indicators */}
-      {getClinicalIndicators().length > 0 && (
+      {showMain && getClinicalIndicators().length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center gap-3 mb-4">
             <Brain className="w-5 h-5 text-purple-500" />
@@ -320,7 +457,7 @@ export function AnalysisPanel({
       )}
 
       {/* AI Clinical Summary (Bedrock aggregation) */}
-      {(() => {
+      {showMain && (() => {
         const aggregation: BedrockAggregation | null | undefined =
           results?.bedrock_aggregation ?? session.bedrock_aggregation
         if (!aggregation) return null
@@ -399,29 +536,8 @@ export function AnalysisPanel({
         )
       })()}
 
-      {/* Transcription */}
-      {transcriptions.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <Mic className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-semibold">Transcription</h2>
-          </div>
-
-          <div className="max-h-48 overflow-y-auto space-y-2">
-            {transcriptions.map((t, index) => (
-              <div key={index} className="flex gap-2 text-sm">
-                <span className="text-gray-400 text-xs whitespace-nowrap">
-                  {t.start_time.toFixed(1)}s
-                </span>
-                <p className="text-gray-700">{t.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Completed Results */}
-      {status === 'completed' && results && (
+      {showMain && status === 'completed' && results && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="w-5 h-5 text-green-600" />

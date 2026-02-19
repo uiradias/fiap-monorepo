@@ -102,27 +102,25 @@ export function SessionResults() {
         <p className="text-sm text-gray-500 font-mono">{session.session_id}</p>
       </div>
 
-      {/* Two-column grid */}
+      {/* Two-column grid: Video + Transcription */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left column: Video player */}
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h2 className="text-lg font-semibold mb-4">Video</h2>
-            {videoUrl ? (
-              <VideoPlayer
-                videoUrl={videoUrl}
-                detections={faceDetections}
-                isAnalyzing={false}
-              />
-            ) : (
-              <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-                Video not available
-              </div>
-            )}
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h2 className="text-lg font-semibold mb-4">Video</h2>
+          {videoUrl ? (
+            <VideoPlayer
+              videoUrl={videoUrl}
+              detections={faceDetections}
+              isAnalyzing={false}
+            />
+          ) : (
+            <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+              Video not available
+            </div>
+          )}
         </div>
 
-        {/* Right column: Analysis results */}
+        {/* Right column: Transcription */}
         <div>
           <AnalysisPanel
             session={session}
@@ -130,9 +128,20 @@ export function SessionResults() {
             transcriptions={[]}
             results={session}
             emotionDetections={[]}
+            mode="sidebar"
           />
         </div>
       </div>
+
+      {/* Full-width sections */}
+      <AnalysisPanel
+        session={session}
+        status={session.status}
+        transcriptions={[]}
+        results={session}
+        emotionDetections={[]}
+        mode="main"
+      />
 
       {/* Full Transcript */}
       {audioAnalysis?.full_transcript && (

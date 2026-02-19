@@ -256,9 +256,17 @@ export function AnalysisPanel({
                     <div className="mt-3 pt-3 border-t border-gray-100">
                       <p className="text-xs font-medium text-gray-500 mb-1">Content moderation labels</p>
                       <div className="flex flex-wrap gap-1">
-                        {check.rekognition_labels.map((l, i) => (
+                        {Array.from(
+                          check.rekognition_labels.reduce((map, l) => {
+                            const prev = map.get(l.name)
+                            if (!prev || l.confidence > prev.confidence) {
+                              map.set(l.name, l)
+                            }
+                            return map
+                          }, new Map<string, typeof check.rekognition_labels[number]>()).values()
+                        ).map((l) => (
                           <span
-                            key={i}
+                            key={l.name}
                             className="inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700"
                           >
                             {l.name} ({(l.confidence * 100).toFixed(0)}%)

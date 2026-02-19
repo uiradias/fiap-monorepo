@@ -6,6 +6,7 @@ import type {
   TranscriptionUpdateMessage,
   AnalysisSessionFull,
   EmotionUpdateMessage,
+  BedrockAggregation,
 } from '../../types/analysis'
 
 const EMOTION_COLORS: Record<string, string> = {
@@ -187,9 +188,15 @@ export function AnalysisPanel({
                   </p>
                 )
               }
+              const severityColors: Record<string, string> = {
+                critical: 'bg-red-200 text-red-900',
+                high: 'bg-orange-200 text-orange-900',
+                moderate: 'bg-yellow-200 text-yellow-900',
+                low: 'bg-blue-200 text-blue-900',
+              }
               return (
                 <>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span
                       className={`px-2 py-1 rounded text-sm font-medium ${
                         check.bedrock_has_signals
@@ -201,11 +208,50 @@ export function AnalysisPanel({
                         ? 'Potential signals noted'
                         : 'No signals indicated'}
                     </span>
+                    {check.bedrock_severity && (
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-bold ${
+                          severityColors[check.bedrock_severity] || 'bg-gray-200 text-gray-900'
+                        }`}
+                      >
+                        {check.bedrock_severity.toUpperCase()} SEVERITY
+                      </span>
+                    )}
                     <span className="text-sm text-gray-500">
                       (confidence: {(check.bedrock_confidence * 100).toFixed(0)}%)
                     </span>
                   </div>
                   <p className="text-sm text-gray-700">{check.bedrock_summary}</p>
+                  {check.bedrock_clinical_rationale && (
+                    <p className="text-sm text-gray-600 mt-2 italic">
+                      {check.bedrock_clinical_rationale}
+                    </p>
+                  )}
+                  {check.bedrock_transcript_analysis?.has_verbal_signals && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-xs font-medium text-amber-600 mb-1">
+                        Verbal indicators detected
+                      </p>
+                      <ul className="text-sm text-gray-700 list-disc pl-4">
+                        {check.bedrock_transcript_analysis.findings.map((f, i) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
+                      {check.bedrock_transcript_analysis.evidence_quotes.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-500">Evidence from transcript:</p>
+                          {check.bedrock_transcript_analysis.evidence_quotes.map((q, i) => (
+                            <blockquote
+                              key={i}
+                              className="text-xs text-gray-600 border-l-2 border-gray-300 pl-2 mt-1 italic"
+                            >
+                              &ldquo;{q}&rdquo;
+                            </blockquote>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {check.rekognition_labels && check.rekognition_labels.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-100">
                       <p className="text-xs font-medium text-gray-500 mb-1">Content moderation labels</p>
@@ -264,6 +310,86 @@ export function AnalysisPanel({
           </div>
         </div>
       )}
+
+      {/* AI Clinical Summary (Bedrock aggregation) */}
+      {(() => {
+        const aggregation: BedrockAggregation | null | undefined =
+          results?.bedrock_aggregation ?? session.bedrock_aggregation
+        if (!aggregation) return null
+        const riskColors: Record<string, string> = {
+          critical: 'bg-red-200 text-red-900',
+          high: 'bg-orange-200 text-orange-900',
+          moderate: 'bg-yellow-200 text-yellow-900',
+          low: 'bg-green-200 text-green-900',
+        }
+        return (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Brain className="w-5 h-5 text-indigo-500" />
+              <h2 className="text-lg font-semibold">AI Clinical Summary</h2>
+              <span
+                className={`px-2 py-1 rounded text-xs font-bold ${
+                  riskColors[aggregation.risk_level] || 'bg-gray-200 text-gray-900'
+                }`}
+              >
+                {aggregation.risk_level.toUpperCase()} RISK
+              </span>
+            </div>
+            <p className="text-sm text-gray-700 mb-3">{aggregation.clinical_summary}</p>
+
+            {aggregation.cross_referenced_evidence.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-500 mb-1">Cross-referenced evidence</p>
+                <ul className="text-sm text-gray-700 list-disc pl-4 space-y-1">
+                  {aggregation.cross_referenced_evidence.map((e, i) => (
+                    <li key={i}>
+                      <span className="font-medium">[{e.source}]</span> {e.finding}
+                      {e.supporting_sources.length > 0 && (
+                        <span className="text-gray-500">
+                          {' '}(corroborated by: {e.supporting_sources.join(', ')})
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {aggregation.concordant_signals.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-green-600 mb-1">Concordant signals</p>
+                <ul className="text-sm text-gray-700 list-disc pl-4">
+                  {aggregation.concordant_signals.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {aggregation.discordant_signals.length > 0 && (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-amber-600 mb-1">Discordant signals</p>
+                <ul className="text-sm text-gray-700 list-disc pl-4">
+                  {aggregation.discordant_signals.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {aggregation.recommendations.length > 0 && (
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-xs font-medium text-indigo-600 mb-1">Recommendations</p>
+                <ul className="text-sm text-gray-700 list-disc pl-4">
+                  {aggregation.recommendations.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Transcription */}
       {transcriptions.length > 0 && (

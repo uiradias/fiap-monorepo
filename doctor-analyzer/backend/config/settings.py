@@ -17,6 +17,7 @@ class AWSSettings:
     s3_bucket: str = os.getenv("S3_BUCKET", "doctor-analyzer-uploads")
     rekognition_role_arn: str = os.getenv("REKOGNITION_ROLE_ARN", "")
     sns_topic_arn: str = os.getenv("SNS_TOPIC_ARN", "")
+    bedrock_model_id: str = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-3-sonnet-20240229-v1:0")
 
 
 @dataclass(frozen=True)

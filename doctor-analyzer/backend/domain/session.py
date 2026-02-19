@@ -35,6 +35,7 @@ class AnalysisSession:
     # Aggregated insights
     emotion_summary: Dict[str, float] = field(default_factory=dict)
     clinical_indicators: List[ClinicalIndicator] = field(default_factory=list)
+    bedrock_aggregation: Optional[Dict] = None
 
     # Metadata
     updated_at: Optional[datetime] = None
@@ -60,6 +61,7 @@ class AnalysisSession:
             "clinical_indicators": [c.to_dict() for c in self.clinical_indicators],
             "error_message": self.error_message,
             "self_injury_check": self.self_injury_check.to_dict() if self.self_injury_check else None,
+            "bedrock_aggregation": self.bedrock_aggregation,
         }
 
     def to_full_dict(self) -> dict:

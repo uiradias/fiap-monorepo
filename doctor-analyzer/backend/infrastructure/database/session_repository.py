@@ -29,6 +29,9 @@ class PostgresSessionStore(SessionStoreProtocol):
                 summary=d.get("bedrock_summary", d.get("summary", "")),
                 confidence=float(d.get("bedrock_confidence", d.get("confidence", 0))),
                 error_message=d.get("error_message"),
+                severity=d.get("bedrock_severity"),
+                clinical_rationale=d.get("bedrock_clinical_rationale"),
+                transcript_analysis=d.get("bedrock_transcript_analysis"),
             )
         return AnalysisSession(
             session_id=str(row.session_id),
@@ -44,6 +47,7 @@ class PostgresSessionStore(SessionStoreProtocol):
             ],
             error_message=row.error_message,
             self_injury_check=self_injury,
+            bedrock_aggregation=row.bedrock_aggregation,
             video_emotions=None,
             audio_analysis=None,
         )
@@ -61,6 +65,7 @@ class PostgresSessionStore(SessionStoreProtocol):
             emotion_summary=session.emotion_summary or {},
             clinical_indicators=[ci.to_dict() for ci in session.clinical_indicators],
             self_injury_check=session.self_injury_check.to_dict() if session.self_injury_check else None,
+            bedrock_aggregation=session.bedrock_aggregation,
             error_message=session.error_message,
         )
 
@@ -95,6 +100,7 @@ class PostgresSessionStore(SessionStoreProtocol):
             row.emotion_summary = session.emotion_summary or {}
             row.clinical_indicators = [ci.to_dict() for ci in session.clinical_indicators]
             row.self_injury_check = session.self_injury_check.to_dict() if session.self_injury_check else None
+            row.bedrock_aggregation = session.bedrock_aggregation
             row.error_message = session.error_message
             await db.commit()
             await db.refresh(row)

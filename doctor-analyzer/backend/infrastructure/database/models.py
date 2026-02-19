@@ -42,6 +42,7 @@ class AnalysisSessionModel(Base):
     emotion_summary: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     clinical_indicators: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
     self_injury_check: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    bedrock_aggregation: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     patient: Mapped["PatientModel"] = relationship(back_populates="sessions")

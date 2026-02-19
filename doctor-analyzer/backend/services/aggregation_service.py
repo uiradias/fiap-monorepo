@@ -117,6 +117,18 @@ class AggregationService:
                 )
             )
 
+        # Bedrock multi-modal risk assessment
+        if session.bedrock_aggregation:
+            risk_level = session.bedrock_aggregation.get("risk_level", "low")
+            if risk_level in ("high", "critical"):
+                indicators.append(
+                    ClinicalIndicator(
+                        indicator_type="bedrock_risk_assessment",
+                        confidence=0.9 if risk_level == "critical" else 0.7,
+                        evidence=session.bedrock_aggregation.get("concordant_signals", []),
+                    )
+                )
+
         # Sort by confidence
         indicators.sort(key=lambda x: x.confidence, reverse=True)
 

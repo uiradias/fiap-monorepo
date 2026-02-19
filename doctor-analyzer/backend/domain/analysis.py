@@ -14,6 +14,7 @@ class AnalysisStatus(str, Enum):
     PROCESSING_VIDEO = "processing_video"
     PROCESSING_SELF_INJURY = "processing_self_injury"
     PROCESSING_AUDIO = "processing_audio"
+    PROCESSING_BEDROCK = "processing_bedrock"
     AGGREGATING = "aggregating"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -100,7 +101,7 @@ class ClinicalIndicator:
 
 @dataclass
 class SelfInjuryCheckResult:
-    """Result of optional self-injury check (Rekognition content moderation only)."""
+    """Result of optional self-injury check (Rekognition content moderation + optional Bedrock enhancement)."""
 
     enabled: bool
     rekognition_labels: List[Dict[str, Any]]  # name, confidence, timestamp_ms, parent_name
@@ -108,10 +109,12 @@ class SelfInjuryCheckResult:
     summary: str
     confidence: float  # max confidence of relevant labels or 0
     error_message: Optional[str] = None
+    severity: Optional[str] = None  # low/moderate/high/critical (from Bedrock)
+    clinical_rationale: Optional[str] = None  # from Bedrock
+    transcript_analysis: Optional[Dict[str, Any]] = None  # from Bedrock verbal analysis
 
     def to_dict(self) -> dict:
-        # Frontend expects bedrock_* names; we fill from Rekognition-only logic
-        return {
+        base = {
             "enabled": self.enabled,
             "rekognition_labels": self.rekognition_labels,
             "bedrock_has_signals": self.has_signals,
@@ -119,3 +122,10 @@ class SelfInjuryCheckResult:
             "bedrock_confidence": self.confidence,
             "error_message": self.error_message,
         }
+        if self.severity is not None:
+            base["bedrock_severity"] = self.severity
+        if self.clinical_rationale is not None:
+            base["bedrock_clinical_rationale"] = self.clinical_rationale
+        if self.transcript_analysis is not None:
+            base["bedrock_transcript_analysis"] = self.transcript_analysis
+        return base

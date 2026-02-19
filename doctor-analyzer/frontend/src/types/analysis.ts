@@ -8,6 +8,7 @@ export type AnalysisStatus =
   | 'processing_video'
   | 'processing_self_injury'
   | 'processing_audio'
+  | 'processing_bedrock'
   | 'aggregating'
   | 'completed'
   | 'failed';
@@ -90,13 +91,40 @@ export interface ModerationLabelItem {
   parent_name?: string;
 }
 
+export type SelfInjurySeverity = 'low' | 'moderate' | 'high' | 'critical';
+
+export interface TranscriptSelfInjuryAnalysis {
+  has_verbal_signals: boolean;
+  severity: string;
+  findings: string[];
+  evidence_quotes: string[];
+  confidence: number;
+  risk_factors_identified?: string[];
+}
+
 export interface SelfInjuryCheckResult {
   enabled: boolean;
   rekognition_labels: ModerationLabelItem[];
   bedrock_has_signals: boolean;
   bedrock_summary: string;
   bedrock_confidence: number;
+  bedrock_severity?: SelfInjurySeverity;
+  bedrock_clinical_rationale?: string;
+  bedrock_transcript_analysis?: TranscriptSelfInjuryAnalysis;
   error_message?: string;
+}
+
+export interface BedrockAggregation {
+  clinical_summary: string;
+  risk_level: SelfInjurySeverity;
+  cross_referenced_evidence: Array<{
+    source: string;
+    finding: string;
+    supporting_sources: string[];
+  }>;
+  concordant_signals: string[];
+  discordant_signals: string[];
+  recommendations: string[];
 }
 
 export interface Patient {
@@ -116,6 +144,7 @@ export interface AnalysisSession {
   clinical_indicators: ClinicalIndicator[];
   error_message: string | null;
   self_injury_check?: SelfInjuryCheckResult | null;
+  bedrock_aggregation?: BedrockAggregation | null;
 }
 
 export interface AnalysisSessionFull extends AnalysisSession {
@@ -123,6 +152,7 @@ export interface AnalysisSessionFull extends AnalysisSession {
   audio_analysis: AudioAnalysis | null;
   results_s3_key: string | null;
   self_injury_check: SelfInjuryCheckResult | null;
+  bedrock_aggregation: BedrockAggregation | null;
 }
 
 // WebSocket message types

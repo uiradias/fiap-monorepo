@@ -7,6 +7,7 @@ from infrastructure.aws.s3_client import S3Client
 from infrastructure.aws.rekognition_client import RekognitionClient
 from infrastructure.aws.transcribe_client import TranscribeClient
 from infrastructure.aws.comprehend_client import ComprehendClient
+from infrastructure.aws.bedrock_client import BedrockClient
 from infrastructure.websocket.connection_manager import ConnectionManager
 from domain.session import SessionStoreProtocol
 from infrastructure.database.session_repository import PostgresSessionStore
@@ -17,6 +18,7 @@ from services.audio_analysis_service import AudioAnalysisService
 from services.aggregation_service import AggregationService
 from services.self_injury_check_service import SelfInjuryCheckService
 from services.patient_service import PatientService
+from services.bedrock_analysis_service import BedrockAnalysisService
 
 
 # Singleton instances
@@ -131,5 +133,19 @@ def get_self_injury_check_service() -> SelfInjuryCheckService:
     return SelfInjuryCheckService(
         rekognition=get_rekognition_client(),
         s3=get_s3_client(),
+        ws_manager=get_connection_manager(),
+    )
+
+
+def get_bedrock_client() -> BedrockClient:
+    """Get Bedrock Runtime client."""
+    settings = get_cached_settings()
+    return BedrockClient(settings.aws)
+
+
+def get_bedrock_analysis_service() -> BedrockAnalysisService:
+    """Get Bedrock analysis service for AI-enhanced analysis."""
+    return BedrockAnalysisService(
+        bedrock=get_bedrock_client(),
         ws_manager=get_connection_manager(),
     )

@@ -77,6 +77,7 @@ class AudioAnalysis:
         return {
             "full_transcript": self.full_transcript,
             "segment_count": len(self.transcription),
+            "segments": [seg.to_dict() for seg in self.transcription],
             "overall_sentiment": self.overall_sentiment.to_dict() if self.overall_sentiment else None,
         }
 

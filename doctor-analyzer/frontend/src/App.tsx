@@ -125,7 +125,7 @@ function AnalysisPage() {
             </div>
 
             {/* Right column: Transcription */}
-            <div>
+            <div className="h-full">
               <AnalysisPanel
                 session={session}
                 status={status}

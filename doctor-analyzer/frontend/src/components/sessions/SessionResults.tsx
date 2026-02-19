@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { FileText, MessageSquare } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import { api } from '../../services/api'
 import { VideoPlayer } from '../video/VideoPlayer'
 import { AnalysisPanel } from '../analysis/AnalysisPanel'
 import { Breadcrumb } from '../layout/Breadcrumb'
-import type { AnalysisSessionFull, EmotionUpdateMessage, Patient } from '../../types/analysis'
+import type { AnalysisSessionFull, EmotionUpdateMessage, Patient, TranscriptionUpdateMessage } from '../../types/analysis'
 
 export function SessionResults() {
   const { patientId, sessionId } = useParams<{ patientId: string; sessionId: string }>()
@@ -54,6 +54,29 @@ export function SessionResults() {
     fetchData()
   }, [patientId, sessionId])
 
+  const audioAnalysis = session?.audio_analysis
+  const sentiment = audioAnalysis?.overall_sentiment
+
+  const transcriptions: TranscriptionUpdateMessage[] = useMemo(() => {
+    if (audioAnalysis?.segments && audioAnalysis.segments.length > 0) {
+      return audioAnalysis.segments.map((seg) => ({
+        type: 'transcription_update' as const,
+        text: seg.text,
+        start_time: seg.start_time,
+        end_time: seg.end_time,
+      }))
+    }
+    if (audioAnalysis?.full_transcript) {
+      return [{
+        type: 'transcription_update' as const,
+        text: audioAnalysis.full_transcript,
+        start_time: 0,
+        end_time: 0,
+      }]
+    }
+    return []
+  }, [audioAnalysis])
+
   if (!patientId || !sessionId) return null
 
   if (loading) {
@@ -80,9 +103,6 @@ export function SessionResults() {
       </div>
     )
   }
-
-  const audioAnalysis = session.audio_analysis
-  const sentiment = audioAnalysis?.overall_sentiment
 
   return (
     <div className="space-y-6">
@@ -121,11 +141,11 @@ export function SessionResults() {
         </div>
 
         {/* Right column: Transcription */}
-        <div>
+        <div className="h-full">
           <AnalysisPanel
             session={session}
             status={session.status}
-            transcriptions={[]}
+            transcriptions={transcriptions}
             results={session}
             emotionDetections={[]}
             mode="sidebar"
@@ -142,19 +162,6 @@ export function SessionResults() {
         emotionDetections={[]}
         mode="main"
       />
-
-      {/* Full Transcript */}
-      {audioAnalysis?.full_transcript && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <FileText className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-semibold">Full Transcript</h2>
-          </div>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-            {audioAnalysis.full_transcript}
-          </p>
-        </div>
-      )}
 
       {/* Sentiment */}
       {sentiment && (

@@ -1,5 +1,6 @@
 """Analysis API endpoints."""
 
+import json
 import logging
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 
@@ -14,6 +15,7 @@ from services.bedrock_analysis_service import BedrockAnalysisService
 from domain.session import SessionStore
 from domain.analysis import AnalysisStatus, InjuryCheckResult
 from infrastructure.websocket.connection_manager import ConnectionManager
+from infrastructure.aws.s3_client import S3Client
 from api.dependencies import (
     get_upload_service,
     get_video_analysis_service,
@@ -23,6 +25,7 @@ from api.dependencies import (
     get_bedrock_analysis_service,
     get_session_store,
     get_connection_manager,
+    get_s3_client,
 )
 
 
@@ -190,6 +193,7 @@ async def get_analysis_status(
 async def get_analysis_results(
     session_id: str,
     upload_service: UploadService = Depends(get_upload_service),
+    s3_client: S3Client = Depends(get_s3_client),
 ):
     """Get the complete analysis results for a session."""
     session = await upload_service.get_session(session_id)
@@ -202,4 +206,26 @@ async def get_analysis_results(
             detail=f"Analysis not complete. Current status: {session.status.value}",
         )
 
-    return session.to_full_dict()
+    result = session.to_full_dict()
+
+    # Load full report from S3 if available
+    if session.results_s3_key:
+        try:
+            data = await s3_client.download_file(session.results_s3_key)
+            result = json.loads(data)
+        except Exception as e:
+            logger.warning(f"Failed to load final report from S3 for {session_id}: {e}")
+
+    # Ensure audio_analysis has segments from the dedicated transcription file
+    transcription_key = f"sessions/{session_id}/results/transcription.json"
+    try:
+        data = await s3_client.download_file(transcription_key)
+        transcription_data = json.loads(data)
+        if result.get("audio_analysis") is None:
+            result["audio_analysis"] = transcription_data
+        elif "segments" not in result["audio_analysis"]:
+            result["audio_analysis"]["segments"] = transcription_data.get("segments", [])
+    except Exception:
+        pass
+
+    return result

@@ -74,6 +74,7 @@ export interface TranscriptionSegment {
 export interface AudioAnalysis {
   full_transcript: string;
   segment_count: number;
+  segments?: TranscriptionSegment[];
   overall_sentiment: SentimentResult | null;
 }
 

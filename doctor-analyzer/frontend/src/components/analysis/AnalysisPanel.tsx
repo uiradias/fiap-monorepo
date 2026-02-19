@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { AlertTriangle, CheckCircle, Clock, Mic, Brain, ShieldAlert, ChevronLeft, ChevronRight } from 'lucide-react'
 import type {
   AnalysisSession,
@@ -61,7 +61,7 @@ function TranscriptionCard({ transcriptions }: { transcriptions: TranscriptionUp
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col" style={{ height: '420px' }}>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col h-full">
       <div className="flex items-center gap-3 mb-3">
         <Mic className="w-5 h-5 text-blue-500" />
         <h2 className="text-lg font-semibold">Transcription</h2>
@@ -233,8 +233,33 @@ export function AnalysisPanel({
   const showSidebar = !mode || mode === 'sidebar'
   const showMain = !mode || mode === 'main'
 
+  const [bannerVisible, setBannerVisible] = useState(false)
+  const [bannerFading, setBannerFading] = useState(false)
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const dismissBanner = useCallback(() => {
+    setBannerFading(true)
+    fadeTimerRef.current = setTimeout(() => {
+      setBannerVisible(false)
+      setBannerFading(false)
+    }, 500)
+  }, [])
+
+  useEffect(() => {
+    if (showMain && status === 'completed' && results) {
+      setBannerVisible(true)
+      setBannerFading(false)
+      closeTimerRef.current = setTimeout(dismissBanner, 5000)
+    }
+    return () => {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current)
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [showMain, status, results, dismissBanner])
+
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4${mode === 'sidebar' ? ' h-full' : ''}`}>
       {/* Status card */}
       {showMain && <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center gap-3 mb-4">
@@ -252,10 +277,6 @@ export function AnalysisPanel({
           <div>
             <p className="text-gray-500">Emotion Detections</p>
             <p className="font-medium">{emotionDetections.length}</p>
-          </div>
-          <div>
-            <p className="text-gray-500">Transcription Segments</p>
-            <p className="font-medium">{transcriptions.length}</p>
           </div>
           {(results?.injury_check ?? session.injury_check) && (
             <div className="col-span-2">
@@ -536,16 +557,28 @@ export function AnalysisPanel({
         )
       })()}
 
-      {/* Completed Results */}
-      {showMain && status === 'completed' && results && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <h3 className="font-semibold text-green-800">Analysis Complete</h3>
+      {/* Floating completion banner */}
+      {bannerVisible && (
+        <div
+          className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-opacity duration-500 ${
+            bannerFading ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg shadow-lg px-5 py-3">
+            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-green-800 text-sm">Analysis Complete</h3>
+              <p className="text-xs text-green-700">
+                All results have been saved and are ready for review.
+              </p>
+            </div>
+            <button
+              onClick={dismissBanner}
+              className="ml-4 px-2 py-1 text-xs font-medium text-green-700 hover:text-green-900 hover:bg-green-100 rounded transition flex-shrink-0"
+            >
+              Close
+            </button>
           </div>
-          <p className="text-sm text-green-700">
-            All analysis results have been saved and are ready for review.
-          </p>
         </div>
       )}
     </div>

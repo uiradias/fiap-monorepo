@@ -96,11 +96,8 @@ export const api = {
   // Analysis endpoints
   async startAnalysis(
     sessionId: string,
-    options?: { enableInjuryCheck?: boolean }
   ): Promise<{ session_id: string; status: string }> {
-    const response = await client.post(`/api/analysis/${sessionId}/start`, {
-      enable_injury_check: options?.enableInjuryCheck ?? false,
-    })
+    const response = await client.post(`/api/analysis/${sessionId}/start`)
     return response.data
   },
 

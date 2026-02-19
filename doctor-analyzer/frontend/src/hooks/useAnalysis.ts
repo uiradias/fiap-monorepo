@@ -8,10 +8,6 @@ import type {
   AnalysisStatus,
 } from '../types/analysis'
 
-export interface StartAnalysisOptions {
-  enableInjuryCheck?: boolean
-}
-
 interface UseAnalysisOptions {
   sessionId: string
   onEmotionUpdate?: (update: EmotionUpdateMessage) => void
@@ -66,7 +62,7 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
   })
 
   const startAnalysis = useCallback(
-    async (options?: StartAnalysisOptions) => {
+    async () => {
       if (!sessionId) return
 
       try {
@@ -75,7 +71,7 @@ export function useAnalysis({ sessionId, onEmotionUpdate }: UseAnalysisOptions) 
         setStatusMessage(null)
         setTranscriptions([])
         setResults(null)
-        await api.startAnalysis(sessionId, options)
+        await api.startAnalysis(sessionId)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to start analysis')
       }

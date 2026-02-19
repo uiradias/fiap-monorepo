@@ -17,7 +17,7 @@ function AnalysisPage() {
   const [session, setSession] = useState<AnalysisSession | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [emotionDetections, setEmotionDetections] = useState<EmotionUpdateMessage[]>([])
-  const [enableInjuryCheck, setEnableInjuryCheck] = useState(false)
+
 
   const {
     status,
@@ -54,7 +54,7 @@ function AnalysisPage() {
 
   const handleStartAnalysis = () => {
     if (session) {
-      startAnalysis({ enableInjuryCheck })
+      startAnalysis()
     }
   }
 
@@ -128,45 +128,20 @@ function AnalysisPage() {
                 </div>
               </div>
 
-              {/* Injury check toggle */}
-              {canStartAnalysis && (
-                <div className="mt-4 flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="enable-injury-check"
-                    checked={enableInjuryCheck}
-                    onChange={(e) => setEnableInjuryCheck(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor="enable-injury-check"
-                    className="text-sm text-gray-700"
-                  >
-                    Check for injury signals
-                  </label>
-                </div>
-              )}
-
               {/* Pipeline stepper + progress */}
               {status && status !== 'pending' && status !== 'uploading' && (
                 <div className="mt-4">
                   {/* Step indicator */}
                   {(() => {
-                    const steps: { label: string; key: AnalysisStatus }[] = enableInjuryCheck
-                      ? [
-                          { label: 'Video Analysis', key: 'processing_video' },
-                          { label: 'Injury check', key: 'processing_injury_check' },
-                          { label: 'Audio Analysis', key: 'processing_audio' },
-                          { label: 'Report', key: 'aggregating' },
-                        ]
-                      : [
-                          { label: 'Video Analysis', key: 'processing_video' },
-                          { label: 'Audio Analysis', key: 'processing_audio' },
-                          { label: 'Report', key: 'aggregating' },
-                        ]
-                    const statusOrder: AnalysisStatus[] = enableInjuryCheck
-                      ? ['processing_video', 'processing_injury_check', 'processing_audio', 'aggregating', 'completed']
-                      : ['processing_video', 'processing_audio', 'aggregating', 'completed']
+                    const steps: { label: string; key: AnalysisStatus }[] = [
+                      { label: 'Video Analysis', key: 'processing_video' },
+                      { label: 'Injury check', key: 'processing_injury_check' },
+                      { label: 'Audio Analysis', key: 'processing_audio' },
+                      { label: 'Report', key: 'aggregating' },
+                    ]
+                    const statusOrder: AnalysisStatus[] = [
+                      'processing_video', 'processing_injury_check', 'processing_audio', 'aggregating', 'completed',
+                    ]
                     const currentIdx = statusOrder.indexOf(status as AnalysisStatus)
 
                     return (

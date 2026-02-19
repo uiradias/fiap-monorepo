@@ -1,10 +1,9 @@
 """Analysis API endpoints."""
 
 import logging
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Body
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 
 logger = logging.getLogger(__name__)
-from pydantic import BaseModel
 
 from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
@@ -27,12 +26,6 @@ from api.dependencies import (
 )
 
 
-class StartAnalysisRequest(BaseModel):
-    """Optional body for starting analysis."""
-
-    enable_injury_check: bool = False
-
-
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 
@@ -40,7 +33,6 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 async def start_analysis(
     session_id: str,
     background_tasks: BackgroundTasks,
-    body: StartAnalysisRequest = Body(default_factory=StartAnalysisRequest),
     upload_service: UploadService = Depends(get_upload_service),
     video_service: VideoAnalysisService = Depends(get_video_analysis_service),
     audio_service: AudioAnalysisService = Depends(get_audio_analysis_service),
@@ -52,13 +44,10 @@ async def start_analysis(
     """
     Start the analysis pipeline for a session.
 
-    Pipeline: video emotion (Rekognition), optional injury check (Rekognition content moderation),
+    Pipeline: video emotion (Rekognition), injury check (Rekognition content moderation),
     audio transcription/sentiment, aggregation.
     """
-    logger.info(
-        f"Received start analysis request for session {session_id} "
-        f"(enable_injury_check={body.enable_injury_check})"
-    )
+    logger.info(f"Received start analysis request for session {session_id}")
 
     session = await upload_service.get_session(session_id)
     if not session:
@@ -85,7 +74,6 @@ async def start_analysis(
         bedrock_analysis_service,
         session_store,
         ws_manager,
-        body.enable_injury_check,
     )
 
     return {
@@ -104,7 +92,6 @@ async def run_analysis_pipeline(
     bedrock_service: BedrockAnalysisService,
     session_store: SessionStore,
     ws_manager: ConnectionManager,
-    enable_injury_check: bool = False,
 ):
     """Run the complete analysis pipeline."""
     logger.info(f"Pipeline started for session {session_id}")
@@ -121,31 +108,30 @@ async def run_analysis_pipeline(
             await video_service.analyze_video(session)
             session = await session_store.get(session_id)
 
-            if enable_injury_check:
-                logger.info(f"[{session_id}] Running injury check (Rekognition only)")
-                try:
-                    result = await injury_check_service.run_injury_check(session)
-                    session.injury_check = result
-                    await session_store.update(session)
-                except Exception as e:
-                    logger.exception(f"Injury check failed for session {session_id}: %s", e)
-                    session.injury_check = InjuryCheckResult(
-                        enabled=True,
-                        rekognition_labels=[],
-                        has_signals=False,
-                        summary="",
-                        confidence=0.0,
-                        error_message=str(e),
-                    )
-                    await session_store.update(session)
-                session = await session_store.get(session_id)
+            logger.info(f"[{session_id}] Running injury check (Rekognition)")
+            try:
+                result = await injury_check_service.run_injury_check(session)
+                session.injury_check = result
+                await session_store.update(session)
+            except Exception as e:
+                logger.exception(f"Injury check failed for session {session_id}: %s", e)
+                session.injury_check = InjuryCheckResult(
+                    enabled=True,
+                    rekognition_labels=[],
+                    has_signals=False,
+                    summary="",
+                    confidence=0.0,
+                    error_message=str(e),
+                )
+                await session_store.update(session)
+            session = await session_store.get(session_id)
 
             logger.info(f"[{session_id}] Starting audio analysis")
             await audio_service.analyze_audio(session)
             session = await session_store.get(session_id)
 
         # Bedrock enhancement (after audio so transcript is available)
-        if enable_injury_check and session.injury_check:
+        if session.injury_check:
             try:
                 logger.info(f"[{session_id}] Running Bedrock-enhanced injury interpretation")
                 enhanced = await bedrock_service.enhance_injury_interpretation(session)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Routes, Route, useParams } from 'react-router-dom'
 import { MainLayout } from './components/layout/MainLayout'
 import { Breadcrumb } from './components/layout/Breadcrumb'
@@ -54,12 +54,45 @@ function AnalysisPage() {
     }
   }, [session])
 
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [showScrollDown, setShowScrollDown] = useState(false)
+
+  const checkScroll = useCallback(() => {
+    const el = contentRef.current
+    if (!el) return
+    const bottomOfContent = el.getBoundingClientRect().bottom
+    const hasOverflow = bottomOfContent > window.innerHeight + 100
+    setShowScrollDown(hasOverflow)
+  }, [])
+
+  useEffect(() => {
+    if (!session) return
+    checkScroll()
+    window.addEventListener('scroll', checkScroll)
+    window.addEventListener('resize', checkScroll)
+
+    const observer = new MutationObserver(checkScroll)
+    if (contentRef.current) {
+      observer.observe(contentRef.current, { childList: true, subtree: true })
+    }
+
+    return () => {
+      window.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
+      observer.disconnect()
+    }
+  }, [session, checkScroll])
+
+  const scrollToBottom = () => {
+    contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }
+
   if (!patientId) {
     return null
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8" ref={contentRef}>
       <Breadcrumb
         items={[
           { label: 'Patients', href: '/' },
@@ -241,6 +274,18 @@ function AnalysisPage() {
             mode="main"
           />
         </div>
+      )}
+
+      {showScrollDown && (
+        <button
+          onClick={scrollToBottom}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center z-50"
+          aria-label="Scroll to bottom"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       )}
     </div>
   )

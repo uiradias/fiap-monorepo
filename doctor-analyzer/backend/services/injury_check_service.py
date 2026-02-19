@@ -1,23 +1,29 @@
-"""Service for optional self-injury check using Rekognition content moderation only (no Bedrock)."""
+"""Service for optional injury check using Rekognition content moderation only (no Bedrock)."""
 
 import logging
 from typing import List, Dict, Any, Tuple
 
 from domain.session import AnalysisSession
-from domain.analysis import SelfInjuryCheckResult, AnalysisStatus
+from domain.analysis import InjuryCheckResult, AnalysisStatus
 from infrastructure.aws.rekognition_client import RekognitionClient
 from infrastructure.aws.s3_client import S3Client
 from infrastructure.websocket.connection_manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
-# Rekognition labels that may indicate self-injury or related concern (case-insensitive match)
-SELF_INJURY_RELATED_KEYWORDS = (
+# Rekognition labels that may indicate injury or related concern (case-insensitive match)
+INJURY_RELATED_KEYWORDS = (
     "self-harm",
     "self harm",
     "violence",
-    "visually disturbing",
     "graphic violence",
+    "visually disturbing",
+    "physical abuse",
+    "abuse",
+    "wounds",
+    "blood",
+    "fighting",
+    "assault",
 )
 CONFIDENCE_THRESHOLD = 0.5  # minimum confidence to consider a label as a signal
 
@@ -38,11 +44,11 @@ def _interpret_labels(labels: List[Dict[str, Any]]) -> Tuple[bool, str, float]:
         confidence = lb.get("confidence", 0)
         if confidence < CONFIDENCE_THRESHOLD:
             continue
-        if any(kw in name for kw in SELF_INJURY_RELATED_KEYWORDS):
+        if any(kw in name for kw in INJURY_RELATED_KEYWORDS):
             relevant.append((lb.get("name", ""), confidence))
 
     if not relevant:
-        return False, "No self-injury or violence-related content detected.", 0.0
+        return False, "No injury or violence-related content detected.", 0.0
 
     has_signals = True
     max_conf = max(c for _, c in relevant)
@@ -51,8 +57,8 @@ def _interpret_labels(labels: List[Dict[str, Any]]) -> Tuple[bool, str, float]:
     return has_signals, summary, max_conf
 
 
-class SelfInjuryCheckService:
-    """Runs Rekognition content moderation on video and interprets labels for self-injury signals."""
+class InjuryCheckService:
+    """Runs Rekognition content moderation on video and interprets labels for injury signals."""
 
     def __init__(
         self,
@@ -64,17 +70,17 @@ class SelfInjuryCheckService:
         self._s3 = s3
         self._ws_manager = ws_manager
 
-    async def run_self_injury_check(
+    async def run_injury_check(
         self,
         session: AnalysisSession,
-    ) -> SelfInjuryCheckResult:
+    ) -> InjuryCheckResult:
         """
-        Run content moderation on the session video; interpret labels for self-injury (Rekognition only).
+        Run content moderation on the session video; interpret labels for injury (Rekognition only).
 
         On failure, returns a result with enabled=True and error_message set.
         """
         if not session.video_s3_key:
-            return SelfInjuryCheckResult(
+            return InjuryCheckResult(
                 enabled=True,
                 rekognition_labels=[],
                 has_signals=False,
@@ -85,9 +91,9 @@ class SelfInjuryCheckService:
 
         await self._ws_manager.send_status_update(
             session.session_id,
-            AnalysisStatus.PROCESSING_SELF_INJURY.value,
+            AnalysisStatus.PROCESSING_INJURY_CHECK.value,
             progress=0.0,
-            message="Running self-injury check (content moderation)...",
+            message="Running injury check (content moderation)...",
         )
 
         labels: List[Dict[str, Any]] = []
@@ -100,7 +106,7 @@ class SelfInjuryCheckService:
                 labels.append(label)
         except Exception as e:
             logger.exception("Rekognition content moderation failed: %s", e)
-            return SelfInjuryCheckResult(
+            return InjuryCheckResult(
                 enabled=True,
                 rekognition_labels=[],
                 has_signals=False,
@@ -111,13 +117,13 @@ class SelfInjuryCheckService:
 
         await self._ws_manager.send_status_update(
             session.session_id,
-            AnalysisStatus.PROCESSING_SELF_INJURY.value,
+            AnalysisStatus.PROCESSING_INJURY_CHECK.value,
             progress=0.0,
             message="Interpreting content moderation results...",
         )
 
         has_signals, summary, confidence = _interpret_labels(labels)
-        return SelfInjuryCheckResult(
+        return InjuryCheckResult(
             enabled=True,
             rekognition_labels=labels,
             has_signals=has_signals,

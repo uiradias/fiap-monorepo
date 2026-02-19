@@ -10,17 +10,17 @@ from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
 from services.audio_analysis_service import AudioAnalysisService
 from services.aggregation_service import AggregationService
-from services.self_injury_check_service import SelfInjuryCheckService
+from services.injury_check_service import InjuryCheckService
 from services.bedrock_analysis_service import BedrockAnalysisService
 from domain.session import SessionStore
-from domain.analysis import AnalysisStatus, SelfInjuryCheckResult
+from domain.analysis import AnalysisStatus, InjuryCheckResult
 from infrastructure.websocket.connection_manager import ConnectionManager
 from api.dependencies import (
     get_upload_service,
     get_video_analysis_service,
     get_audio_analysis_service,
     get_aggregation_service,
-    get_self_injury_check_service,
+    get_injury_check_service,
     get_bedrock_analysis_service,
     get_session_store,
     get_connection_manager,
@@ -30,7 +30,7 @@ from api.dependencies import (
 class StartAnalysisRequest(BaseModel):
     """Optional body for starting analysis."""
 
-    enable_self_injury_check: bool = False
+    enable_injury_check: bool = False
 
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
@@ -45,19 +45,19 @@ async def start_analysis(
     video_service: VideoAnalysisService = Depends(get_video_analysis_service),
     audio_service: AudioAnalysisService = Depends(get_audio_analysis_service),
     aggregation_service: AggregationService = Depends(get_aggregation_service),
-    self_injury_check_service: SelfInjuryCheckService = Depends(get_self_injury_check_service),
+    injury_check_service: InjuryCheckService = Depends(get_injury_check_service),
     bedrock_analysis_service: BedrockAnalysisService = Depends(get_bedrock_analysis_service),
     session_store: SessionStore = Depends(get_session_store),
 ):
     """
     Start the analysis pipeline for a session.
 
-    Pipeline: video emotion (Rekognition), optional self-injury check (Rekognition content moderation),
+    Pipeline: video emotion (Rekognition), optional injury check (Rekognition content moderation),
     audio transcription/sentiment, aggregation.
     """
     logger.info(
         f"Received start analysis request for session {session_id} "
-        f"(enable_self_injury_check={body.enable_self_injury_check})"
+        f"(enable_injury_check={body.enable_injury_check})"
     )
 
     session = await upload_service.get_session(session_id)
@@ -81,11 +81,11 @@ async def start_analysis(
         video_service,
         audio_service,
         aggregation_service,
-        self_injury_check_service,
+        injury_check_service,
         bedrock_analysis_service,
         session_store,
         ws_manager,
-        body.enable_self_injury_check,
+        body.enable_injury_check,
     )
 
     return {
@@ -100,11 +100,11 @@ async def run_analysis_pipeline(
     video_service: VideoAnalysisService,
     audio_service: AudioAnalysisService,
     aggregation_service: AggregationService,
-    self_injury_check_service: SelfInjuryCheckService,
+    injury_check_service: InjuryCheckService,
     bedrock_service: BedrockAnalysisService,
     session_store: SessionStore,
     ws_manager: ConnectionManager,
-    enable_self_injury_check: bool = False,
+    enable_injury_check: bool = False,
 ):
     """Run the complete analysis pipeline."""
     logger.info(f"Pipeline started for session {session_id}")
@@ -121,15 +121,15 @@ async def run_analysis_pipeline(
             await video_service.analyze_video(session)
             session = await session_store.get(session_id)
 
-            if enable_self_injury_check:
-                logger.info(f"[{session_id}] Running self-injury check (Rekognition only)")
+            if enable_injury_check:
+                logger.info(f"[{session_id}] Running injury check (Rekognition only)")
                 try:
-                    result = await self_injury_check_service.run_self_injury_check(session)
-                    session.self_injury_check = result
+                    result = await injury_check_service.run_injury_check(session)
+                    session.injury_check = result
                     await session_store.update(session)
                 except Exception as e:
-                    logger.exception(f"Self-injury check failed for session {session_id}: %s", e)
-                    session.self_injury_check = SelfInjuryCheckResult(
+                    logger.exception(f"Injury check failed for session {session_id}: %s", e)
+                    session.injury_check = InjuryCheckResult(
                         enabled=True,
                         rekognition_labels=[],
                         has_signals=False,
@@ -145,18 +145,18 @@ async def run_analysis_pipeline(
             session = await session_store.get(session_id)
 
         # Bedrock enhancement (after audio so transcript is available)
-        if enable_self_injury_check and session.self_injury_check:
+        if enable_injury_check and session.injury_check:
             try:
-                logger.info(f"[{session_id}] Running Bedrock-enhanced self-injury interpretation")
-                enhanced = await bedrock_service.enhance_self_injury_interpretation(session)
-                session.self_injury_check = enhanced
-                transcript_analysis = await bedrock_service.analyze_transcript_for_self_injury(session)
+                logger.info(f"[{session_id}] Running Bedrock-enhanced injury interpretation")
+                enhanced = await bedrock_service.enhance_injury_interpretation(session)
+                session.injury_check = enhanced
+                transcript_analysis = await bedrock_service.analyze_transcript_for_injuries(session)
                 if transcript_analysis:
-                    session.self_injury_check.transcript_analysis = transcript_analysis
+                    session.injury_check.transcript_analysis = transcript_analysis
                 await session_store.update(session)
                 session = await session_store.get(session_id)
             except Exception as e:
-                logger.exception(f"Bedrock self-injury enhancement failed for {session_id}, keeping Rekognition results: %s", e)
+                logger.exception(f"Bedrock injury enhancement failed for {session_id}, keeping Rekognition results: %s", e)
 
         try:
             logger.info(f"[{session_id}] Running Bedrock multi-modal aggregation")

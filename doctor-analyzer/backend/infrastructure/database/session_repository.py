@@ -6,7 +6,7 @@ import uuid
 
 from sqlalchemy import select
 
-from domain.analysis import AnalysisStatus, ClinicalIndicator, SelfInjuryCheckResult
+from domain.analysis import AnalysisStatus, ClinicalIndicator, InjuryCheckResult
 from domain.session import AnalysisSession, SessionStoreProtocol
 from infrastructure.database.engine import get_session_factory
 from infrastructure.database.models import AnalysisSessionModel
@@ -19,10 +19,10 @@ class PostgresSessionStore(SessionStoreProtocol):
 
     @staticmethod
     def _to_domain(row: AnalysisSessionModel) -> AnalysisSession:
-        self_injury = None
-        if row.self_injury_check:
-            d = row.self_injury_check
-            self_injury = SelfInjuryCheckResult(
+        injury_check = None
+        if row.injury_check:
+            d = row.injury_check
+            injury_check = InjuryCheckResult(
                 enabled=d.get("enabled", False),
                 rekognition_labels=d.get("rekognition_labels", []),
                 has_signals=d.get("bedrock_has_signals", d.get("has_signals", False)),
@@ -46,7 +46,7 @@ class PostgresSessionStore(SessionStoreProtocol):
                 ClinicalIndicator(**ci) for ci in (row.clinical_indicators or [])
             ],
             error_message=row.error_message,
-            self_injury_check=self_injury,
+            injury_check=injury_check,
             bedrock_aggregation=row.bedrock_aggregation,
             video_emotions=None,
             audio_analysis=None,
@@ -64,7 +64,7 @@ class PostgresSessionStore(SessionStoreProtocol):
             results_s3_key=session.results_s3_key,
             emotion_summary=session.emotion_summary or {},
             clinical_indicators=[ci.to_dict() for ci in session.clinical_indicators],
-            self_injury_check=session.self_injury_check.to_dict() if session.self_injury_check else None,
+            injury_check=session.injury_check.to_dict() if session.injury_check else None,
             bedrock_aggregation=session.bedrock_aggregation,
             error_message=session.error_message,
         )
@@ -99,7 +99,7 @@ class PostgresSessionStore(SessionStoreProtocol):
             row.results_s3_key = session.results_s3_key
             row.emotion_summary = session.emotion_summary or {}
             row.clinical_indicators = [ci.to_dict() for ci in session.clinical_indicators]
-            row.self_injury_check = session.self_injury_check.to_dict() if session.self_injury_check else None
+            row.injury_check = session.injury_check.to_dict() if session.injury_check else None
             row.bedrock_aggregation = session.bedrock_aggregation
             row.error_message = session.error_message
             await db.commit()

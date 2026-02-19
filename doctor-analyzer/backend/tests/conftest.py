@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 from domain.analysis import (
     AnalysisStatus,
     AudioAnalysis,
-    SelfInjuryCheckResult,
+    InjuryCheckResult,
     SentimentResult,
     TranscriptionSegment,
 )
@@ -65,7 +65,7 @@ def sample_session(sample_transcription_segments, sample_rekognition_labels):
                 mixed_score=0.10,
             ),
         ),
-        self_injury_check=SelfInjuryCheckResult(
+        injury_check=InjuryCheckResult(
             enabled=True,
             rekognition_labels=sample_rekognition_labels,
             has_signals=True,
@@ -105,7 +105,7 @@ def sample_session_no_signals():
                 mixed_score=0.05,
             ),
         ),
-        self_injury_check=SelfInjuryCheckResult(
+        injury_check=InjuryCheckResult(
             enabled=True,
             rekognition_labels=[],
             has_signals=False,

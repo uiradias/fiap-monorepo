@@ -9,7 +9,7 @@ from domain.analysis import (
     AnalysisStatus,
     AudioAnalysis,
     ClinicalIndicator,
-    SelfInjuryCheckResult,
+    InjuryCheckResult,
 )
 from domain.emotion import VideoEmotionTimeline
 
@@ -30,7 +30,7 @@ class AnalysisSession:
     # Analysis results
     video_emotions: Optional[VideoEmotionTimeline] = None
     audio_analysis: Optional[AudioAnalysis] = None
-    self_injury_check: Optional[SelfInjuryCheckResult] = None
+    injury_check: Optional[InjuryCheckResult] = None
 
     # Aggregated insights
     emotion_summary: Dict[str, float] = field(default_factory=dict)
@@ -60,7 +60,7 @@ class AnalysisSession:
             "emotion_summary": self.emotion_summary,
             "clinical_indicators": [c.to_dict() for c in self.clinical_indicators],
             "error_message": self.error_message,
-            "self_injury_check": self.self_injury_check.to_dict() if self.self_injury_check else None,
+            "injury_check": self.injury_check.to_dict() if self.injury_check else None,
             "bedrock_aggregation": self.bedrock_aggregation,
         }
 

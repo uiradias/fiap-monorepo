@@ -10,7 +10,7 @@ from services.bedrock_analysis_service import BedrockAnalysisService
 
 
 @pytest.mark.asyncio
-async def test_enhance_self_injury_interpretation_updates_result(
+async def test_enhance_injury_interpretation_updates_result(
     mock_bedrock, mock_ws_manager, sample_session,
 ):
     mock_bedrock.invoke_model_json.return_value = {
@@ -25,7 +25,7 @@ async def test_enhance_self_injury_interpretation_updates_result(
     }
 
     service = BedrockAnalysisService(mock_bedrock, mock_ws_manager)
-    result = service.enhance_self_injury_interpretation(sample_session)
+    result = service.enhance_injury_interpretation(sample_session)
     result = await result
 
     assert result.severity == "moderate"
@@ -36,11 +36,11 @@ async def test_enhance_self_injury_interpretation_updates_result(
 
 
 @pytest.mark.asyncio
-async def test_enhance_self_injury_no_labels_returns_original(
+async def test_enhance_injury_no_labels_returns_original(
     mock_bedrock, mock_ws_manager, sample_session_no_signals,
 ):
     service = BedrockAnalysisService(mock_bedrock, mock_ws_manager)
-    result = await service.enhance_self_injury_interpretation(sample_session_no_signals)
+    result = await service.enhance_injury_interpretation(sample_session_no_signals)
 
     assert result.has_signals is False
     assert result.severity is None
@@ -48,14 +48,14 @@ async def test_enhance_self_injury_no_labels_returns_original(
 
 
 @pytest.mark.asyncio
-async def test_enhance_self_injury_bedrock_returns_none(
+async def test_enhance_injury_bedrock_returns_none(
     mock_bedrock, mock_ws_manager, sample_session,
 ):
     """Unparseable Bedrock response should preserve original result."""
     mock_bedrock.invoke_model_json.return_value = None
 
     service = BedrockAnalysisService(mock_bedrock, mock_ws_manager)
-    result = await service.enhance_self_injury_interpretation(sample_session)
+    result = await service.enhance_injury_interpretation(sample_session)
 
     # Should keep original Rekognition values
     assert result.has_signals is True
@@ -86,7 +86,7 @@ async def test_transcript_analysis_detects_verbal_signals(
     }
 
     service = BedrockAnalysisService(mock_bedrock, mock_ws_manager)
-    result = await service.analyze_transcript_for_self_injury(sample_session)
+    result = await service.analyze_transcript_for_injuries(sample_session)
 
     assert result is not None
     assert result["has_verbal_signals"] is True
@@ -102,7 +102,7 @@ async def test_transcript_analysis_no_transcript(
 ):
     """Session without audio analysis should return None."""
     from domain.session import AnalysisSession
-    from domain.analysis import AnalysisStatus, SelfInjuryCheckResult
+    from domain.analysis import AnalysisStatus, InjuryCheckResult
     from datetime import datetime
 
     session = AnalysisSession(
@@ -110,14 +110,14 @@ async def test_transcript_analysis_no_transcript(
         created_at=datetime.utcnow(),
         status=AnalysisStatus.PROCESSING_AUDIO,
         audio_analysis=None,
-        self_injury_check=SelfInjuryCheckResult(
+        injury_check=InjuryCheckResult(
             enabled=True, rekognition_labels=[], has_signals=False,
             summary="", confidence=0.0,
         ),
     )
 
     service = BedrockAnalysisService(mock_bedrock, mock_ws_manager)
-    result = await service.analyze_transcript_for_self_injury(session)
+    result = await service.analyze_transcript_for_injuries(session)
 
     assert result is None
     mock_bedrock.invoke_model_json.assert_not_called()
@@ -130,7 +130,7 @@ async def test_transcript_analysis_bedrock_failure(
     mock_bedrock.invoke_model_json.return_value = None
 
     service = BedrockAnalysisService(mock_bedrock, mock_ws_manager)
-    result = await service.analyze_transcript_for_self_injury(sample_session)
+    result = await service.analyze_transcript_for_injuries(sample_session)
 
     assert result is None
 

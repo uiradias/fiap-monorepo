@@ -8,7 +8,7 @@ def build_multimodal_aggregation_prompt(
     emotion_summary: Dict[str, float],
     transcript_text: str,
     sentiment_result: Optional[Dict[str, Any]],
-    self_injury_result: Optional[Dict[str, Any]],
+    injury_check_result: Optional[Dict[str, Any]],
     clinical_indicators: List[Dict[str, Any]],
 ) -> str:
     """Build prompt for multi-modal aggregation of all analysis signals.
@@ -21,7 +21,7 @@ def build_multimodal_aggregation_prompt(
 
     emotion_json = json.dumps(emotion_summary, indent=2)
     sentiment_json = json.dumps(sentiment_result, indent=2) if sentiment_result else "Not available"
-    self_injury_json = json.dumps(self_injury_result, indent=2) if self_injury_result else "Not performed"
+    injury_check_json = json.dumps(injury_check_result, indent=2) if injury_check_result else "Not performed"
     indicators_json = json.dumps(clinical_indicators, indent=2) if clinical_indicators else "[]"
 
     return f"""\
@@ -39,8 +39,8 @@ Transcript excerpt:
 Overall sentiment analysis:
 {sentiment_json}
 
-## Self-Injury Check Results
-{self_injury_json}
+## Injury Check Results
+{injury_check_json}
 
 ## Existing Clinical Indicators (Rule-Based)
 {indicators_json}

@@ -9,7 +9,7 @@ import type {
 } from '../types/analysis'
 
 export interface StartAnalysisOptions {
-  enableSelfInjuryCheck?: boolean
+  enableInjuryCheck?: boolean
 }
 
 interface UseAnalysisOptions {

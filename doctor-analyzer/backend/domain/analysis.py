@@ -12,7 +12,7 @@ class AnalysisStatus(str, Enum):
     PENDING = "pending"
     UPLOADING = "uploading"
     PROCESSING_VIDEO = "processing_video"
-    PROCESSING_SELF_INJURY = "processing_self_injury"
+    PROCESSING_INJURY_CHECK = "processing_injury_check"
     PROCESSING_AUDIO = "processing_audio"
     PROCESSING_BEDROCK = "processing_bedrock"
     AGGREGATING = "aggregating"
@@ -100,8 +100,8 @@ class ClinicalIndicator:
 
 
 @dataclass
-class SelfInjuryCheckResult:
-    """Result of optional self-injury check (Rekognition content moderation + optional Bedrock enhancement)."""
+class InjuryCheckResult:
+    """Result of optional injury check (Rekognition content moderation + optional Bedrock enhancement)."""
 
     enabled: bool
     rekognition_labels: List[Dict[str, Any]]  # name, confidence, timestamp_ms, parent_name

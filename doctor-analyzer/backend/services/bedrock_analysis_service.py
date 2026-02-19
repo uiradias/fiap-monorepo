@@ -1,13 +1,13 @@
-"""Service for Bedrock-enhanced self-injury and clinical analysis."""
+"""Service for Bedrock-enhanced injury and clinical analysis."""
 
 import logging
 from typing import Any, Dict, List, Optional
 
-from domain.analysis import AnalysisStatus, SelfInjuryCheckResult
+from domain.analysis import AnalysisStatus, InjuryCheckResult
 from domain.session import AnalysisSession
 from infrastructure.aws.bedrock_client import BedrockClient
 from infrastructure.websocket.connection_manager import ConnectionManager
-from services.prompts.self_injury_prompts import (
+from services.prompts.injury_prompts import (
     build_label_interpretation_prompt,
     build_transcript_analysis_prompt,
 )
@@ -27,17 +27,17 @@ class BedrockAnalysisService:
         self._bedrock = bedrock
         self._ws_manager = ws_manager
 
-    async def enhance_self_injury_interpretation(
+    async def enhance_injury_interpretation(
         self,
         session: AnalysisSession,
-    ) -> SelfInjuryCheckResult:
+    ) -> InjuryCheckResult:
         """Use Case 1: Enhance Rekognition labels with contextual LLM interpretation.
 
-        Takes the existing SelfInjuryCheckResult (from Rekognition) and
+        Takes the existing InjuryCheckResult (from Rekognition) and
         enriches it with Bedrock-derived severity, summary, and clinical
         rationale by cross-referencing labels with transcript context.
         """
-        result = session.self_injury_check
+        result = session.injury_check
         if not result or not result.rekognition_labels:
             logger.info("No Rekognition labels to enhance")
             return result
@@ -46,7 +46,7 @@ class BedrockAnalysisService:
             session.session_id,
             AnalysisStatus.PROCESSING_BEDROCK.value,
             progress=0.0,
-            message="Enhancing self-injury analysis with AI...",
+            message="Enhancing injury analysis with AI...",
         )
 
         # Extract transcript text around the timestamps of flagged labels
@@ -79,17 +79,17 @@ class BedrockAnalysisService:
 
         return result
 
-    async def analyze_transcript_for_self_injury(
+    async def analyze_transcript_for_injuries(
         self,
         session: AnalysisSession,
     ) -> Optional[Dict[str, Any]]:
-        """Use Case 2: Scan transcript for verbal self-injury indicators.
+        """Use Case 2: Scan transcript for verbal injury indicators.
 
         Returns a dict matching the transcript_analysis schema, or None
         if no transcript is available.
         """
         if not session.audio_analysis or not session.audio_analysis.full_transcript:
-            logger.info("No transcript available for verbal self-injury analysis")
+            logger.info("No transcript available for verbal injury analysis")
             return None
 
         await self._ws_manager.send_status_update(
@@ -141,9 +141,9 @@ class BedrockAnalysisService:
             if session.audio_analysis.overall_sentiment:
                 sentiment_result = session.audio_analysis.overall_sentiment.to_dict()
 
-        self_injury_dict = None
-        if session.self_injury_check:
-            self_injury_dict = session.self_injury_check.to_dict()
+        injury_check_dict = None
+        if session.injury_check:
+            injury_check_dict = session.injury_check.to_dict()
 
         indicators = [ci.to_dict() for ci in session.clinical_indicators]
 
@@ -151,7 +151,7 @@ class BedrockAnalysisService:
             emotion_summary=session.emotion_summary or {},
             transcript_text=transcript_text,
             sentiment_result=sentiment_result,
-            self_injury_result=self_injury_dict,
+            injury_check_result=injury_check_dict,
             clinical_indicators=indicators,
         )
 

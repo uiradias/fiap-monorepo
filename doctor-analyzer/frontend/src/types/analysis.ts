@@ -6,7 +6,7 @@ export type AnalysisStatus =
   | 'pending'
   | 'uploading'
   | 'processing_video'
-  | 'processing_self_injury'
+  | 'processing_injury_check'
   | 'processing_audio'
   | 'processing_bedrock'
   | 'aggregating'
@@ -91,9 +91,9 @@ export interface ModerationLabelItem {
   parent_name?: string;
 }
 
-export type SelfInjurySeverity = 'low' | 'moderate' | 'high' | 'critical';
+export type InjurySeverity = 'low' | 'moderate' | 'high' | 'critical';
 
-export interface TranscriptSelfInjuryAnalysis {
+export interface TranscriptInjuryAnalysis {
   has_verbal_signals: boolean;
   severity: string;
   findings: string[];
@@ -102,21 +102,21 @@ export interface TranscriptSelfInjuryAnalysis {
   risk_factors_identified?: string[];
 }
 
-export interface SelfInjuryCheckResult {
+export interface InjuryCheckResult {
   enabled: boolean;
   rekognition_labels: ModerationLabelItem[];
   bedrock_has_signals: boolean;
   bedrock_summary: string;
   bedrock_confidence: number;
-  bedrock_severity?: SelfInjurySeverity;
+  bedrock_severity?: InjurySeverity;
   bedrock_clinical_rationale?: string;
-  bedrock_transcript_analysis?: TranscriptSelfInjuryAnalysis;
+  bedrock_transcript_analysis?: TranscriptInjuryAnalysis;
   error_message?: string;
 }
 
 export interface BedrockAggregation {
   clinical_summary: string;
-  risk_level: SelfInjurySeverity;
+  risk_level: InjurySeverity;
   cross_referenced_evidence: Array<{
     source: string;
     finding: string;
@@ -143,7 +143,7 @@ export interface AnalysisSession {
   emotion_summary: Record<string, number>;
   clinical_indicators: ClinicalIndicator[];
   error_message: string | null;
-  self_injury_check?: SelfInjuryCheckResult | null;
+  injury_check?: InjuryCheckResult | null;
   bedrock_aggregation?: BedrockAggregation | null;
 }
 
@@ -151,7 +151,7 @@ export interface AnalysisSessionFull extends AnalysisSession {
   video_emotions: VideoEmotionTimeline | null;
   audio_analysis: AudioAnalysis | null;
   results_s3_key: string | null;
-  self_injury_check: SelfInjuryCheckResult | null;
+  injury_check: InjuryCheckResult | null;
   bedrock_aggregation: BedrockAggregation | null;
 }
 

@@ -17,7 +17,7 @@ function AnalysisPage() {
   const [session, setSession] = useState<AnalysisSession | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [emotionDetections, setEmotionDetections] = useState<EmotionUpdateMessage[]>([])
-  const [enableSelfInjuryCheck, setEnableSelfInjuryCheck] = useState(false)
+  const [enableInjuryCheck, setEnableInjuryCheck] = useState(false)
 
   const {
     status,
@@ -54,7 +54,7 @@ function AnalysisPage() {
 
   const handleStartAnalysis = () => {
     if (session) {
-      startAnalysis({ enableSelfInjuryCheck })
+      startAnalysis({ enableInjuryCheck })
     }
   }
 
@@ -128,21 +128,21 @@ function AnalysisPage() {
                 </div>
               </div>
 
-              {/* Self-injury check toggle */}
+              {/* Injury check toggle */}
               {canStartAnalysis && (
                 <div className="mt-4 flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="enable-self-injury-check"
-                    checked={enableSelfInjuryCheck}
-                    onChange={(e) => setEnableSelfInjuryCheck(e.target.checked)}
+                    id="enable-injury-check"
+                    checked={enableInjuryCheck}
+                    onChange={(e) => setEnableInjuryCheck(e.target.checked)}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <label
-                    htmlFor="enable-self-injury-check"
+                    htmlFor="enable-injury-check"
                     className="text-sm text-gray-700"
                   >
-                    Check for self-injury signals (Rekognition)
+                    Check for injury signals
                   </label>
                 </div>
               )}
@@ -152,10 +152,10 @@ function AnalysisPage() {
                 <div className="mt-4">
                   {/* Step indicator */}
                   {(() => {
-                    const steps: { label: string; key: AnalysisStatus }[] = enableSelfInjuryCheck
+                    const steps: { label: string; key: AnalysisStatus }[] = enableInjuryCheck
                       ? [
                           { label: 'Video Analysis', key: 'processing_video' },
-                          { label: 'Self-injury check', key: 'processing_self_injury' },
+                          { label: 'Injury check', key: 'processing_injury_check' },
                           { label: 'Audio Analysis', key: 'processing_audio' },
                           { label: 'Report', key: 'aggregating' },
                         ]
@@ -164,8 +164,8 @@ function AnalysisPage() {
                           { label: 'Audio Analysis', key: 'processing_audio' },
                           { label: 'Report', key: 'aggregating' },
                         ]
-                    const statusOrder: AnalysisStatus[] = enableSelfInjuryCheck
-                      ? ['processing_video', 'processing_self_injury', 'processing_audio', 'aggregating', 'completed']
+                    const statusOrder: AnalysisStatus[] = enableInjuryCheck
+                      ? ['processing_video', 'processing_injury_check', 'processing_audio', 'aggregating', 'completed']
                       : ['processing_video', 'processing_audio', 'aggregating', 'completed']
                     const currentIdx = statusOrder.indexOf(status as AnalysisStatus)
 

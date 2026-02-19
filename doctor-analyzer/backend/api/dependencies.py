@@ -16,7 +16,7 @@ from services.upload_service import UploadService
 from services.video_analysis_service import VideoAnalysisService
 from services.audio_analysis_service import AudioAnalysisService
 from services.aggregation_service import AggregationService
-from services.self_injury_check_service import SelfInjuryCheckService
+from services.injury_check_service import InjuryCheckService
 from services.patient_service import PatientService
 from services.bedrock_analysis_service import BedrockAnalysisService
 
@@ -128,9 +128,9 @@ def get_aggregation_service() -> AggregationService:
     )
 
 
-def get_self_injury_check_service() -> SelfInjuryCheckService:
-    """Get self-injury check service (Rekognition content moderation only)."""
-    return SelfInjuryCheckService(
+def get_injury_check_service() -> InjuryCheckService:
+    """Get injury check service (Rekognition content moderation only)."""
+    return InjuryCheckService(
         rekognition=get_rekognition_client(),
         s3=get_s3_client(),
         ws_manager=get_connection_manager(),

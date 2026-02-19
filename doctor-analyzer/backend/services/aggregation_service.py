@@ -103,17 +103,17 @@ class AggregationService:
                 )
             )
 
-        # Self-injury check (Rekognition): add clinical indicator if signals detected
+        # Injury check (Rekognition): add clinical indicator if signals detected
         if (
-            session.self_injury_check
-            and session.self_injury_check.enabled
-            and session.self_injury_check.has_signals
+            session.injury_check
+            and session.injury_check.enabled
+            and session.injury_check.has_signals
         ):
             indicators.append(
                 ClinicalIndicator(
-                    indicator_type="potential_self_injury_signals",
-                    confidence=session.self_injury_check.confidence,
-                    evidence=[f"Self-injury check (Rekognition): {session.self_injury_check.summary}"],
+                    indicator_type="potential_injury_signals",
+                    confidence=session.injury_check.confidence,
+                    evidence=[f"Injury check (Rekognition): {session.injury_check.summary}"],
                 )
             )
 

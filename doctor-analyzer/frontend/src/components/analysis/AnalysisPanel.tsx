@@ -126,12 +126,12 @@ export function AnalysisPanel({
             <p className="text-gray-500">Transcription Segments</p>
             <p className="font-medium">{transcriptions.length}</p>
           </div>
-          {(results?.self_injury_check ?? session.self_injury_check) && (
+          {(results?.injury_check ?? session.injury_check) && (
             <div className="col-span-2">
-              <p className="text-gray-500">Self-injury check</p>
+              <p className="text-gray-500">Injury check</p>
               <p className="font-medium">
                 {(() => {
-                  const check = results?.self_injury_check ?? session.self_injury_check
+                  const check = results?.injury_check ?? session.injury_check
                   if (!check) return '—'
                   if (check.error_message) return `Error: ${check.error_message}`
                   if (check.bedrock_has_signals) {
@@ -171,15 +171,15 @@ export function AnalysisPanel({
           </div>
         )}
 
-        {/* Self injury results — only when the self-injury check was run */}
-        {(results?.self_injury_check ?? session.self_injury_check) && (
+        {/* Injury detection results — only when the injury check was run */}
+        {(results?.injury_check ?? session.injury_check) && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-amber-500" />
-              Self injury results
+              Injury detection results
             </h3>
             {(() => {
-              const check = results?.self_injury_check ?? session.self_injury_check
+              const check = results?.injury_check ?? session.injury_check
               if (!check) return null
               if (check.error_message) {
                 return (

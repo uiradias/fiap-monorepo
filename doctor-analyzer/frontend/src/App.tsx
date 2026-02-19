@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom'
 import { MainLayout } from './components/layout/MainLayout'
 import { PatientList } from './components/patients/PatientList'
@@ -137,22 +137,23 @@ function AnalysisPage() {
                       { label: 'Video Analysis', key: 'processing_video' },
                       { label: 'Injury check', key: 'processing_injury_check' },
                       { label: 'Audio Analysis', key: 'processing_audio' },
+                      { label: 'Compilation', key: 'processing_bedrock' },
                       { label: 'Report', key: 'aggregating' },
                     ]
                     const statusOrder: AnalysisStatus[] = [
-                      'processing_video', 'processing_injury_check', 'processing_audio', 'aggregating', 'completed',
+                      'processing_video', 'processing_injury_check', 'processing_audio', 'processing_bedrock', 'aggregating', 'completed',
                     ]
                     const currentIdx = statusOrder.indexOf(status as AnalysisStatus)
 
                     return (
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center mb-3">
                         {steps.map((step, i) => {
                           const stepIdx = statusOrder.indexOf(step.key)
                           const isDone = currentIdx > stepIdx || status === 'completed'
                           const isActive = currentIdx === stepIdx && status !== 'completed' && status !== 'failed'
 
                           return (
-                            <div key={step.key} className="flex items-center flex-1 last:flex-none">
+                            <React.Fragment key={step.key}>
                               <div className="flex flex-col items-center">
                                 <div
                                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
@@ -190,12 +191,12 @@ function AnalysisPage() {
                               </div>
                               {i < steps.length - 1 && (
                                 <div
-                                  className={`flex-1 h-0.5 mx-2 mt-[-1rem] ${
+                                  className={`flex-1 h-0.5 mx-2 self-start mt-3.5 ${
                                     currentIdx > stepIdx ? 'bg-green-400' : 'bg-gray-200'
                                   }`}
                                 />
                               )}
-                            </div>
+                            </React.Fragment>
                           )
                         })}
                       </div>

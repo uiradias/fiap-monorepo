@@ -21,6 +21,8 @@ schema_config:
         prefix: index_
         period: 24h
 
+# Loki 3.x removed the chunks_directory / rules_directory split under filesystem.
+# Use a single `directory` field; the index lives under tsdb_shipper.
 storage_config:
   tsdb_shipper:
     active_index_directory: /tmp/loki/tsdb-active

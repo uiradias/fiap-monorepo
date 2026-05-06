@@ -59,6 +59,8 @@ services:
       - "13133:13133"
       - "8889:8889"   # Prometheus exporter scrape target
     healthcheck:
+      # otel/opentelemetry-collector-contrib:0.103.0 is distroless — no wget/sh available.
+      # Validate the static config as the readiness signal; the collector binary boots only if validate succeeds.
       test: ["CMD", "/otelcol-contrib", "validate", "--config=/etc/otel-collector-config.yaml"]
       interval: 5s
       timeout: 3s

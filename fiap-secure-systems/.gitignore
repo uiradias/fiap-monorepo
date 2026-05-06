@@ -1,0 +1,31 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Volumes & runtime
+.localstack/
+postgres-data/
+grafana-data/
+
+# OS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Build artifacts (will appear once services are added)
+**/build/
+**/target/
+**/dist/
+**/node_modules/
+**/.gradle/
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+*.pyc
+
+# Logs
+*.log

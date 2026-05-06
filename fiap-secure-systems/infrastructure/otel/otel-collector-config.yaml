@@ -18,6 +18,25 @@ processors:
 exporters:
   debug:
     verbosity: basic
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: true
+    retry_on_failure:
+      enabled: true
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    send_timestamps: true
+    metric_expiration: 5m
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+    encoding: json
+    sending_queue:
+      enabled: true
+    retry_on_failure:
+      enabled: true
 
 extensions:
   health_check:
@@ -29,12 +48,12 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [debug]
+      exporters: [otlp/tempo, debug]
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [debug]
+      exporters: [prometheus, debug]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [debug]
+      exporters: [otlphttp/loki, debug]

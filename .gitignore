@@ -107,6 +107,8 @@ node_modules/
 #
 #
 */docs/
+# fiap-secure-systems tracks its own docs (specs, plans, ADRs)
+!fiap-secure-systems/docs/
 
 # ============================================
 # Git worktrees

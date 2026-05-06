@@ -23,8 +23,29 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    networks:
-      - fss
+    networks: [fss]
+
+  localstack:
+    image: localstack/localstack:3.5
+    container_name: fss-localstack
+    environment:
+      <<: *common-env
+      SERVICES: s3,sns,sqs
+      DEBUG: "0"
+      PERSISTENCE: "0"
+      LOCALSTACK_HOST: localstack
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./infrastructure/localstack/init:/etc/localstack/init/ready.d:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal sqs get-queue-url --queue-name analysis-jobs >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks: [fss]
 
 volumes:
   postgres-data:

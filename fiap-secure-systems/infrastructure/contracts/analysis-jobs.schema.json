@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fiap-secure-systems/contracts/analysis-jobs.schema.json",
+  "title": "AnalysisJob",
+  "description": "Message published by orchestrator-service to the analysis-jobs SQS queue, consumed by smart-service.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "jobId", "sessionId", "userId", "assets", "promptVersion", "submittedAt"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "jobId":        { "type": "string", "format": "uuid" },
+    "sessionId":    { "type": "string", "format": "uuid" },
+    "userId":       { "type": "string", "format": "uuid" },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "s3Key", "contentType", "filename", "sizeBytes"],
+        "properties": {
+          "assetId":     { "type": "string", "format": "uuid" },
+          "s3Key":       { "type": "string", "minLength": 1 },
+          "contentType": { "type": "string", "enum": ["application/pdf", "image/png", "image/jpeg", "image/webp"] },
+          "filename":    { "type": "string", "minLength": 1 },
+          "sizeBytes":   { "type": "integer", "minimum": 1, "maximum": 26214400 }
+        }
+      }
+    },
+    "promptVersion": { "type": "string", "pattern": "^v[0-9]+$" },
+    "submittedAt":   { "type": "string", "format": "date-time" }
+  }
+}

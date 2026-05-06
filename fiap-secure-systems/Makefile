@@ -34,8 +34,8 @@ logs: ## Tail logs for all running services
 	$(COMPOSE_OBS) logs -f --tail=100
 
 .PHONY: smoke
-smoke: ## Run the foundation smoke check (added in Task 8)
-	@echo "smoke target not yet implemented (Task 8)"; exit 1
+smoke: ## Verify the running infrastructure stack
+	@./infrastructure/smoke/check-stack.sh
 
 .PHONY: clean
 clean: ## Remove local caches & build artifacts (does not stop containers)

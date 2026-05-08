@@ -78,3 +78,7 @@ smart-logs: ## (smart-service) tail smart-service logs
 .PHONY: smart-shell
 smart-shell: ## (smart-service) exec a shell inside the running smart-service
 	docker exec -it fss-smart-service /bin/sh
+
+.PHONY: round-trip
+round-trip: ## (smart-service) end-to-end synthetic SQS round-trip (requires stack up)
+	@./infrastructure/smoke/round-trip.sh

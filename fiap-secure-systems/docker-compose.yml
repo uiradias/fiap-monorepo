@@ -68,6 +68,45 @@ services:
       start_period: 5s
     networks: [fss]
 
+  smart-service:
+    image: fss/smart-service:dev
+    build:
+      context: ./smart-service
+    container_name: fss-smart-service
+    environment:
+      <<: *common-env
+      SMART_SERVICE_PROFILE: ${SMART_SERVICE_PROFILE:-e2e}
+      SMART_DATABASE_URL: ${SMART_DATABASE_URL}
+      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+      S3_BUCKET: ${S3_BUCKET}
+      SQS_ANALYSIS_JOBS_URL: ${SQS_ANALYSIS_JOBS_URL}
+      SQS_ANALYSIS_RESULTS_URL: ${SQS_ANALYSIS_RESULTS_URL}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      INTERNAL_HMAC_SECRET: ${INTERNAL_HMAC_SECRET}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_SERVICE_NAME: smart-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./infrastructure/contracts:/app/contracts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+    networks: [fss]
+
 volumes:
   postgres-data:
 

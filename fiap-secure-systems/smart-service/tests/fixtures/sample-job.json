@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "jobId": "REPLACE_JOB",
+  "sessionId": "REPLACE_SESSION",
+  "userId": "00000000-0000-4000-8000-000000000001",
+  "assets": [
+    {
+      "assetId": "00000000-0000-4000-8000-000000000002",
+      "s3Key": "sessions/REPLACE_SESSION/sample-architecture.png",
+      "contentType": "image/png",
+      "filename": "sample-architecture.png",
+      "sizeBytes": 70
+    }
+  ],
+  "promptVersion": "v1",
+  "submittedAt": "REPLACE_TIMESTAMP"
+}

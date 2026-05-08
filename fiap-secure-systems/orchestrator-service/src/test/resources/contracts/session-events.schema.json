@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://fiap-secure-systems/contracts/session-events.schema.json",
+  "title": "SessionEvent",
+  "description": "Message published by orchestrator-service to the session-events SNS topic and fanned out to per-gateway SQS queues.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "eventId", "sessionId", "userId", "toState", "occurredAt"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "eventId":   { "type": "string", "format": "uuid" },
+    "sessionId": { "type": "string", "format": "uuid" },
+    "userId":    { "type": "string", "format": "uuid" },
+    "fromState": {
+      "type": ["string", "null"],
+      "enum": [
+        null,
+        "CREATED",
+        "ASSETS_UPLOADED",
+        "QUEUED_FOR_ANALYSIS",
+        "ANALYZING",
+        "ANALYSIS_COMPLETED",
+        "REPORT_READY",
+        "FAILED",
+        "CANCELED"
+      ]
+    },
+    "toState": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "ASSETS_UPLOADED",
+        "QUEUED_FOR_ANALYSIS",
+        "ANALYZING",
+        "ANALYSIS_COMPLETED",
+        "REPORT_READY",
+        "FAILED",
+        "CANCELED"
+      ]
+    },
+    "payload":   { "type": "object" },
+    "occurredAt": { "type": "string", "format": "date-time" }
+  }
+}

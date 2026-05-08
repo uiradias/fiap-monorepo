@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from uuid import uuid4
 
 import boto3
@@ -27,10 +28,8 @@ def s3_client(localstack):
         aws_access_key_id="test",
         aws_secret_access_key="test",
     )
-    try:
+    with contextlib.suppress(cli.exceptions.BucketAlreadyOwnedByYou):
         cli.create_bucket(Bucket=BUCKET)
-    except cli.exceptions.BucketAlreadyOwnedByYou:
-        pass
     yield cli
 
 

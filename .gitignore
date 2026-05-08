@@ -61,6 +61,7 @@ coverage.xml
 # Distribuição / Build
 # ============================================
 build/
+.gradle/
 dist/
 *.egg-info/
 .eggs/

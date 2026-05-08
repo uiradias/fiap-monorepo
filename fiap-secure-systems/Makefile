@@ -82,3 +82,33 @@ smart-shell: ## (smart-service) exec a shell inside the running smart-service
 .PHONY: round-trip
 round-trip: ## (smart-service) end-to-end synthetic SQS round-trip (requires stack up)
 	@./infrastructure/smoke/round-trip.sh
+
+# === orchestrator-service ===
+
+.PHONY: orch-build
+orch-build: ## (orchestrator-service) compile + bootJar
+	./gradlew :orchestrator-service:bootJar
+
+.PHONY: orch-test-unit
+orch-test-unit: ## (orchestrator-service) run unit tests only
+	./gradlew :orchestrator-service:test
+
+.PHONY: orch-test-integration
+orch-test-integration: ## (orchestrator-service) run integration tests (Docker required)
+	./gradlew :orchestrator-service:integrationTest
+
+.PHONY: orch-up
+orch-up: env-check ## (orchestrator-service) start core infra + smart-service + orchestrator-service
+	$(COMPOSE) up -d orchestrator-service
+
+.PHONY: orch-logs
+orch-logs: ## (orchestrator-service) tail orchestrator-service logs
+	$(COMPOSE) logs -f --tail=100 orchestrator-service
+
+.PHONY: orch-shell
+orch-shell: ## (orchestrator-service) exec a shell inside the running orchestrator-service
+	docker exec -it fss-orchestrator-service /bin/sh
+
+.PHONY: orch-round-trip
+orch-round-trip: ## (orchestrator-service) end-to-end session lifecycle (requires stack up)
+	@./infrastructure/smoke/orchestrator-round-trip.sh

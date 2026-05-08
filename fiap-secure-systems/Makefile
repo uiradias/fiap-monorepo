@@ -33,6 +33,10 @@ nuke: ## Stop containers AND remove volumes (DESTRUCTIVE)
 logs: ## Tail logs for all running services
 	$(COMPOSE_OBS) logs -f --tail=100
 
+.PHONY: ps
+ps: ## Show status of all stack containers
+	@$(COMPOSE_OBS) ps
+
 .PHONY: smoke
 smoke: ## Verify the running infrastructure stack
 	@./infrastructure/smoke/check-stack.sh

@@ -25,6 +25,14 @@ for db in gateway_db orchestrator_db smart_db; do
     "1"
 done
 
+echo "== Postgres roles =="
+check "role smart_user exists" \
+  "docker exec fss-postgres psql -U postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='smart_user'\"" \
+  "1"
+check "smart_db owned by smart_user" \
+  "docker exec fss-postgres psql -U postgres -tAc \"SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname='smart_db'\"" \
+  "smart_user"
+
 echo "== LocalStack: S3 =="
 check "bucket fiap-secure-systems-assets" \
   "docker exec fss-localstack awslocal s3api list-buckets --query 'Buckets[].Name' --output text" \

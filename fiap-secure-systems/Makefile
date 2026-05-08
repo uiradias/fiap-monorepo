@@ -48,3 +48,33 @@ clean: ## Remove local caches & build artifacts (does not stop containers)
 	@find . -type d -name build -prune -exec rm -rf {} +
 	@find . -type d -name target -prune -exec rm -rf {} +
 	@echo "Cleaned local caches."
+
+# === smart-service ===
+
+.PHONY: smart-sync
+smart-sync: ## (smart-service) install/sync deps via uv
+	cd smart-service && uv sync
+
+.PHONY: smart-test-unit
+smart-test-unit: ## (smart-service) run unit tests only
+	cd smart-service && uv run pytest -m "not integration"
+
+.PHONY: smart-test-integration
+smart-test-integration: ## (smart-service) run integration tests (Docker required)
+	cd smart-service && uv run pytest -m "integration"
+
+.PHONY: smart-lint
+smart-lint: ## (smart-service) ruff + mypy
+	cd smart-service && uv run ruff check . && uv run mypy smart_service
+
+.PHONY: smart-up
+smart-up: env-check ## (smart-service) start core infra + smart-service
+	$(COMPOSE) up -d smart-service
+
+.PHONY: smart-logs
+smart-logs: ## (smart-service) tail smart-service logs
+	$(COMPOSE) logs -f --tail=100 smart-service
+
+.PHONY: smart-shell
+smart-shell: ## (smart-service) exec a shell inside the running smart-service
+	docker exec -it fss-smart-service /bin/sh

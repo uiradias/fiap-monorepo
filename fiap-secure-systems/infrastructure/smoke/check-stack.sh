@@ -32,6 +32,12 @@ check "role smart_user exists" \
 check "smart_db owned by smart_user" \
   "docker exec fss-postgres psql -U postgres -tAc \"SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname='smart_db'\"" \
   "smart_user"
+check "role orchestrator_user exists" \
+  "docker exec fss-postgres psql -U postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='orchestrator_user'\"" \
+  "1"
+check "orchestrator_db owned by orchestrator_user" \
+  "docker exec fss-postgres psql -U postgres -tAc \"SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname='orchestrator_db'\"" \
+  "orchestrator_user"
 
 echo "== LocalStack: S3 =="
 check "bucket fiap-secure-systems-assets" \

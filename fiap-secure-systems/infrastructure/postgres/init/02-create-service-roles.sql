@@ -10,5 +10,13 @@ ALTER DATABASE smart_db OWNER TO smart_user;
 GRANT ALL ON SCHEMA public TO smart_user;
 ALTER SCHEMA public OWNER TO smart_user;
 
--- gateway-service and orchestrator-service roles are created in their own sub-plans
--- (sub-plans 3 and 4) so each service's plan is self-contained.
+-- orchestrator-service
+\connect postgres
+CREATE ROLE orchestrator_user WITH LOGIN PASSWORD 'orchestrator_pwd';
+ALTER DATABASE orchestrator_db OWNER TO orchestrator_user;
+
+\connect orchestrator_db
+GRANT ALL ON SCHEMA public TO orchestrator_user;
+ALTER SCHEMA public OWNER TO orchestrator_user;
+
+-- gateway-service role is created in its own sub-plan (sub-plan 4).

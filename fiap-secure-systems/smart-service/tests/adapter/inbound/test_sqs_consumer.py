@@ -131,6 +131,58 @@ def test_consumer_processes_message(localstack, queue_url, repo_root: Path):
 
 
 @pytest.mark.integration
+def test_bad_uuid_message_is_dropped(localstack, queue_url, repo_root: Path):
+    """A schema-shaped message with a non-UUID jobId must be dropped (not redriven)."""
+    sqs, url = queue_url
+    body = {
+        "schemaVersion": 1,
+        "jobId": "REPLACE_JOB",  # bad UUID — would crash worker without format check
+        "sessionId": str(uuid4()),
+        "userId": str(uuid4()),
+        "assets": [
+            {
+                "assetId": str(uuid4()),
+                "s3Key": "sessions/x/img.png",
+                "contentType": "image/png",
+                "filename": "img.png",
+                "sizeBytes": 4,
+            }
+        ],
+        "promptVersion": "v1",
+        "submittedAt": datetime.now(UTC).isoformat(),
+    }
+    sqs.send_message(QueueUrl=url, MessageBody=json.dumps(body))
+
+    repo = InMemoryRepo()
+    pub = CapturingPublisher()
+    svc = AnalyzeAssetsService(
+        asset_reader=InMemoryReader(),
+        model=FakeAnalysisModel(),
+        publisher=pub,
+        repo=repo,
+        model_id="fake-claude",
+    )
+    consumer = SqsAnalysisJobConsumer(
+        endpoint_url=localstack.get_url(),
+        region="us-east-1",
+        access_key="test",
+        secret_key="test",
+        queue_url=url,
+        application_service=svc,
+        contracts_dir=repo_root / "infrastructure" / "contracts",
+        long_poll_seconds=1,
+        visibility_seconds=30,
+    )
+    consumer.start()
+    time.sleep(3)
+    consumer.stop(timeout=5)
+
+    assert pub.published == []
+    remaining = sqs.receive_message(QueueUrl=url, WaitTimeSeconds=1)
+    assert "Messages" not in remaining
+
+
+@pytest.mark.integration
 def test_invalid_message_is_dropped_and_logged(localstack, queue_url, repo_root: Path):
     """A payload that violates the JSON schema is deleted (no infinite redrive)."""
     sqs, url = queue_url

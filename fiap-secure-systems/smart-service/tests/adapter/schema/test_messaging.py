@@ -54,6 +54,14 @@ def test_validator_rejects_extra_field(contracts_dir: Path):
         validate_analysis_job(payload, contracts_dir)
 
 
+def test_validator_rejects_bad_uuid(contracts_dir: Path):
+    """A non-UUID string in jobId must be rejected at validation time, not on later UUID()."""
+    payload = _job_dict()
+    payload["jobId"] = "REPLACE_JOB"
+    with pytest.raises(SchemaValidationError):
+        validate_analysis_job(payload, contracts_dir)
+
+
 def test_pydantic_serializes_using_camelcase_aliases():
     payload = _job_dict()
     msg = AnalysisJobMessage.model_validate(payload)

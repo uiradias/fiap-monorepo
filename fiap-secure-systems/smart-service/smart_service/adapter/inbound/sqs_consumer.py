@@ -114,6 +114,15 @@ class SqsAnalysisJobConsumer:
 
         try:
             job = _payload_to_job(payload)
+        except (ValueError, KeyError, TypeError) as e:
+            # Defense in depth: even after schema validation, a bad UUID or
+            # datetime would only surface here. Drop the message instead of
+            # letting it loop on redelivery until DLQ.
+            log.error("dropping unparseable analysis-job message error=%s", e)
+            self._delete(receipt)
+            return
+
+        try:
             self._svc.run(job)
             self._delete(receipt)
         except Exception:

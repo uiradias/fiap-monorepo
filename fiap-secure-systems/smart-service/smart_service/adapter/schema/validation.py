@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import json
+import uuid
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft7Validator
+from jsonschema import Draft7Validator, FormatChecker
 from jsonschema.exceptions import ValidationError
 from referencing import Registry
 from referencing.jsonschema import DRAFT7
@@ -14,6 +15,20 @@ from referencing.jsonschema import DRAFT7
 
 class SchemaValidationError(Exception):
     """Raised when a payload does not conform to its JSON Schema."""
+
+
+# jsonschema's draft-07 built-in FormatChecker does NOT validate `format: uuid`.
+# Add an explicit checker so a non-UUID string in jobId/sessionId/userId/assetId is
+# rejected at validation time instead of crashing the worker on UUID(value) later.
+_FORMAT_CHECKER = FormatChecker()
+
+
+@_FORMAT_CHECKER.checks("uuid", raises=ValueError)
+def _check_uuid(instance: object) -> bool:
+    if not isinstance(instance, str):
+        return True  # leave non-string instances to the type keyword
+    uuid.UUID(instance)
+    return True
 
 
 def _build_registry(contracts_dir: Path) -> Registry:
@@ -37,7 +52,14 @@ def _load_validator(schema_path_str: str, contracts_dir_str: str) -> Draft7Valid
     contracts_dir = Path(contracts_dir_str)
     schema = json.loads(schema_path.read_text())
     Draft7Validator.check_schema(schema)
-    return Draft7Validator(schema, registry=_build_registry(contracts_dir))
+    # FORMAT_CHECKER enforces `format: uuid` and other format keywords. Without it
+    # they are informational only — a bad UUID slips through and crashes the worker
+    # later on `UUID(value)`.
+    return Draft7Validator(
+        schema,
+        registry=_build_registry(contracts_dir),
+        format_checker=_FORMAT_CHECKER,
+    )
 
 
 def _validate(payload: Any, schema_path: Path, contracts_dir: Path) -> None:

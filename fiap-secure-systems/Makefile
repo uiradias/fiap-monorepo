@@ -128,7 +128,7 @@ gw-test-integration: ## (gateway-service) run integration tests (Docker required
 	./gradlew :gateway-service:integrationTest
 
 .PHONY: gw-up
-gw-up: env-check ## (gateway-service) start full stack with gateway-service
+gw-up: env-check gen-jwt-keys ## (gateway-service) start full stack with gateway-service
 	$(COMPOSE) up -d gateway-service
 
 .PHONY: gw-logs
@@ -142,3 +142,12 @@ gw-shell: ## (gateway-service) exec a shell inside the running gateway-service
 .PHONY: gw-round-trip
 gw-round-trip: ## (gateway-service) end-to-end register → finalize → REPORT_READY (requires stack up)
 	@./infrastructure/smoke/gateway-round-trip.sh
+
+.PHONY: gen-jwt-keys
+gen-jwt-keys: ## Generate RS256 JWT keys for gateway-service (no-op if already present)
+	@if [ ! -f infrastructure/jwt/jwt-private.pem ]; then \
+	  mkdir -p infrastructure/jwt; \
+	  openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out infrastructure/jwt/jwt-private.pem; \
+	  openssl rsa -in infrastructure/jwt/jwt-private.pem -pubout -out infrastructure/jwt/jwt-public.pem; \
+	  echo "[gen-jwt-keys] wrote infrastructure/jwt/jwt-{private,public}.pem"; \
+	else echo "[gen-jwt-keys] keys already exist; skipping"; fi

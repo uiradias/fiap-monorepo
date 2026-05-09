@@ -1,0 +1,34 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+gateway:
+  contracts-dir: ../infrastructure/contracts
+  aws:
+    endpoint-url: http://throwaway.invalid
+    region: us-east-1
+    access-key: test
+    secret-key: test
+  s3:
+    bucket: throwaway
+  sqs:
+    session-events-url: http://throwaway.invalid/000000000000/session-events-gateway
+    poll-wait-seconds: 1
+  orchestrator:
+    base-url: http://throwaway.invalid
+    hmac-secret: test-secret-32-bytes-min-for-real-deploy
+    connect-timeout-ms: 200
+    read-timeout-ms: 200
+  jwt:
+    private-key-path: /dev/null
+    public-key-path: /dev/null
+    issuer: gateway-service-test
+    access-ttl-minutes: 15
+    refresh-ttl-days: 7
+  rate-limit:
+    authed-per-minute: 60
+    anon-per-minute: 10
+  websocket:
+    snapshot-events: 5

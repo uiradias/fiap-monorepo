@@ -47,7 +47,7 @@ public class CreateSessionService implements CreateSessionUseCase {
         return created;
     }
 
-    static Map<String, Object> sessionEventPayload(SessionEvent ev, UserId userId) {
+    public static Map<String, Object> sessionEventPayload(SessionEvent ev, UserId userId) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("schemaVersion", 1);
         body.put("eventId", ev.id().toString());

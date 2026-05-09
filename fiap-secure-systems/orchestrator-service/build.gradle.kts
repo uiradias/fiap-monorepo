@@ -50,6 +50,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.assertj:assertj-core")
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.awaitility:awaitility:4.2.2")
 }
 
 sourceSets {

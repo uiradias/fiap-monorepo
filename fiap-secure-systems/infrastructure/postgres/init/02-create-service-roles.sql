@@ -19,4 +19,18 @@ ALTER DATABASE orchestrator_db OWNER TO orchestrator_user;
 GRANT ALL ON SCHEMA public TO orchestrator_user;
 ALTER SCHEMA public OWNER TO orchestrator_user;
 
--- gateway-service role is created in its own sub-plan (sub-plan 4).
+-- gateway-service role (added by sub-plan 4).
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'gateway_user') THEN
+    CREATE ROLE gateway_user LOGIN PASSWORD 'gateway_pwd';
+  END IF;
+END
+$$;
+
+ALTER DATABASE gateway_db OWNER TO gateway_user;
+GRANT ALL PRIVILEGES ON DATABASE gateway_db TO gateway_user;
+
+\connect gateway_db
+GRANT ALL ON SCHEMA public TO gateway_user;
+ALTER SCHEMA public OWNER TO gateway_user;

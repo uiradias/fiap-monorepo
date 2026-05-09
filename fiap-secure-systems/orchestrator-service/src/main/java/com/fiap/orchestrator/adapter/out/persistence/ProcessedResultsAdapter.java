@@ -20,7 +20,11 @@ public class ProcessedResultsAdapter implements ProcessedResultsPort {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // Joins the caller's @Transactional scope so the dedup record rolls back together
+    // with a failed state-transition. Earlier this used REQUIRES_NEW and committed
+    // independently, which made the consumer skip the retry — see the e2e race where
+    // RECEIVE_RESULT_STARTED arrives before OUTBOX_JOB_PUBLISHED has advanced the state.
+    @Transactional(propagation = Propagation.REQUIRED)
     public boolean recordIfAbsent(JobId jobId, AnalysisStatus status, Instant processedAt) {
         ProcessedResultId id = new ProcessedResultId(jobId.value(), status);
         if (repo.existsById(id)) return false;

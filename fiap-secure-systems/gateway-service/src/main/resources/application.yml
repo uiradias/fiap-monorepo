@@ -71,3 +71,20 @@ gateway:
     anon-per-minute: ${GATEWAY_RATE_LIMIT_ANON_PER_MINUTE:10}
   websocket:
     snapshot-events: ${GATEWAY_WEBSOCKET_SNAPSHOT_EVENTS:50}
+
+resilience4j:
+  retry:
+    instances:
+      orchestrator:
+        max-attempts: 3
+        wait-duration: 200ms
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+  circuitbreaker:
+    instances:
+      orchestrator:
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s

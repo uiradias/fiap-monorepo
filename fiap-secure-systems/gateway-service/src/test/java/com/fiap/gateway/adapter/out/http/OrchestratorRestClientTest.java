@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,14 +42,22 @@ class OrchestratorRestClientTest {
 
         SessionId sid = new SessionId(UUID.randomUUID());
         UserId uid = new UserId(UUID.randomUUID());
-        client.createSession(sid, uid, 1, List.of("sessions/" + sid + "/x.png"));
+        BundleId bid = new BundleId(sid.value());
+        Asset asset = new Asset(
+                new AssetId(UUID.randomUUID()), bid,
+                "sessions/" + sid + "/x.png", "x.png", ContentType.IMAGE_PNG,
+                100L, "deadbeef".repeat(8), Instant.now());
+        client.createSession(sid, uid, 1, List.of(asset));
 
         RecordedRequest rec = server.takeRequest();
         assertThat(rec.getMethod()).isEqualTo("POST");
         assertThat(rec.getPath()).isEqualTo("/internal/sessions");
         assertThat(rec.getHeader("X-Internal-Timestamp")).isEqualTo("1714003200");
         assertThat(rec.getHeader("X-Internal-Signature")).isNotNull().hasSize(64);
-        assertThat(rec.getBody().readUtf8()).contains(sid.value().toString());
+        String body = rec.getBody().readUtf8();
+        assertThat(body).contains(sid.value().toString());
+        assertThat(body).contains("\"assets\"");
+        assertThat(body).contains("\"sessions/" + sid + "/x.png\"");
     }
 
     @Test
@@ -59,7 +68,7 @@ class OrchestratorRestClientTest {
                 .setHeader("Content-Type", "application/json")
                 .setBody("""
                         {
-                          "id":"%s",
+                          "reportId":"%s",
                           "sessionId":"%s",
                           "summary":"ok",
                           "confidence":"high",

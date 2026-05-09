@@ -8,7 +8,7 @@ import java.util.UUID;
 @Table(name = "users")
 public class UserEntity {
     @Id @Column(name = "id", nullable = false) public UUID id;
-    @Column(name = "email", nullable = false, unique = true) public String email;
+    @Column(name = "email", nullable = false, unique = true, columnDefinition = "citext") public String email;
     @Column(name = "password_hash", nullable = false) public String passwordHash;
     @Column(name = "display_name") public String displayName;
     @Column(name = "created_at", nullable = false) public Instant createdAt;

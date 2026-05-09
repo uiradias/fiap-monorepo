@@ -1,7 +1,6 @@
 package com.fiap.gateway.adapter.in.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fiap.gateway.domain.port.out.SessionEventBroadcastPort;
 import com.fiap.gateway.domain.port.out.SessionEventLogRepositoryPort;
 import com.fiap.gateway.domain.port.out.SessionProjectionRepositoryPort;
 import com.fiap.gateway.domain.port.out.TokenIssuerPort;
@@ -40,18 +39,14 @@ public class WebSocketConfig implements WebSocketConfigurer {
     }
 
     @Bean
-    public SessionEventBroadcastPort sessionEventBroadcastPort(InProcessSessionEventBroadcaster b) {
-        return b;
-    }
-
-    @Bean
-    public SessionEventsWsHandler sessionEventsWsHandler() {
-        return new SessionEventsWsHandler(sessionEventBroadcaster(), eventLog, projections, mapper, snapshotEvents);
+    public SessionEventsWsHandler sessionEventsWsHandler(InProcessSessionEventBroadcaster broadcaster) {
+        return new SessionEventsWsHandler(broadcaster, eventLog, projections, mapper, snapshotEvents);
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(sessionEventsWsHandler(), "/ws/sessions/{sessionId}")
+        registry.addHandler(sessionEventsWsHandler(sessionEventBroadcaster()),
+                        "/ws/sessions/{sessionId}")
                 .addInterceptors(new JwtHandshakeInterceptor(tokens, projections))
                 .setAllowedOrigins("*");
     }

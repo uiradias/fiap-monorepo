@@ -39,13 +39,13 @@ public class FinalizeBundleService implements FinalizeBundleUseCase {
         AssetBundle finalized = bundle.finalize(clock.now());
         bundles.save(finalized);
 
-        SessionId sessionId = new SessionId(UUID.fromString(bundleId.value().toString()));   // bundleId == sessionId
-        List<String> keys = assets.findByBundleId(bundleId).stream().map(Asset::s3Key).toList();
+        SessionId sessionId = new SessionId(bundleId.value());   // bundleId == sessionId end-to-end
+        List<Asset> bundleAssets = assets.findByBundleId(bundleId);
 
         // Pre-seed the projection so the WS path can find it before the first SNS event arrives.
         projections.upsert(SessionProjection.initial(sessionId, requester, SessionState.ASSETS_UPLOADED, clock.now()));
 
-        orchestrator.createSession(sessionId, requester, finalized.assetCount(), keys);
+        orchestrator.createSession(sessionId, requester, finalized.assetCount(), bundleAssets);
         return new Result(sessionId, SessionState.ASSETS_UPLOADED);
     }
 }

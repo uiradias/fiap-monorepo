@@ -44,12 +44,20 @@ public class OrchestratorRestClient implements OrchestratorClientPort {
     @Retry(name = "orchestrator")
     @CircuitBreaker(name = "orchestrator")
     @Override
-    public void createSession(SessionId sessionId, UserId userId, int assetCount, List<String> assetKeys) {
+    public void createSession(SessionId sessionId, UserId userId, int assetCount, List<Asset> assets) {
+        List<Map<String, Object>> assetReqs = assets.stream()
+                .map(a -> Map.<String, Object>of(
+                        "assetId", a.id().value().toString(),
+                        "s3Key", a.s3Key(),
+                        "contentType", a.contentType().value,
+                        "filename", a.filename(),
+                        "sizeBytes", a.sizeBytes()))
+                .toList();
         Map<String, Object> body = Map.of(
                 "sessionId", sessionId.value().toString(),
                 "userId", userId.value().toString(),
                 "assetCount", assetCount,
-                "assetKeys", assetKeys);
+                "assets", assetReqs);
         sendJson("POST", "/internal/sessions", body, Void.class);
     }
 
@@ -57,22 +65,25 @@ public class OrchestratorRestClient implements OrchestratorClientPort {
     @CircuitBreaker(name = "orchestrator")
     @Override
     public SessionProjection getSession(SessionId sessionId) {
+        // Orchestrator's SessionResponse: sessionId, userId, state, assetCount, failureReason, createdAt, updatedAt, version
+        // (No lastEventAt or reportId — orchestrator owns canonical state, not the projection shape.)
         String path = "/internal/sessions/" + sessionId;
         @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) sendJson("GET", path, null, Map.class);
         return new SessionProjection(
-                new SessionId(UUID.fromString((String) body.get("id"))),
+                new SessionId(UUID.fromString((String) body.get("sessionId"))),
                 new UserId(UUID.fromString((String) body.get("userId"))),
                 SessionState.valueOf((String) body.get("state")),
-                java.time.Instant.parse((String) body.get("lastEventAt")),
+                java.time.Instant.parse((String) body.get("updatedAt")),
                 (String) body.get("failureReason"),
-                body.get("reportId") == null ? null : new ReportId(UUID.fromString((String) body.get("reportId"))));
+                null);
     }
 
     @Retry(name = "orchestrator")
     @CircuitBreaker(name = "orchestrator")
     @Override
     public AnalysisReport getReport(SessionId sessionId) {
+        // Orchestrator's ReportResponse: reportId, sessionId, summary, confidence, payload, modelMetadata, createdAt
         String path = "/internal/sessions/" + sessionId + "/report";
         @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) sendJson("GET", path, null, Map.class);
@@ -81,7 +92,7 @@ public class OrchestratorRestClient implements OrchestratorClientPort {
         @SuppressWarnings("unchecked")
         Map<String, Object> md = (Map<String, Object>) body.get("modelMetadata");
         return new AnalysisReport(
-                new ReportId(UUID.fromString((String) body.get("id"))),
+                new ReportId(UUID.fromString((String) body.get("reportId"))),
                 new SessionId(UUID.fromString((String) body.get("sessionId"))),
                 (String) body.get("summary"),
                 (String) body.get("confidence"),

@@ -36,6 +36,11 @@ public class CompositionConfig {
     }
 
     @Bean
+    public Duration refreshTokenTtl(@Value("${gateway.jwt.refresh-ttl-days}") int days) {
+        return Duration.ofDays(days);
+    }
+
+    @Bean
     public ContractValidator contractValidator(
             @Value("${gateway.contracts-dir}") String contractsDir) {
         return new ContractValidator(new File(contractsDir).getAbsoluteFile());

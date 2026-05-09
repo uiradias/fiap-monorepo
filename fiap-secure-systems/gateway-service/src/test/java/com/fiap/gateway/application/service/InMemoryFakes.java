@@ -113,14 +113,14 @@ public final class InMemoryFakes {
         public final Map<SessionId, SessionProjection> sessions = new ConcurrentHashMap<>();
         public final Map<SessionId, AnalysisReport> reports = new ConcurrentHashMap<>();
 
-        @Override public void createSession(SessionId sid, UserId uid, int count, List<String> keys) {
-            creates.add(new CreateCall(sid, uid, count, keys));
+        @Override public void createSession(SessionId sid, UserId uid, int count, List<Asset> bundleAssets) {
+            creates.add(new CreateCall(sid, uid, count, bundleAssets));
         }
         @Override public SessionProjection getSession(SessionId sid) { return sessions.get(sid); }
         @Override public AnalysisReport getReport(SessionId sid) { return reports.get(sid); }
         @Override public void cancelSession(SessionId sid) { /* no-op for fake */ }
 
-        public record CreateCall(SessionId sid, UserId uid, int count, List<String> keys) {}
+        public record CreateCall(SessionId sid, UserId uid, int count, List<Asset> bundleAssets) {}
     }
 
     public static final class FakeBroadcaster implements SessionEventBroadcastPort {

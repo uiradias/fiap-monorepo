@@ -14,18 +14,18 @@ describe("apiClient", () => {
   let access: string | null;
   let refresh: string | null;
   let setCalls: TokenPair[] = [];
-  let clearCalls = 0;
+  let _clearCalls = 0;
 
   beforeEach(() => {
     access = "tok-1";
     refresh = "ref-1";
     setCalls = [];
-    clearCalls = 0;
+    _clearCalls = 0;
     configureTokenStore({
       getAccess: () => access,
       getRefresh: () => refresh,
       set: (p) => { setCalls.push(p); access = p.accessToken; refresh = p.refreshToken; },
-      clear: () => { clearCalls++; access = null; refresh = null; },
+      clear: () => { _clearCalls++; access = null; refresh = null; },
     });
   });
 

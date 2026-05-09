@@ -16,6 +16,11 @@ set -euo pipefail
 
 QUEUE_JOBS="http://localhost:4566/000000000000/analysis-jobs"
 QUEUE_RESULTS="http://localhost:4566/000000000000/analysis-results"
+# When orchestrator-service is also running, it consumes analysis-results and
+# treats this script's synthetic sessionIds as poison pills (no matching session
+# in its DB), forwarding them to the DLQ. So we poll both queues — the message
+# lands in whichever the orchestrator did not race us to.
+QUEUE_RESULTS_DLQ="http://localhost:4566/000000000000/analysis-results-dlq"
 BUCKET="fiap-secure-systems-assets"
 DEADLINE_SECONDS="${DEADLINE_SECONDS:-30}"
 FIXTURE="smart-service/tests/fixtures/sample-architecture.png"
@@ -73,36 +78,47 @@ docker exec fss-localstack awslocal sqs send-message \
   --queue-url "${QUEUE_JOBS}" \
   --message-body file:///tmp/round-trip-job.json >/dev/null
 
-echo "→ waiting up to ${DEADLINE_SECONDS}s for STARTED + SUCCEEDED on analysis-results"
+echo "→ waiting up to ${DEADLINE_SECONDS}s for STARTED + SUCCEEDED on analysis-results (or DLQ)"
 deadline=$(( $(date +%s) + DEADLINE_SECONDS ))
 seen_started=0
 seen_succeeded=0
-while [ "$(date +%s)" -lt "$deadline" ]; do
+
+drain_one() {
+  # $1 = queue url. Receives one message, matches against JOB_ID, marks seen_*
+  # if matched, otherwise releases visibility on non-DLQ queues so other readers
+  # can see it. DLQ is terminal — we delete unmatched DLQ entries to avoid
+  # mis-attributing leftovers.
+  local q="$1" resp body receipt msg_job status
   resp=$(docker exec fss-localstack awslocal sqs receive-message \
-    --queue-url "${QUEUE_RESULTS}" \
-    --max-number-of-messages 1 \
-    --wait-time-seconds 2 \
+    --queue-url "$q" --max-number-of-messages 1 --wait-time-seconds 1 \
     --output json 2>/dev/null || true)
   body=$(echo "$resp" | jq -r '.Messages[0].Body // empty')
   receipt=$(echo "$resp" | jq -r '.Messages[0].ReceiptHandle // empty')
-  [ -z "$body" ] && continue
+  [ -z "$body" ] && return 0
 
   msg_job=$(echo "$body" | jq -r '.jobId')
   status=$(echo "$body" | jq -r '.status')
   if [ "$msg_job" = "${JOB_ID}" ]; then
-    printf "    status=%-9s jobId=%s\n" "$status" "$msg_job"
+    printf "    queue=%-20s status=%-9s jobId=%s\n" "$(basename "$q")" "$status" "$msg_job"
     [ "$status" = "STARTED" ]   && seen_started=1
     [ "$status" = "SUCCEEDED" ] && seen_succeeded=1
-    # Consume only our own messages so a stray result from elsewhere stays put.
     docker exec fss-localstack awslocal sqs delete-message \
-      --queue-url "${QUEUE_RESULTS}" --receipt-handle "$receipt" >/dev/null
+      --queue-url "$q" --receipt-handle "$receipt" >/dev/null
   else
-    # Not ours — release immediately so it's available again.
-    docker exec fss-localstack awslocal sqs change-message-visibility \
-      --queue-url "${QUEUE_RESULTS}" --receipt-handle "$receipt" \
-      --visibility-timeout 0 >/dev/null 2>&1 || true
+    if [ "$q" = "${QUEUE_RESULTS_DLQ}" ]; then
+      docker exec fss-localstack awslocal sqs delete-message \
+        --queue-url "$q" --receipt-handle "$receipt" >/dev/null 2>&1 || true
+    else
+      docker exec fss-localstack awslocal sqs change-message-visibility \
+        --queue-url "$q" --receipt-handle "$receipt" \
+        --visibility-timeout 0 >/dev/null 2>&1 || true
+    fi
   fi
+}
 
+while [ "$(date +%s)" -lt "$deadline" ]; do
+  drain_one "${QUEUE_RESULTS}"
+  drain_one "${QUEUE_RESULTS_DLQ}"
   [ $seen_started -eq 1 ] && [ $seen_succeeded -eq 1 ] && break
 done
 

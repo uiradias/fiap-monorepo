@@ -1,5 +1,6 @@
 package com.fiap.orchestrator.application.service;
 
+import com.fiap.orchestrator.domain.exception.UnknownSessionException;
 import com.fiap.orchestrator.domain.model.*;
 import com.fiap.orchestrator.domain.port.in.HandleAnalysisCompletedUseCase;
 import com.fiap.orchestrator.domain.port.out.OutboxPort;
@@ -42,7 +43,7 @@ public class HandleAnalysisCompletedService implements HandleAnalysisCompletedUs
         if (!dedup.recordIfAbsent(outcome.jobId(), AnalysisStatus.SUCCEEDED, now)) return;
 
         Session s = sessions.findById(outcome.sessionId())
-                .orElseThrow(() -> new IllegalStateException("unknown session: " + outcome.sessionId()));
+                .orElseThrow(() -> new UnknownSessionException(outcome.sessionId()));
 
         // Step A: ANALYZING → ANALYSIS_COMPLETED
         Transition tA = sm.next(s.state(), SessionStateMachine.Trigger.RECEIVE_RESULT_SUCCEEDED);

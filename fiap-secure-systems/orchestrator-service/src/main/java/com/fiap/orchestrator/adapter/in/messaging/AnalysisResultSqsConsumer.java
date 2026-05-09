@@ -3,6 +3,7 @@ package com.fiap.orchestrator.adapter.in.messaging;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.orchestrator.application.service.Clock;
+import com.fiap.orchestrator.domain.exception.UnknownSessionException;
 import com.fiap.orchestrator.domain.model.*;
 import com.fiap.orchestrator.domain.port.in.HandleAnalysisCompletedUseCase;
 import com.fiap.orchestrator.domain.port.in.HandleAnalysisFailedUseCase;
@@ -16,6 +17,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import java.time.Instant;
 import java.util.Map;
@@ -29,6 +31,7 @@ public class AnalysisResultSqsConsumer {
 
     private final SqsClient sqs;
     private final String queueUrl;
+    private final String dlqUrl;
     private final int waitSeconds;
     private final ObjectMapper mapper;
     private final ContractValidator validator;
@@ -41,7 +44,7 @@ public class AnalysisResultSqsConsumer {
     private Thread worker;
 
     public AnalysisResultSqsConsumer(
-            SqsClient sqs, String queueUrl, int waitSeconds,
+            SqsClient sqs, String queueUrl, String dlqUrl, int waitSeconds,
             ObjectMapper mapper, ContractValidator validator,
             HandleAnalysisStartedUseCase started,
             HandleAnalysisCompletedUseCase completed,
@@ -49,6 +52,7 @@ public class AnalysisResultSqsConsumer {
             Clock clock) {
         this.sqs = sqs;
         this.queueUrl = queueUrl;
+        this.dlqUrl = dlqUrl;
         this.waitSeconds = waitSeconds;
         this.mapper = mapper;
         this.validator = validator;
@@ -96,7 +100,7 @@ public class AnalysisResultSqsConsumer {
         }
     }
 
-    private void handleOne(Message m) {
+    void handleOne(Message m) {
         Map<String, Object> body;
         try {
             body = mapper.readValue(m.body(), MAP_TYPE);
@@ -109,9 +113,29 @@ public class AnalysisResultSqsConsumer {
         try {
             dispatch(body);
             deleteSafely(m);
+        } catch (UnknownSessionException poisonPill) {
+            // Permanent error: session referenced by the message does not exist (and won't, ever).
+            // Re-queueing wastes 300 s of visibility timeout per attempt; forward to DLQ explicitly
+            // so ops keeps an audit trail and the message is gone from the main queue immediately.
+            log.warn("poison pill on analysis-results jobId={} status={}: {}",
+                    body.get("jobId"), body.get("status"), poisonPill.getMessage());
+            forwardToDlq(m);
+            deleteSafely(m);
         } catch (Exception useCaseError) {
             log.error("use case failed for analysis-results jobId={} status={}; leaving for redelivery",
                     body.get("jobId"), body.get("status"), useCaseError);
+        }
+    }
+
+    private void forwardToDlq(Message m) {
+        try {
+            sqs.sendMessage(SendMessageRequest.builder()
+                    .queueUrl(dlqUrl)
+                    .messageBody(m.body())
+                    .build());
+        } catch (Exception e) {
+            log.warn("failed to forward poison-pill message {} to DLQ {}: {}",
+                    m.messageId(), dlqUrl, e.getMessage());
         }
     }
 

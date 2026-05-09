@@ -59,6 +59,7 @@ public class CompositionConfig {
     public AnalysisResultSqsConsumer analysisResultSqsConsumer(
             SqsClient sqs,
             @Qualifier("analysisResultsQueueUrl") String queueUrl,
+            @Qualifier("analysisResultsDlqUrl") String dlqUrl,
             @Value("${orchestrator.sqs.poll-wait-seconds:10}") int waitSeconds,
             ObjectMapper mapper,
             ContractValidator validator,
@@ -67,6 +68,7 @@ public class CompositionConfig {
             HandleAnalysisFailedUseCase failed,
             Clock clock) {
         return new AnalysisResultSqsConsumer(
-                sqs, queueUrl, waitSeconds, mapper, validator, started, completed, failed, clock);
+                sqs, queueUrl, dlqUrl, waitSeconds, mapper, validator,
+                started, completed, failed, clock);
     }
 }

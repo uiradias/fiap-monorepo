@@ -1,5 +1,6 @@
 package com.fiap.orchestrator.application.service;
 
+import com.fiap.orchestrator.domain.exception.UnknownSessionException;
 import com.fiap.orchestrator.domain.model.*;
 import com.fiap.orchestrator.domain.port.in.HandleAnalysisStartedUseCase;
 import com.fiap.orchestrator.domain.port.out.OutboxPort;
@@ -40,7 +41,7 @@ public class HandleAnalysisStartedService implements HandleAnalysisStartedUseCas
             return;
         }
         Session s = sessions.findById(sessionId)
-                .orElseThrow(() -> new IllegalStateException("unknown session: " + sessionId));
+                .orElseThrow(() -> new UnknownSessionException(sessionId));
         Transition t = sm.next(s.state(), SessionStateMachine.Trigger.RECEIVE_RESULT_STARTED);
         Session moved = s.withState(t.to(), now);
         sessions.save(moved);

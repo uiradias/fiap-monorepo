@@ -1,5 +1,6 @@
 package com.fiap.orchestrator.application.service;
 
+import com.fiap.orchestrator.domain.exception.UnknownSessionException;
 import com.fiap.orchestrator.domain.model.*;
 import com.fiap.orchestrator.domain.port.in.HandleAnalysisFailedUseCase;
 import com.fiap.orchestrator.domain.port.out.OutboxPort;
@@ -36,7 +37,7 @@ public class HandleAnalysisFailedService implements HandleAnalysisFailedUseCase 
         if (!dedup.recordIfAbsent(outcome.jobId(), AnalysisStatus.FAILED, now)) return;
 
         Session s = sessions.findById(outcome.sessionId())
-                .orElseThrow(() -> new IllegalStateException("unknown session: " + outcome.sessionId()));
+                .orElseThrow(() -> new UnknownSessionException(outcome.sessionId()));
         if (s.state().isTerminal()) return;
 
         AnalysisFailure failure = outcome.failureOpt().orElseThrow();

@@ -148,6 +148,58 @@ services:
       start_period: 60s
     networks: [fss]
 
+  gateway-service:
+    image: fss/gateway-service:dev
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    container_name: fss-gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ""
+      GATEWAY_PORT: 8080
+      GATEWAY_DATABASE_URL: ${GATEWAY_DATABASE_URL}
+      GATEWAY_DB_USER: ${GATEWAY_DB_USER}
+      GATEWAY_DB_PASSWORD: ${GATEWAY_DB_PASSWORD}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+      S3_BUCKET: ${S3_BUCKET}
+      SQS_SESSION_EVENTS_GATEWAY_URL: ${SQS_SESSION_EVENTS_GATEWAY_URL}
+      GATEWAY_ORCHESTRATOR_BASE_URL: http://orchestrator-service:8081
+      GATEWAY_INTERNAL_HMAC_SECRET: ${INTERNAL_HMAC_SECRET}
+      GATEWAY_RATE_LIMIT_AUTHED_PER_MINUTE: ${GATEWAY_RATE_LIMIT_AUTHED_PER_MINUTE:-60}
+      GATEWAY_RATE_LIMIT_ANON_PER_MINUTE: ${GATEWAY_RATE_LIMIT_ANON_PER_MINUTE:-10}
+      GATEWAY_WEBSOCKET_SNAPSHOT_EVENTS: ${GATEWAY_WEBSOCKET_SNAPSHOT_EVENTS:-50}
+      GATEWAY_SQS_SESSION_EVENTS_POLL_WAIT_SECONDS: 10
+      JWT_PRIVATE_KEY_PATH: /run/jwt/jwt-private.pem
+      JWT_PUBLIC_KEY_PATH: /run/jwt/jwt-public.pem
+      GATEWAY_CONTRACTS_DIR: /opt/contracts
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_SERVICE_NAME: gateway-service
+    volumes:
+      - ./infrastructure/jwt:/run/jwt:ro
+      - ./infrastructure/contracts:/opt/contracts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+      orchestrator-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/actuator/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    networks: [fss]
+
 volumes:
   postgres-data:
 

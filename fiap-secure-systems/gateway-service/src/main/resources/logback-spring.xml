@@ -1,0 +1,15 @@
+<configuration>
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <includeMdcKeyName>traceId</includeMdcKeyName>
+      <includeMdcKeyName>spanId</includeMdcKeyName>
+      <customFields>{"service":"gateway-service"}</customFields>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="JSON"/>
+  </root>
+
+  <logger name="com.fiap.gateway" level="DEBUG"/>
+</configuration>

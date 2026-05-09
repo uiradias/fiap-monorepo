@@ -1,0 +1,46 @@
+{
+  "title": "frontend",
+  "uid": "fss-frontend",
+  "schemaVersion": 39,
+  "tags": ["fiap-secure-systems", "frontend"],
+  "time": { "from": "now-30m", "to": "now" },
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "stat",
+      "id": 1,
+      "title": "frontend container",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "up{job=\"frontend\"}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN" }, "1": { "text": "UP" } } }
+          ]
+        }
+      }
+    },
+    {
+      "type": "text",
+      "id": 2,
+      "title": "Note",
+      "gridPos": { "x": 6, "y": 0, "w": 18, "h": 4 },
+      "options": {
+        "mode": "markdown",
+        "content": "The SPA bundle does not emit metrics directly — it's static assets served by nginx. To populate this dashboard with traffic data, add `nginx-prometheus-exporter` as a sidecar to the frontend container and scrape it via the OTel Collector. Tracked as a deferred follow-up; see the plan."
+      }
+    }
+  ]
+}

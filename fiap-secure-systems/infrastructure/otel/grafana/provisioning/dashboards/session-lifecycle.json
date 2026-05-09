@@ -1,0 +1,67 @@
+{
+  "title": "session-lifecycle",
+  "uid": "fss-session",
+  "schemaVersion": 39,
+  "tags": ["fiap-secure-systems", "cross-cutting"],
+  "time": { "from": "now-30m", "to": "now" },
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "id": 1,
+      "title": "Session state transitions per minute (by toState)",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum by (to_state) (rate(fss_session_transitions_total[1m]))",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "{{to_state}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 2,
+      "title": "End-to-end session duration p50 / p95 (s, finalize → REPORT_READY)",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(fss_session_duration_seconds_bucket[5m])))",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(fss_session_duration_seconds_bucket[5m])))",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 3,
+      "title": "SQS queue depths (analysis-jobs / analysis-results / session-events)",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "fss_sqs_queue_depth",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 4,
+      "title": "Failure rate (FAILED transitions / minute, by errorCode)",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum by (error_code) (rate(fss_session_transitions_total{to_state=\"FAILED\"}[1m]))",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "{{error_code}}"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "title": "orchestrator-service",
+  "uid": "fss-orchestrator",
+  "schemaVersion": 39,
+  "tags": ["fiap-secure-systems", "orchestrator-service"],
+  "time": { "from": "now-30m", "to": "now" },
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "stat",
+      "id": 1,
+      "title": "orchestrator-service running",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "expr": "up{job=\"orchestrator-service\"}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN" }, "1": { "text": "UP" } } }
+          ]
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 2,
+      "title": "Internal REST request rate (req/s, by URI + status)",
+      "gridPos": { "x": 4, "y": 0, "w": 10, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{service=\"orchestrator-service\"}[1m]))",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "{{uri}} ({{status}})"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 3,
+      "title": "Outbox unpublished count",
+      "gridPos": { "x": 14, "y": 0, "w": 10, "h": 8 },
+      "targets": [
+        {
+          "expr": "fss_outbox_unpublished{service=\"orchestrator-service\"}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "unpublished rows"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 4,
+      "title": "JVM heap (used vs max, MB)",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{service=\"orchestrator-service\",area=\"heap\"} / 1024 / 1024",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "used"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{service=\"orchestrator-service\",area=\"heap\"} / 1024 / 1024",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "legendFormat": "max"
+        }
+      ]
+    }
+  ]
+}

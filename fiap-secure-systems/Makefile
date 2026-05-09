@@ -204,3 +204,9 @@ e2e: ## end-to-end harness: nuke, full stack up, all round-trips + Playwright, t
 	cd frontend && npm ci && npx playwright install --with-deps chromium && BASE_URL=http://localhost:5173 npm run test:e2e; \
 	cd ..; \
 	make down
+
+.PHONY: dashboards-check
+dashboards-check: ## verify all Grafana dashboard JSON files parse
+	@for f in infrastructure/otel/grafana/provisioning/dashboards/*.json; do \
+	  python3 -m json.tool "$$f" > /dev/null && echo "  OK $$f" || { echo "  FAIL $$f"; exit 1; }; \
+	done

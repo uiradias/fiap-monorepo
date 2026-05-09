@@ -16,6 +16,7 @@ import java.util.Set;
 public class ContractValidator {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String SCHEMA_ID_PREFIX = "https://fiap-secure-systems/contracts/";
 
     private final JsonSchema analysisJob;
     private final JsonSchema analysisResult;
@@ -28,7 +29,17 @@ public class ContractValidator {
         }
         SchemaValidatorsConfig cfg = new SchemaValidatorsConfig();
         cfg.setFailFast(false);
-        JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+        // Map the schemas' "$id" URI prefix to the local contracts directory so that
+        // cross-schema $refs (e.g. analysis-results -> analysis-report) resolve locally
+        // instead of being fetched over the network.
+        String localPrefix = contractsDir.toURI().toString();
+        if (!localPrefix.endsWith("/")) localPrefix = localPrefix + "/";
+        final String localPrefixFinal = localPrefix;
+        JsonSchemaFactory factory = JsonSchemaFactory
+                .getInstance(SpecVersion.VersionFlag.V7,
+                        builder -> builder.schemaMappers(
+                                m -> m.mapPrefix(SCHEMA_ID_PREFIX, localPrefixFinal)));
+
         this.analysisJob    = load(factory, cfg, contractsDir, "analysis-jobs.schema.json");
         this.analysisResult = load(factory, cfg, contractsDir, "analysis-results.schema.json");
         this.sessionEvent   = load(factory, cfg, contractsDir, "session-events.schema.json");

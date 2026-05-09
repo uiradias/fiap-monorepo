@@ -97,10 +97,17 @@ green "  → got report, summary=\"${SUMMARY}\""
 
 echo "→ checking SNS event delivery on session-events-gateway queue"
 SNS_QUEUE="http://localhost:4566/000000000000/session-events-gateway"
-events=$(docker exec "$LOCALSTACK" awslocal sqs receive-message \
-  --queue-url "$SNS_QUEUE" --max-number-of-messages 10 --wait-time-seconds 2 \
-  --query 'Messages[].Body' --output text 2>/dev/null || true)
-matches=$(echo "$events" | tr ' ' '\n' | grep -c "$SESSION_ID" || true)
+matches=0
+# Loop receives until the queue stops returning messages — SQS can return fewer than the
+# requested max-messages. Tab-delimited output requires splitting on \t, not space.
+for _ in 1 2 3 4 5 6 7 8; do
+  events=$(docker exec "$LOCALSTACK" awslocal sqs receive-message \
+    --queue-url "$SNS_QUEUE" --max-number-of-messages 10 --wait-time-seconds 1 \
+    --query 'Messages[].Body' --output text 2>/dev/null || true)
+  [ -z "$events" ] && break
+  count=$(printf "%s" "$events" | tr '\t' '\n' | grep -c "$SESSION_ID" || true)
+  matches=$((matches + count))
+done
 echo "    received ${matches} session-events for our sessionId"
 [ "$matches" -ge 4 ] || { red "expected ≥ 4 session-events, got $matches"; exit 1; }
 green "  → at least 4 transition events delivered"

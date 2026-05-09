@@ -6,6 +6,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -52,7 +54,8 @@ public class OutboxMessageEntity {
         e.aggregateId = aggregateId;
         e.destination = destination;
         e.eventType = eventType;
-        e.payload = Map.copyOf(payload);
+        // Defensive copy that tolerates null values (e.g. fromState=null for initial events).
+        e.payload = Collections.unmodifiableMap(new LinkedHashMap<>(payload));
         e.createdAt = createdAt;
         e.attempts = 0;
         return e;

@@ -33,10 +33,9 @@ public class CompositionConfig {
         return new ContractValidator(new File(contractsDir).getAbsoluteFile());
     }
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
+    // ObjectMapper bean is provided by Spring Boot's Jackson auto-configuration.
+    // It comes pre-registered with JavaTimeModule (required to serialize java.time.Instant).
+    // Defining our own here would override that, breaking REST/JSON for Instant fields.
 
     @Bean
     public SqsAnalysisJobPublisher sqsAnalysisJobPublisher(

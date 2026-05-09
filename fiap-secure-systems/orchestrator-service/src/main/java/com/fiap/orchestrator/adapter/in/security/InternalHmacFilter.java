@@ -2,15 +2,20 @@ package com.fiap.orchestrator.adapter.in.security;
 
 import com.fiap.orchestrator.application.service.Clock;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HexFormat;
@@ -46,10 +51,8 @@ public class InternalHmacFilter extends OncePerRequestFilter {
             return;
         }
 
-        ContentCachingRequestWrapper cached = new ContentCachingRequestWrapper(request);
-
-        String tsHeader = cached.getHeader("X-Internal-Timestamp");
-        String sigHeader = cached.getHeader("X-Internal-Signature");
+        String tsHeader = request.getHeader("X-Internal-Timestamp");
+        String sigHeader = request.getHeader("X-Internal-Signature");
         if (tsHeader == null || sigHeader == null) {
             problem(response, "missing X-Internal-Timestamp or X-Internal-Signature");
             return;
@@ -67,17 +70,39 @@ public class InternalHmacFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Force the cache by reading the underlying stream first.
-        cached.getInputStream().readAllBytes();
-        String body = new String(cached.getContentAsByteArray(), StandardCharsets.UTF_8);
-        String canonical = ts + "\n" + cached.getMethod() + "\n" + path + "\n" + sha256Hex(body);
+        byte[] bodyBytes = request.getInputStream().readAllBytes();
+        String body = new String(bodyBytes, StandardCharsets.UTF_8);
+        String canonical = ts + "\n" + request.getMethod() + "\n" + path + "\n" + sha256Hex(body);
         String expected = hmacHex(canonical);
 
         if (!constantTimeEquals(expected, sigHeader)) {
             problem(response, "invalid X-Internal-Signature");
             return;
         }
-        chain.doFilter(cached, response);
+        chain.doFilter(new CachedBodyRequest(request, bodyBytes), response);
+    }
+
+    private static final class CachedBodyRequest extends HttpServletRequestWrapper {
+        private final byte[] cachedBody;
+
+        CachedBodyRequest(HttpServletRequest delegate, byte[] cachedBody) {
+            super(delegate);
+            this.cachedBody = cachedBody;
+        }
+
+        @Override public ServletInputStream getInputStream() {
+            ByteArrayInputStream inner = new ByteArrayInputStream(cachedBody);
+            return new ServletInputStream() {
+                @Override public boolean isFinished() { return inner.available() == 0; }
+                @Override public boolean isReady() { return true; }
+                @Override public void setReadListener(ReadListener readListener) {}
+                @Override public int read() { return inner.read(); }
+            };
+        }
+
+        @Override public BufferedReader getReader() {
+            return new BufferedReader(new InputStreamReader(getInputStream(), StandardCharsets.UTF_8));
+        }
     }
 
     private static boolean constantTimeEquals(String a, String b) {

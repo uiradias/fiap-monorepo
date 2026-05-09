@@ -151,3 +151,33 @@ gen-jwt-keys: ## Generate RS256 JWT keys for gateway-service (no-op if already p
 	  openssl rsa -in infrastructure/jwt/jwt-private.pem -pubout -out infrastructure/jwt/jwt-public.pem; \
 	  echo "[gen-jwt-keys] wrote infrastructure/jwt/jwt-{private,public}.pem"; \
 	else echo "[gen-jwt-keys] keys already exist; skipping"; fi
+
+# === frontend ===
+
+.PHONY: front-build
+front-build: ## (frontend) install deps + production build
+	cd frontend && npm ci && npm run build
+
+.PHONY: front-test
+front-test: ## (frontend) Vitest unit tests
+	cd frontend && npm ci && npm test -- --run
+
+.PHONY: front-dev
+front-dev: ## (frontend) start Vite dev server (no docker)
+	cd frontend && npm install && npm run dev
+
+.PHONY: front-up
+front-up: env-check ## (frontend) start full stack with frontend container
+	$(COMPOSE) up -d frontend
+
+.PHONY: front-logs
+front-logs: ## (frontend) tail frontend container logs
+	$(COMPOSE) logs -f --tail=100 frontend
+
+.PHONY: front-shell
+front-shell: ## (frontend) exec a shell inside the running frontend container
+	docker exec -it fss-frontend /bin/sh
+
+.PHONY: front-round-trip
+front-round-trip: ## (frontend) end-to-end public flow via curl + wscat (requires stack up)
+	@./infrastructure/smoke/front-round-trip.sh

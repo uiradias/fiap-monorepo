@@ -38,3 +38,9 @@ grafana-data/
 # JWT keys are generated locally; never commit
 infrastructure/jwt/jwt-private.pem
 infrastructure/jwt/jwt-public.pem
+
+# frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/

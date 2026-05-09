@@ -73,7 +73,7 @@ configurations {
 }
 
 dependencies {
-    "integrationTestImplementation"(platform("org.testcontainers:testcontainers-bom:1.20.4"))
+    "integrationTestImplementation"(platform("org.testcontainers:testcontainers-bom:1.21.3"))
     "integrationTestImplementation"("org.testcontainers:junit-jupiter")
     "integrationTestImplementation"("org.testcontainers:postgresql")
     "integrationTestImplementation"("org.testcontainers:localstack")

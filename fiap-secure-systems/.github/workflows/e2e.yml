@@ -1,0 +1,106 @@
+name: e2e
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *"          # 03:00 UTC nightly
+  workflow_dispatch: {}           # manual trigger button
+
+permissions:
+  contents: read
+
+env:
+  COMPOSE_BAKE: true
+  SMART_SERVICE_PROFILE: e2e
+
+jobs:
+  full-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: fiap-secure-systems
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: fiap-secure-systems/frontend/package-lock.json
+
+      - name: Install Python 3.12 + uv
+        uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pipx install uv==0.5.4
+
+      - name: Seed .env (e2e profile)
+        run: |
+          cp .env.example .env
+          sed -i 's/^SMART_SERVICE_PROFILE=production$/SMART_SERVICE_PROFILE=e2e/' .env
+
+      - name: Generate JWT keys
+        run: make gen-jwt-keys
+
+      - name: Bring up full stack
+        run: |
+          make up
+          make smart-up
+          make orch-up
+          make gw-up
+          make front-up
+
+      - name: Wait for healthy
+        run: ./infrastructure/smoke/wait-healthy.sh
+
+      - name: make smoke
+        run: make smoke
+
+      - name: smart-service round-trip
+        run: make round-trip
+
+      - name: gateway-service round-trip
+        run: make gw-round-trip
+
+      - name: frontend round-trip
+        run: make front-round-trip
+
+      - name: Playwright e2e
+        working-directory: fiap-secure-systems/frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          BASE_URL=http://localhost:5173 npm run test:e2e
+
+      - name: Tear down
+        if: always()
+        run: make down
+
+      - name: Archive compose logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-logs-${{ github.run_id }}
+          path: |
+            fiap-secure-systems/**/build/reports/**
+            fiap-secure-systems/frontend/playwright-report/**
+            fiap-secure-systems/frontend/test-results/**
+          retention-days: 7
+
+      - name: Promote :stable image tag (success on main only)
+        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for svc in smart-service orchestrator-service gateway-service frontend; do
+            src="ghcr.io/${{ github.repository_owner }}/fiap-${svc}:${{ github.sha }}"
+            dst="ghcr.io/${{ github.repository_owner }}/fiap-${svc}:stable"
+            docker buildx imagetools create -t "$dst" "$src" || true
+          done

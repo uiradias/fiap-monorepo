@@ -185,3 +185,22 @@ front-round-trip: ## (frontend) end-to-end public flow via curl + wscat (require
 .PHONY: front-test-e2e
 front-test-e2e: ## (frontend) Playwright e2e against an already-running stack
 	cd frontend && npm ci && npx playwright install --with-deps chromium && npm run test:e2e
+
+.PHONY: e2e
+e2e: ## end-to-end harness: nuke, full stack up, all round-trips + Playwright, tear down
+	@set -e; \
+	make gen-jwt-keys; \
+	make nuke; \
+	make up; \
+	make smart-up; \
+	make orch-up; \
+	make gw-up; \
+	make front-up; \
+	./infrastructure/smoke/wait-healthy.sh; \
+	make smoke; \
+	make round-trip; \
+	make gw-round-trip; \
+	make front-round-trip; \
+	cd frontend && npm ci && npx playwright install --with-deps chromium && BASE_URL=http://localhost:5173 npm run test:e2e; \
+	cd ..; \
+	make down

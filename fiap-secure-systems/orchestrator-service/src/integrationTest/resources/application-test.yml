@@ -1,0 +1,12 @@
+# Inherits the main application.yml; overrides come from @DynamicPropertySource.
+# AWS endpoints are stubbed; LocalStack-using tests override them.
+spring:
+  jpa:
+    show-sql: false
+orchestrator:
+  sqs:
+    analysis-jobs-url: http://test/analysis-jobs
+    analysis-results-url: http://test/analysis-results
+  sns:
+    session-events-topic-arn: arn:aws:sns:us-east-1:000000000000:session-events
+  contracts-dir: ../infrastructure/contracts

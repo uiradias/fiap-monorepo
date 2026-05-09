@@ -1,3 +1,6 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+
 plugins {
     java
     id("org.springframework.boot") version "3.4.0"
@@ -51,8 +54,6 @@ dependencies {
 
 sourceSets {
     create("integrationTest") {
-        java.srcDir("src/integrationTest/java")
-        resources.srcDir("src/integrationTest/resources")
         compileClasspath += sourceSets["main"].output + sourceSets["test"].output
         runtimeClasspath += sourceSets["main"].output + sourceSets["test"].output
     }
@@ -68,7 +69,7 @@ configurations {
 }
 
 dependencies {
-    "integrationTestImplementation"(platform("org.testcontainers:testcontainers-bom:1.20.1"))
+    "integrationTestImplementation"(platform("org.testcontainers:testcontainers-bom:1.20.4"))
     "integrationTestImplementation"("org.testcontainers:junit-jupiter")
     "integrationTestImplementation"("org.testcontainers:postgresql")
     "integrationTestImplementation"("org.testcontainers:localstack")
@@ -82,6 +83,17 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     shouldRunAfter("test")
     useJUnitPlatform()
     systemProperty("spring.profiles.active", "test")
+    // Propagate DOCKER_HOST so Testcontainers finds the Docker Desktop socket on macOS.
+    val explicitDockerHost = System.getenv("DOCKER_HOST")
+    if (explicitDockerHost != null) {
+        environment("DOCKER_HOST", explicitDockerHost)
+    } else {
+        val home = System.getProperty("user.home")
+        val candidate = Paths.get(home, ".docker", "run", "docker.sock")
+        if (Files.exists(candidate)) {
+            environment("DOCKER_HOST", "unix://" + candidate.toAbsolutePath().toString())
+        }
+    }
 }
 
 tasks.named<Test>("test") {

@@ -1,0 +1,14 @@
+# All changes default to the repo owner.
+*                              @uiradias
+
+# Per-service ownership — duplicates the default for clarity, gives a hook
+# for future per-service maintainers without a global rewrite.
+/fiap-secure-systems/smart-service/        @uiradias
+/fiap-secure-systems/orchestrator-service/ @uiradias
+/fiap-secure-systems/gateway-service/      @uiradias
+/fiap-secure-systems/frontend/             @uiradias
+
+# Workflow + infra changes need owner review.
+/fiap-secure-systems/.github/              @uiradias
+/fiap-secure-systems/infrastructure/       @uiradias
+/fiap-secure-systems/docker-compose*.yml   @uiradias

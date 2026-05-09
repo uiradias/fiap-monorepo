@@ -31,3 +31,6 @@ grafana-data/
 
 # Logs
 *.log
+
+# AI agents
+.claude/

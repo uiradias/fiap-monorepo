@@ -54,9 +54,12 @@ dependencies {
 }
 
 sourceSets {
-    create("integrationTest") {
-        compileClasspath += sourceSets["main"].output + sourceSets["test"].output
-        runtimeClasspath += sourceSets["main"].output + sourceSets["test"].output
+    val main by getting
+    val test by getting
+    @Suppress("unused")
+    val integrationTest by creating {
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
     }
 }
 

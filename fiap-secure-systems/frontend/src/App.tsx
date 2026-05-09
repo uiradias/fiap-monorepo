@@ -1,4 +1,6 @@
 import { Link, Route, Routes } from "react-router-dom";
+import { useAuth } from "./auth/AuthContext";
+import ProtectedRoute from "./auth/ProtectedRoute";
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -9,23 +11,31 @@ function Placeholder({ name }: { name: string }) {
   );
 }
 
+function NavLinks() {
+  const { authed, logout } = useAuth();
+  return (
+    <nav>
+      {!authed && <Link to="/login">Login</Link>}
+      {!authed && <Link to="/register">Register</Link>}
+      {authed && <Link to="/upload">Upload</Link>}
+      {authed && <button onClick={logout} className="link-button">Logout</button>}
+    </nav>
+  );
+}
+
 export default function App() {
   return (
     <div className="app">
       <header className="topbar">
         <Link to="/" className="brand">fiap-secure-systems</Link>
-        <nav>
-          <Link to="/login">Login</Link>
-          <Link to="/register">Register</Link>
-          <Link to="/upload">Upload</Link>
-        </nav>
+        <NavLinks />
       </header>
       <Routes>
         <Route path="/" element={<Placeholder name="Home" />} />
         <Route path="/login" element={<Placeholder name="Login" />} />
         <Route path="/register" element={<Placeholder name="Register" />} />
-        <Route path="/upload" element={<Placeholder name="Upload" />} />
-        <Route path="/sessions/:id" element={<Placeholder name="Session" />} />
+        <Route path="/upload" element={<ProtectedRoute><Placeholder name="Upload" /></ProtectedRoute>} />
+        <Route path="/sessions/:id" element={<ProtectedRoute><Placeholder name="Session" /></ProtectedRoute>} />
         <Route path="*" element={<Placeholder name="Not found" />} />
       </Routes>
     </div>

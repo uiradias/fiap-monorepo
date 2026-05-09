@@ -72,3 +72,14 @@ form.card button:disabled { background: #94a3b8; cursor: not-allowed; }
 }
 .event.terminal { background: #dcfce7; border-color: #86efac; }
 .event.failed { background: #fee2e2; border-color: #fca5a5; }
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-left: 16px;
+  color: #475569;
+  font-size: inherit;
+  cursor: pointer;
+}
+.link-button:hover { color: #0f172a; }

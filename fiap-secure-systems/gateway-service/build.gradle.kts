@@ -5,6 +5,29 @@ plugins {
     java
     id("org.springframework.boot") version "3.4.0"
     id("io.spring.dependency-management") version "1.1.6"
+    id("com.diffplug.spotless") version "6.25.0"
+}
+
+spotless {
+    // Only format files changed since origin/main so introducing Spotless does not
+    // produce a repo-wide reformat diff. Drop this line to enforce on every file.
+    ratchetFrom("origin/main")
+
+    format("misc") {
+        target("*.gradle.kts", "*.md", ".gitignore")
+        trimTrailingWhitespace()
+        indentWithSpaces(4)
+        endWithNewline()
+    }
+    java {
+        target("src/*/java/**/*.java")
+        // googleJavaFormat with AOSP style — 4-space indent, 100-char line limit;
+        // matches the existing codebase. The article uses eclipse() but Eclipse's
+        // out-of-the-box settings would convert every line to tabs.
+        googleJavaFormat("1.22.0").aosp().reflowLongStrings()
+        importOrder("java", "javax", "org", "com", "")
+        removeUnusedImports()
+    }
 }
 
 java {

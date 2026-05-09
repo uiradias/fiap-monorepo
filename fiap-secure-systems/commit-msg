@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# commit-msg hook — runs Spotless on the staged changes and re-stages any
+# resulting reformat. Installed by `./gradlew :installGitHooks` (which is
+# wired as a dependency of every Java module's compileJava task).
+#
+# Spotless is configured with `ratchetFrom 'origin/main'`, so this only
+# formats files changed in the working tree — which keeps the hook fast
+# even on a large codebase.
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+GRADLE_PROJECT_DIR="$REPO_ROOT/fiap-secure-systems"
+
+echo "======================================================================"
+echo "Running SPOTLESS on your code now!"
+echo "======================================================================"
+
+cd "$GRADLE_PROJECT_DIR"
+./gradlew --quiet spotlessApply
+
+# Re-stage tracked files only — `git add -u` skips untracked junk that
+# `git add .` would otherwise sweep into the commit. Run from REPO_ROOT
+# so paths resolve correctly when committing from a subdirectory.
+cd "$REPO_ROOT"
+git add -u
+
+echo "======================================================================"
+echo "Code is linted. Committing now"
+echo "======================================================================"

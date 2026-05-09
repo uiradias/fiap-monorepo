@@ -181,3 +181,7 @@ front-shell: ## (frontend) exec a shell inside the running frontend container
 .PHONY: front-round-trip
 front-round-trip: ## (frontend) end-to-end public flow via curl + wscat (requires stack up)
 	@./infrastructure/smoke/front-round-trip.sh
+
+.PHONY: front-test-e2e
+front-test-e2e: ## (frontend) Playwright e2e against an already-running stack
+	cd frontend && npm ci && npx playwright install --with-deps chromium && npm run test:e2e

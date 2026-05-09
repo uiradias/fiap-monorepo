@@ -1,59 +1,75 @@
 # fiap-secure-systems
 
-A distributed system that ingests system-architecture diagrams (PDF/image), persists them in S3 under a single identifier, and uses an AI model to produce a structured architecture review (relevant components, risks, improvements, strengths).
+Distributed system for AI-assisted architecture review. Three Spring Boot / Python services + a React SPA, all runnable via docker-compose.
 
 ## Status
 
-Foundation in place. Application services are implemented across subsequent sub-plans.
+| | |
+|---|---|
+| ci-smart       | ![ci-smart](https://github.com/uiradias/fiap-monorepo/actions/workflows/ci-smart.yml/badge.svg)             |
+| ci-orchestrator| ![ci-orchestrator](https://github.com/uiradias/fiap-monorepo/actions/workflows/ci-orchestrator.yml/badge.svg) |
+| ci-gateway     | ![ci-gateway](https://github.com/uiradias/fiap-monorepo/actions/workflows/ci-gateway.yml/badge.svg)         |
+| ci-frontend    | ![ci-frontend](https://github.com/uiradias/fiap-monorepo/actions/workflows/ci-frontend.yml/badge.svg)       |
+| e2e            | ![e2e](https://github.com/uiradias/fiap-monorepo/actions/workflows/e2e.yml/badge.svg)                       |
 
-- See [`docs/superpowers/specs/2026-05-05-fiap-secure-systems-design.md`](docs/superpowers/specs/2026-05-05-fiap-secure-systems-design.md) for the full design.
-- See [`docs/superpowers/plans/`](docs/superpowers/plans/) for the implementation plans.
-
-## Architecture (one-liner)
-
-`gateway-service` (Spring Boot, public, JWT) → `orchestrator-service` (Spring Boot, internal, owns session state) ↔ SQS ↔ `smart-service` (FastAPI, internal, calls Anthropic Claude). Postgres database-per-service; SNS+SQS fan-out for session events; WebSocket from gateway to client.
-
-## Quickstart
-
-Prerequisites: Docker (with Compose v2), `curl`, `nc`. (Python 3 + `jsonschema` is only needed if you re-validate the JSON schemas under `infrastructure/contracts/`.)
+## Quick start
 
 ```bash
-cp .env.example .env             # one-time
-make up                          # core infra: postgres + localstack + otel-collector
-make smoke                       # verify everything provisioned
-make up-obs                      # add tempo + prometheus + loki + grafana on top
-open http://localhost:3000       # Grafana (anonymous admin)
-make down                        # stop containers (volumes preserved)
-make nuke                        # stop + delete volumes
+make gen-jwt-keys       # generate RS256 keypair for gateway-service (gitignored)
+make up                 # postgres + localstack + otel-collector
+make smart-up           # add smart-service
+make orch-up            # add orchestrator-service
+make gw-up              # add gateway-service
+make front-up           # add frontend (nginx)
+
+make smoke              # PASS=19/0
+make front-round-trip   # full SPA register → finalize → REPORT_READY
 ```
 
-## What this repo contains today
+Browse the SPA at <http://localhost:5173>.
 
-| Path | Purpose |
-|---|---|
-| `docker-compose.yml` | Core infra (Postgres, LocalStack, OTel Collector) |
-| `docker-compose.observability.yml` | Tempo + Prometheus + Loki + Grafana overlay |
-| `infrastructure/postgres/init/` | Bootstraps `gateway_db`, `orchestrator_db`, `smart_db` |
-| `infrastructure/localstack/init/` | Bootstraps S3 bucket, SNS topic, SQS queues + DLQs, subscription |
-| `infrastructure/otel/` | Collector, Tempo, Prometheus, Loki, Grafana configs |
-| `infrastructure/contracts/` | JSON Schemas for messaging payloads + AI report |
-| `infrastructure/smoke/check-stack.sh` | Verifies the running stack |
-| `Makefile` | Top-level commands |
-| `.env.example` | Template environment variables |
+## Observability
 
-## Resources provisioned by `make up`
+```bash
+make up-obs             # adds Tempo + Loki + Prometheus + Grafana
+```
 
-- **Postgres** at `localhost:5432` with three logical DBs (`gateway_db`, `orchestrator_db`, `smart_db`)
-- **LocalStack** at `localhost:4566` — S3 bucket `fiap-secure-systems-assets`, SNS topic `session-events`, SQS queues `analysis-jobs`, `analysis-results`, `session-events-gateway` (each with a DLQ; redrive after 3 receives)
-- **OTel Collector** receiving OTLP/gRPC on `localhost:4317`, OTLP/HTTP on `localhost:4318`, Prometheus exporter on `localhost:8889`, health on `localhost:13133`
+- Grafana: <http://localhost:3000> (anonymous admin) — five dashboards under "fiap-secure-systems":
+  - `smart-service`, `orchestrator-service`, `gateway-service`, `frontend`, `session-lifecycle`
+- Prometheus: <http://localhost:9090>
+- Tempo: <http://localhost:3200>
+- Loki: <http://localhost:3100>
 
-## Resources added by `make up-obs`
+## Architecture
 
-- **Tempo** UI/API at `localhost:3200`
-- **Prometheus** at `localhost:9090` (scrapes the OTel Collector's Prometheus exporter)
-- **Loki** at `localhost:3100`
-- **Grafana** at `localhost:3000` (anonymous admin; Tempo/Prometheus/Loki provisioned as datasources)
+See [`docs/superpowers/specs/2026-05-05-fiap-secure-systems-design.md`](docs/superpowers/specs/2026-05-05-fiap-secure-systems-design.md) for the design doc; sub-plans land under [`docs/superpowers/plans/`](docs/superpowers/plans/).
 
-## License
+```
+                         ┌─────────────────────┐
+                         │   React + Vite SPA  │   :5173 (host) → :80 (nginx)
+                         └──────────┬──────────┘
+                            REST + WebSocket
+                                    │
+                          ┌─────────▼─────────┐
+                          │  gateway-service  │   :8080  Spring Boot 3.4 / Java 21
+                          └────┬───────┬──────┘   - JWT (RS256) + bcrypt
+                               │       ▲
+                       REST    │       │  consumes session-events SQS
+                               │       │
+                          ┌────▼───────┴──────┐
+                          │ orchestrator-svc  │   :8081  Spring Boot 3.4 / Java 21
+                          └────┬──────────────┘   - SessionStateMachine + outbox + OutboxRelay
+                               │
+                          analysis-jobs SQS
+                               ▼
+                          ┌────────────────────┐
+                          │   smart-service    │   :8000  Python 3.12 / FastAPI
+                          └────────────────────┘   - Anthropic Claude (with prompt caching)
 
-(Internal academic project — license TBD.)
+  postgres :5432  (gateway_db / orchestrator_db / smart_db)
+  localstack :4566 (S3 / SNS / SQS)
+```
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md).

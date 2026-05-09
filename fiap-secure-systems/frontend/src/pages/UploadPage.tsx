@@ -8,6 +8,7 @@ const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MiB
 const MAX_FILES = 20;
 
 type FileItem = {
+  id: string;
   file: File;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
@@ -66,9 +67,15 @@ export default function UploadPage() {
 
     if (!valid.length) return;
 
-    // Append as pending first so the UI updates immediately.
-    const newItems: FileItem[] = valid.map((f) => ({ file: f, status: "pending" }));
+    // Append as pending first so the UI updates immediately. Each item gets a stable
+    // id so subsequent state transitions can locate it after `setItems` replaces objects.
+    const newItems: FileItem[] = valid.map((f) => ({
+      id: crypto.randomUUID(),
+      file: f,
+      status: "pending",
+    }));
     setItems((prev) => [...prev, ...newItems]);
+    const newIds = new Set(newItems.map((it) => it.id));
 
     // Obtain (or create) the bundle.
     let bid: string;
@@ -77,25 +84,25 @@ export default function UploadPage() {
     } catch (e) {
       const msg = e instanceof ApiError ? e.problem.detail || e.problem.title : String(e);
       setGlobalError(`Failed to create bundle: ${msg ?? "unknown error"}`);
-      setItems((prev) => prev.filter((it) => !newItems.includes(it)));
+      setItems((prev) => prev.filter((it) => !newIds.has(it.id)));
       return;
     }
 
     // Upload each file sequentially (keeps bundle state sane on the server).
     for (const item of newItems) {
       setItems((prev) =>
-        prev.map((it) => (it === item ? { ...it, status: "uploading" } : it))
+        prev.map((it) => (it.id === item.id ? { ...it, status: "uploading" } : it))
       );
       try {
         await apiClient.uploadAsset(bid, item.file);
         setItems((prev) =>
-          prev.map((it) => (it === item ? { ...it, status: "done" } : it))
+          prev.map((it) => (it.id === item.id ? { ...it, status: "done" } : it))
         );
       } catch (e) {
         const msg = e instanceof ApiError ? e.problem.detail || e.problem.title : String(e);
         setItems((prev) =>
           prev.map((it) =>
-            it === item ? { ...it, status: "error", error: msg ?? "upload failed" } : it
+            it.id === item.id ? { ...it, status: "error", error: msg ?? "upload failed" } : it
           )
         );
       }
@@ -187,9 +194,9 @@ export default function UploadPage() {
 
       {items.length > 0 && (
         <ul style={{ listStyle: "none", padding: 0, marginBottom: 24 }}>
-          {items.map((it, idx) => (
+          {items.map((it) => (
             <li
-              key={idx}
+              key={it.id}
               style={{
                 display: "flex",
                 alignItems: "center",

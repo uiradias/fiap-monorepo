@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const FIXTURE = path.resolve(
   __dirname, "..", "..", "smart-service", "tests", "fixtures", "sample-architecture.png");
@@ -24,12 +27,17 @@ test("register → upload → REPORT_READY", async ({ page }) => {
   await fileInput.setInputFiles(FIXTURE);
   await expect(page.getByText(/sample-architecture\.png/)).toBeVisible({ timeout: 15_000 });
 
+  // Wait for the upload to complete (Finalize button stays disabled while files are uploading).
+  await expect(page.getByRole("button", { name: /^finalize \(/i })).toBeEnabled({ timeout: 30_000 });
+
   // Finalize
   await page.getByRole("button", { name: /finalize/i }).click();
   await expect(page).toHaveURL(/\/sessions\/[0-9a-f-]+$/, { timeout: 15_000 });
 
   // Wait for REPORT_READY in the timeline (smart-service is in e2e profile → fast path).
-  await expect(page.getByText(/REPORT_READY/)).toBeVisible({ timeout: 90_000 });
+  // The state name appears twice (header + timeline list) — scope to the timeline `ol`
+  // so the locator stays unambiguous under Playwright's strict mode.
+  await expect(page.locator("ol").getByText(/REPORT_READY/)).toBeVisible({ timeout: 90_000 });
 
   // Report block should render with the (fake) summary.
   await expect(page.getByText(/\(fake\) Architecture review of 1 asset\(s\)/)).toBeVisible();

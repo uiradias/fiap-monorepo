@@ -83,3 +83,15 @@ form.card button:disabled { background: #94a3b8; cursor: not-allowed; }
   cursor: pointer;
 }
 .link-button:hover { color: #0f172a; }
+
+button.primary {
+  background: #0f172a;
+  color: white;
+  border: 0;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+button.primary:disabled { background: #94a3b8; cursor: not-allowed; }
+button.primary:not(:disabled):hover { background: #1e293b; }

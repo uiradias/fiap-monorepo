@@ -112,3 +112,33 @@ orch-shell: ## (orchestrator-service) exec a shell inside the running orchestrat
 .PHONY: orch-round-trip
 orch-round-trip: ## (orchestrator-service) end-to-end session lifecycle (requires stack up)
 	@./infrastructure/smoke/orchestrator-round-trip.sh
+
+# === gateway-service ===
+
+.PHONY: gw-build
+gw-build: ## (gateway-service) compile + bootJar
+	./gradlew :gateway-service:bootJar
+
+.PHONY: gw-test-unit
+gw-test-unit: ## (gateway-service) run unit tests only
+	./gradlew :gateway-service:test
+
+.PHONY: gw-test-integration
+gw-test-integration: ## (gateway-service) run integration tests (Docker required)
+	./gradlew :gateway-service:integrationTest
+
+.PHONY: gw-up
+gw-up: env-check ## (gateway-service) start full stack with gateway-service
+	$(COMPOSE) up -d gateway-service
+
+.PHONY: gw-logs
+gw-logs: ## (gateway-service) tail gateway-service logs
+	$(COMPOSE) logs -f --tail=100 gateway-service
+
+.PHONY: gw-shell
+gw-shell: ## (gateway-service) exec a shell inside the running gateway-service
+	docker exec -it fss-gateway-service /bin/sh
+
+.PHONY: gw-round-trip
+gw-round-trip: ## (gateway-service) end-to-end register → finalize → REPORT_READY (requires stack up)
+	@./infrastructure/smoke/gateway-round-trip.sh

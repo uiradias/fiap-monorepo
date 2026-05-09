@@ -5,3 +5,4 @@ plugins {
 rootProject.name = "fiap-secure-systems"
 
 include("orchestrator-service")
+include("gateway-service")

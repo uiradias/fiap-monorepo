@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: gateway-service
+  datasource:
+    url: ${GATEWAY_DATABASE_URL:jdbc:postgresql://localhost:5432/gateway_db}
+    username: ${GATEWAY_DB_USER:gateway_user}
+    password: ${GATEWAY_DB_PASSWORD:gateway_pwd}
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 25MB
+      max-request-size: 525MB     # 21 × 25MB to leave headroom over the per-request 20-file cap
+
+server:
+  port: ${GATEWAY_PORT:8080}
+  error:
+    include-message: never
+    include-binding-errors: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+  tracing:
+    sampling:
+      probability: 1.0
+
+gateway:
+  contracts-dir: ${GATEWAY_CONTRACTS_DIR:./infrastructure/contracts}
+  aws:
+    endpoint-url: ${AWS_ENDPOINT_URL:http://localhost:4566}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY_ID:test}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:test}
+  s3:
+    bucket: ${S3_BUCKET:fiap-secure-systems-assets}
+  sqs:
+    session-events-url: ${SQS_SESSION_EVENTS_GATEWAY_URL:http://localhost:4566/000000000000/session-events-gateway}
+    poll-wait-seconds: ${GATEWAY_SQS_SESSION_EVENTS_POLL_WAIT_SECONDS:10}
+  orchestrator:
+    base-url: ${GATEWAY_ORCHESTRATOR_BASE_URL:http://localhost:8081}
+    hmac-secret: ${GATEWAY_INTERNAL_HMAC_SECRET:change-me-32-bytes-min-for-real-deployments}
+    connect-timeout-ms: 2000
+    read-timeout-ms: 5000
+  jwt:
+    private-key-path: ${JWT_PRIVATE_KEY_PATH:./infrastructure/jwt/jwt-private.pem}
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:./infrastructure/jwt/jwt-public.pem}
+    issuer: gateway-service
+    access-ttl-minutes: 15
+    refresh-ttl-days: 7
+  rate-limit:
+    authed-per-minute: ${GATEWAY_RATE_LIMIT_AUTHED_PER_MINUTE:60}
+    anon-per-minute: ${GATEWAY_RATE_LIMIT_ANON_PER_MINUTE:10}
+  websocket:
+    snapshot-events: ${GATEWAY_WEBSOCKET_SNAPSHOT_EVENTS:50}

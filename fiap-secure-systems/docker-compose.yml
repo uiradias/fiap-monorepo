@@ -107,6 +107,47 @@ services:
       start_period: 30s
     networks: [fss]
 
+  orchestrator-service:
+    image: fss/orchestrator-service:dev
+    build:
+      context: .
+      dockerfile: ./orchestrator-service/Dockerfile
+    container_name: fss-orchestrator-service
+    environment:
+      <<: *common-env
+      ORCHESTRATOR_DATABASE_URL: ${ORCHESTRATOR_DATABASE_URL}
+      ORCHESTRATOR_DB_USER: ${ORCHESTRATOR_DB_USER}
+      ORCHESTRATOR_DB_PASSWORD: ${ORCHESTRATOR_DB_PASSWORD}
+      AWS_ENDPOINT_URL: ${AWS_ENDPOINT_URL}
+      SQS_ANALYSIS_JOBS_URL: ${SQS_ANALYSIS_JOBS_URL}
+      SQS_ANALYSIS_RESULTS_URL: ${SQS_ANALYSIS_RESULTS_URL}
+      SQS_ANALYSIS_RESULTS_DLQ_URL: http://localstack:4566/000000000000/analysis-results-dlq
+      SNS_TOPIC_SESSION_EVENTS: ${SNS_TOPIC_SESSION_EVENTS}
+      INTERNAL_HMAC_SECRET: ${INTERNAL_HMAC_SECRET}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+      OTEL_SERVICE_NAME: orchestrator-service
+      ORCHESTRATOR_CONTRACTS_DIR: /app/contracts
+      ORCHESTRATOR_OUTBOX_RELAY_INTERVAL_MS: ${ORCHESTRATOR_OUTBOX_RELAY_INTERVAL_MS:-500}
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./infrastructure/contracts:/app/contracts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
+    networks: [fss]
+
 volumes:
   postgres-data:
 

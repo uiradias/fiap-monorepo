@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -110,7 +111,7 @@ class ClaudeModelAdapter:
         try:
             resp = self._client.messages.create(
                 model=self._model,
-                max_tokens=4096,
+                max_tokens=8192,
                 system=[
                     {
                         "type": "text",
@@ -150,9 +151,18 @@ class ClaudeModelAdapter:
             raise AnalysisModelError("MODEL_OUTPUT_INVALID", str(e)) from e
 
 
+# Models routinely wrap JSON in ```json ... ``` despite a system-prompt "no markdown"
+# instruction. Strip the fence so json.loads doesn't bomb on the leading backtick.
+_FENCE_RE = re.compile(r"\A```(?:[a-zA-Z]+)?\s*\n?(.*?)\n?```\Z", re.DOTALL)
+
+
 def _extract_text(response: Any) -> str:
     parts = [b.text for b in response.content if getattr(b, "type", None) == "text"]
-    return "".join(parts).strip()
+    text = "".join(parts).strip()
+    m = _FENCE_RE.match(text)
+    if m:
+        text = m.group(1).strip()
+    return text
 
 
 def _payload_to_domain(

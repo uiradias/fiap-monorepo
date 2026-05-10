@@ -21,6 +21,19 @@ up: env-check ## Start core infra (postgres, localstack, otel-collector)
 up-obs: env-check ## Start core infra + observability stack
 	$(COMPOSE_OBS) up -d
 
+.PHONY: bootstrap
+bootstrap: ## One-shot: keys + full stack up; blocks until all services healthy
+	@set -e; \
+	$(MAKE) gen-jwt-keys; \
+	$(MAKE) up; \
+	$(MAKE) smart-up; \
+	$(MAKE) orch-up; \
+	$(MAKE) gw-up; \
+	$(MAKE) front-up; \
+	./infrastructure/smoke/wait-healthy.sh; \
+	echo ""; \
+	echo "Stack is healthy. Open the SPA at http://localhost:5173"
+
 .PHONY: down
 down: ## Stop and remove containers (volumes preserved)
 	$(COMPOSE_OBS) down

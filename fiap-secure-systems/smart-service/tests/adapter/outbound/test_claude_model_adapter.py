@@ -86,6 +86,60 @@ def test_uses_prompt_caching_on_system_block(contracts_dir: Path):
     assert sys_block["cache_control"] == {"type": "ephemeral"}
 
 
+def test_accepts_markdown_fenced_response(contracts_dir: Path):
+    """Models routinely wrap JSON in ```json ... ``` despite system-prompt instructions.
+    The adapter must strip the fence so the payload parses."""
+    valid_json = (
+        '{"summary":"x","components":[],"risks":[],"improvements":[],"strengths":[],'
+        '"confidence":"low","model_metadata":{"model":"claude-sonnet-4-6"}}'
+    )
+    fake_client = MagicMock(spec=anthropic.Anthropic)
+    fake_client.messages.create.return_value = _mock_anthropic_response(
+        f"```json\n{valid_json}\n```"
+    )
+    adapter = ClaudeModelAdapter(
+        client=fake_client, model="claude-sonnet-4-6", contracts_dir=contracts_dir,
+    )
+    job = _job()
+    report = adapter.analyze(job, asset_bytes={job.assets[0].asset_id: b"png"})
+    assert report.confidence.value == "low"
+
+
+def test_accepts_bare_fenced_response(contracts_dir: Path):
+    """Some responses use plain ``` fences without the json language tag."""
+    valid_json = (
+        '{"summary":"x","components":[],"risks":[],"improvements":[],"strengths":[],'
+        '"confidence":"low","model_metadata":{"model":"claude-sonnet-4-6"}}'
+    )
+    fake_client = MagicMock(spec=anthropic.Anthropic)
+    fake_client.messages.create.return_value = _mock_anthropic_response(
+        f"```\n{valid_json}\n```"
+    )
+    adapter = ClaudeModelAdapter(
+        client=fake_client, model="claude-sonnet-4-6", contracts_dir=contracts_dir,
+    )
+    job = _job()
+    report = adapter.analyze(job, asset_bytes={job.assets[0].asset_id: b"png"})
+    assert report.confidence.value == "low"
+
+
+def test_requests_sufficient_max_tokens(contracts_dir: Path):
+    """Real architecture diagrams produce 6k+ output tokens; 4096 truncates them.
+    Locks in the bump so a future drive-by 'optimization' can't silently shrink it."""
+    fake_client = MagicMock(spec=anthropic.Anthropic)
+    fake_client.messages.create.return_value = _mock_anthropic_response(
+        '{"summary":"x","components":[],"risks":[],"improvements":[],"strengths":[],'
+        '"confidence":"low","model_metadata":{"model":"claude-sonnet-4-6"}}'
+    )
+    adapter = ClaudeModelAdapter(
+        client=fake_client, model="claude-sonnet-4-6", contracts_dir=contracts_dir,
+    )
+    job = _job()
+    adapter.analyze(job, asset_bytes={job.assets[0].asset_id: b"png"})
+    kwargs = fake_client.messages.create.call_args.kwargs
+    assert kwargs["max_tokens"] >= 8192
+
+
 def test_raises_on_malformed_json(contracts_dir: Path):
     fake_client = MagicMock(spec=anthropic.Anthropic)
     fake_client.messages.create.return_value = _mock_anthropic_response("not json")

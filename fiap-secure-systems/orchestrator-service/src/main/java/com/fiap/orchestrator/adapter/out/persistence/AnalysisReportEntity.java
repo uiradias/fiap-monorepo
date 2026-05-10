@@ -1,22 +1,23 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
-import com.fiap.orchestrator.domain.model.AnalysisReport;
-import com.fiap.orchestrator.domain.model.ReportId;
-import com.fiap.orchestrator.domain.model.SessionId;
-import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.fiap.orchestrator.domain.model.AnalysisReport;
+import com.fiap.orchestrator.domain.model.ReportId;
+import com.fiap.orchestrator.domain.model.SessionId;
+
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "analysis_reports")
 public class AnalysisReportEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
 
     @Column(name = "session_id", nullable = false, unique = true)
     private UUID sessionId;
@@ -54,7 +55,12 @@ public class AnalysisReportEntity {
 
     public AnalysisReport toDomain() {
         return new AnalysisReport(
-                new ReportId(id), new SessionId(sessionId),
-                summary, confidence, payload, modelMetadata, createdAt);
+                new ReportId(id),
+                new SessionId(sessionId),
+                summary,
+                confidence,
+                payload,
+                modelMetadata,
+                createdAt);
     }
 }

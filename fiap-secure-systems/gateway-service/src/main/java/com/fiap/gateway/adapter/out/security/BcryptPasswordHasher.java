@@ -1,8 +1,9 @@
 package com.fiap.gateway.adapter.out.security;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import com.fiap.gateway.domain.model.PasswordHash;
 import com.fiap.gateway.domain.port.out.PasswordHasherPort;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class BcryptPasswordHasher implements PasswordHasherPort {
 

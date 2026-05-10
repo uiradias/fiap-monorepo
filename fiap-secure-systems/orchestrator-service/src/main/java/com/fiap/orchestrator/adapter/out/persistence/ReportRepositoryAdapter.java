@@ -1,11 +1,12 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
 import com.fiap.orchestrator.domain.model.AnalysisReport;
 import com.fiap.orchestrator.domain.model.SessionId;
 import com.fiap.orchestrator.domain.port.out.ReportRepositoryPort;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
 
 @Repository
 public class ReportRepositoryAdapter implements ReportRepositoryPort {

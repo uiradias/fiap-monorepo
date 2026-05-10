@@ -11,9 +11,12 @@ public record Email(String value) {
         if (raw == null) throw new IllegalArgumentException("email required");
         String normalized = raw.trim().toLowerCase();
         if (normalized.isEmpty()) throw new IllegalArgumentException("email required");
-        if (!normalized.contains("@") || normalized.indexOf('@') != normalized.lastIndexOf('@')
-                || normalized.startsWith("@") || normalized.endsWith("@")) {
-            throw new IllegalArgumentException("email must contain exactly one @ between non-empty parts");
+        if (!normalized.contains("@")
+                || normalized.indexOf('@') != normalized.lastIndexOf('@')
+                || normalized.startsWith("@")
+                || normalized.endsWith("@")) {
+            throw new IllegalArgumentException(
+                    "email must contain exactly one @ between non-empty parts");
         }
         return new Email(normalized);
     }

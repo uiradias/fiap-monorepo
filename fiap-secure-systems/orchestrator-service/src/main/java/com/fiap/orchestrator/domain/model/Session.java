@@ -11,8 +11,7 @@ public record Session(
         String failureReason,
         Instant createdAt,
         Instant updatedAt,
-        long version
-) {
+        long version) {
     public Session {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(userId, "userId");
@@ -28,7 +27,8 @@ public record Session(
     }
 
     public static Session newSession(SessionId id, UserId userId, int assetCount, Instant now) {
-        return new Session(id, userId, SessionState.ASSETS_UPLOADED, assetCount, null, now, now, 0L);
+        return new Session(
+                id, userId, SessionState.ASSETS_UPLOADED, assetCount, null, now, now, 0L);
     }
 
     public Session withState(SessionState next, Instant now) {

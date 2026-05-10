@@ -9,7 +9,7 @@ public record SessionEventLogEntry(
         EventId eventId,
         SessionId sessionId,
         UserId userId,
-        SessionState fromState,        // null on the very first event
+        SessionState fromState, // null on the very first event
         SessionState toState,
         Map<String, Object> payload,
         Instant occurredAt,

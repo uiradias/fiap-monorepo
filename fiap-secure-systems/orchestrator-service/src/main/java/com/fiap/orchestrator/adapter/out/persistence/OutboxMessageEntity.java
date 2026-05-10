@@ -1,22 +1,23 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
-import com.fiap.orchestrator.domain.port.out.OutboxPort;
-import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.fiap.orchestrator.domain.port.out.OutboxPort;
+
+import jakarta.persistence.*;
+
 @Entity
 @Table(name = "outbox_messages")
 public class OutboxMessageEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
 
     @Column(name = "aggregate_id", nullable = false)
     private UUID aggregateId;
@@ -47,8 +48,12 @@ public class OutboxMessageEntity {
     public OutboxMessageEntity() {}
 
     public static OutboxMessageEntity create(
-            UUID id, UUID aggregateId, OutboxPort.Destination destination,
-            String eventType, Map<String, Object> payload, Instant createdAt) {
+            UUID id,
+            UUID aggregateId,
+            OutboxPort.Destination destination,
+            String eventType,
+            Map<String, Object> payload,
+            Instant createdAt) {
         OutboxMessageEntity e = new OutboxMessageEntity();
         e.id = id;
         e.aggregateId = aggregateId;
@@ -61,16 +66,48 @@ public class OutboxMessageEntity {
         return e;
     }
 
-    public UUID getId() { return id; }
-    public UUID getAggregateId() { return aggregateId; }
-    public OutboxPort.Destination getDestination() { return destination; }
-    public String getEventType() { return eventType; }
-    public Map<String, Object> getPayload() { return payload; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getPublishedAt() { return publishedAt; }
-    public int getAttempts() { return attempts; }
-    public String getLastError() { return lastError; }
+    public UUID getId() {
+        return id;
+    }
 
-    void markPublished(Instant now) { this.publishedAt = now; }
-    void recordFailure(String err) { this.attempts += 1; this.lastError = err; }
+    public UUID getAggregateId() {
+        return aggregateId;
+    }
+
+    public OutboxPort.Destination getDestination() {
+        return destination;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public Map<String, Object> getPayload() {
+        return payload;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getPublishedAt() {
+        return publishedAt;
+    }
+
+    public int getAttempts() {
+        return attempts;
+    }
+
+    public String getLastError() {
+        return lastError;
+    }
+
+    void markPublished(Instant now) {
+        this.publishedAt = now;
+    }
+
+    void recordFailure(String err) {
+        this.attempts += 1;
+        this.lastError = err;
+    }
 }

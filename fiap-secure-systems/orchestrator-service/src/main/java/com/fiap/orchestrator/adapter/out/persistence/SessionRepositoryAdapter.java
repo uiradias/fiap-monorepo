@@ -1,13 +1,14 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
+import java.util.Optional;
+
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.stereotype.Repository;
+
 import com.fiap.orchestrator.domain.model.Session;
 import com.fiap.orchestrator.domain.model.SessionEvent;
 import com.fiap.orchestrator.domain.model.SessionId;
 import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
-import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
 
 @Repository
 public class SessionRepositoryAdapter implements SessionRepositoryPort {
@@ -15,7 +16,8 @@ public class SessionRepositoryAdapter implements SessionRepositoryPort {
     private final SessionJpaRepository sessions;
     private final SessionEventJpaRepository events;
 
-    public SessionRepositoryAdapter(SessionJpaRepository sessions, SessionEventJpaRepository events) {
+    public SessionRepositoryAdapter(
+            SessionJpaRepository sessions, SessionEventJpaRepository events) {
         this.sessions = sessions;
         this.events = events;
     }
@@ -42,8 +44,12 @@ public class SessionRepositoryAdapter implements SessionRepositoryPort {
         // Hibernate's @Version alone doesn't fire here because findById re-reads inside this
         // transaction, so we'd otherwise lose the stale-read signal. The explicit check below
         // restores it.
-        SessionEntity managed = sessions.findById(session.id().value())
-                .orElseThrow(() -> new IllegalStateException("session not found: " + session.id()));
+        SessionEntity managed =
+                sessions.findById(session.id().value())
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "session not found: " + session.id()));
         long expectedDbVersion = session.version() - 1;
         if (managed.getVersion() != expectedDbVersion) {
             throw new OptimisticLockingFailureException(

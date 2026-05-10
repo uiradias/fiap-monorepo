@@ -7,5 +7,9 @@ public record PasswordHash(String value) {
         Objects.requireNonNull(value, "value");
         if (value.isBlank()) throw new IllegalArgumentException("hash required");
     }
-    @Override public String toString() { return "PasswordHash{***}"; }   // never log the hash
+
+    @Override
+    public String toString() {
+        return "PasswordHash{***}";
+    } // never log the hash
 }

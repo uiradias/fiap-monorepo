@@ -1,18 +1,21 @@
 package com.fiap.gateway.adapter.out.persistence;
 
-import com.fiap.gateway.domain.model.*;
-import com.fiap.gateway.domain.port.out.AssetRepositoryPort;
+import java.util.List;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.fiap.gateway.domain.model.*;
+import com.fiap.gateway.domain.port.out.AssetRepositoryPort;
 
 @Repository
 public class AssetRepositoryAdapter implements AssetRepositoryPort {
 
     private final AssetJpaRepository repo;
 
-    public AssetRepositoryAdapter(AssetJpaRepository repo) { this.repo = repo; }
+    public AssetRepositoryAdapter(AssetJpaRepository repo) {
+        this.repo = repo;
+    }
 
     @Override
     @Transactional
@@ -34,7 +37,8 @@ public class AssetRepositoryAdapter implements AssetRepositoryPort {
     @Transactional(readOnly = true)
     public List<Asset> findByBundleId(BundleId bundleId) {
         return repo.findByBundleIdOrderByUploadedAtAsc(bundleId.value()).stream()
-                .map(this::toDomain).toList();
+                .map(this::toDomain)
+                .toList();
     }
 
     private Asset toDomain(AssetEntity e) {

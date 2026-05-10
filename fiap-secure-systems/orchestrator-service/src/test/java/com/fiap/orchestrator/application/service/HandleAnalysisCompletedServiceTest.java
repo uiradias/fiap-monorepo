@@ -1,14 +1,15 @@
 package com.fiap.orchestrator.application.service;
 
-import com.fiap.orchestrator.domain.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.fiap.orchestrator.domain.model.*;
 
 class HandleAnalysisCompletedServiceTest {
 
@@ -32,8 +33,7 @@ class HandleAnalysisCompletedServiceTest {
                 "improvements", List.of(),
                 "strengths", List.of(),
                 "confidence", "high",
-                "model_metadata", Map.of("model", "claude-sonnet-4-6")
-        );
+                "model_metadata", Map.of("model", "claude-sonnet-4-6"));
     }
 
     @Test
@@ -44,17 +44,30 @@ class HandleAnalysisCompletedServiceTest {
         s = s.withState(SessionState.ANALYZING, clock.now());
         repo.store.put(sid.value(), s);
 
-        AnalysisOutcome out = new AnalysisOutcome(
-                new JobId(UUID.randomUUID()), sid, AnalysisStatus.SUCCEEDED,
-                reportPayload("hello"),
-                Map.of("model", "claude-sonnet-4-6", "tokensIn", 10, "tokensOut", 20, "durationMs", 100),
-                null, clock.now());
+        AnalysisOutcome out =
+                new AnalysisOutcome(
+                        new JobId(UUID.randomUUID()),
+                        sid,
+                        AnalysisStatus.SUCCEEDED,
+                        reportPayload("hello"),
+                        Map.of(
+                                "model",
+                                "claude-sonnet-4-6",
+                                "tokensIn",
+                                10,
+                                "tokensOut",
+                                20,
+                                "durationMs",
+                                100),
+                        null,
+                        clock.now());
 
         svc.onSucceeded(out);
 
         assertThat(repo.store.get(sid.value()).state()).isEqualTo(SessionState.REPORT_READY);
         assertThat(reports.store).containsKey(sid.value());
-        assertThat(repo.events).extracting("toState")
+        assertThat(repo.events)
+                .extracting("toState")
                 .containsExactly(SessionState.ANALYSIS_COMPLETED, SessionState.REPORT_READY);
         assertThat(outbox.rows).hasSize(2);
     }

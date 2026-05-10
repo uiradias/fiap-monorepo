@@ -1,17 +1,18 @@
 package com.fiap.orchestrator.infrastructure.config;
 
+import java.net.URI;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
-
-import java.net.URI;
 
 @Configuration
 public class AwsSdkConfig {
@@ -25,8 +26,9 @@ public class AwsSdkConfig {
         return SqsClient.builder()
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKey, secretKey)))
                 .httpClient(UrlConnectionHttpClient.create())
                 .build();
     }
@@ -40,8 +42,9 @@ public class AwsSdkConfig {
         return SnsClient.builder()
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKey, secretKey)))
                 .httpClient(UrlConnectionHttpClient.create())
                 .build();
     }
@@ -54,19 +57,22 @@ public class AwsSdkConfig {
 
     @Bean
     @Qualifier("analysisResultsQueueUrl")
-    public String analysisResultsQueueUrl(@Value("${orchestrator.sqs.analysis-results-url}") String url) {
+    public String analysisResultsQueueUrl(
+            @Value("${orchestrator.sqs.analysis-results-url}") String url) {
         return url;
     }
 
     @Bean
     @Qualifier("analysisResultsDlqUrl")
-    public String analysisResultsDlqUrl(@Value("${orchestrator.sqs.analysis-results-dlq-url}") String url) {
+    public String analysisResultsDlqUrl(
+            @Value("${orchestrator.sqs.analysis-results-dlq-url}") String url) {
         return url;
     }
 
     @Bean
     @Qualifier("sessionEventsTopicArn")
-    public String sessionEventsTopicArn(@Value("${orchestrator.sns.session-events-topic-arn}") String arn) {
+    public String sessionEventsTopicArn(
+            @Value("${orchestrator.sns.session-events-topic-arn}") String arn) {
         return arn;
     }
 }

@@ -7,6 +7,13 @@ public record ReportId(UUID value) {
     public ReportId {
         Objects.requireNonNull(value, "ReportId.value");
     }
-    public static ReportId of(UUID value) { return new ReportId(value); }
-    @Override public String toString() { return value.toString(); }
+
+    public static ReportId of(UUID value) {
+        return new ReportId(value);
+    }
+
+    @Override
+    public String toString() {
+        return value.toString();
+    }
 }

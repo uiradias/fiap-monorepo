@@ -10,8 +10,7 @@ public record AnalysisJob(
         UserId userId,
         List<AssetRef> assets,
         String promptVersion,
-        Instant submittedAt
-) {
+        Instant submittedAt) {
     public AnalysisJob {
         Objects.requireNonNull(jobId, "jobId");
         Objects.requireNonNull(sessionId, "sessionId");

@@ -1,20 +1,21 @@
 package com.fiap.gateway.application.service;
 
-import com.fiap.gateway.domain.exception.DuplicateEmailException;
-import com.fiap.gateway.domain.model.*;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
+
+import com.fiap.gateway.domain.exception.DuplicateEmailException;
+import com.fiap.gateway.domain.model.*;
 
 class RegisterUserServiceTest {
 
     private final InMemoryFakes.FakeUsers users = new InMemoryFakes.FakeUsers();
     private final InMemoryFakes.FakeHasher hasher = new InMemoryFakes.FakeHasher();
-    private final RegisterUserService svc = new RegisterUserService(
-            users, hasher, () -> Instant.parse("2026-05-09T12:00:00Z"));
+    private final RegisterUserService svc =
+            new RegisterUserService(users, hasher, () -> Instant.parse("2026-05-09T12:00:00Z"));
 
     @Test
     void registers_a_new_user_with_hashed_password() {

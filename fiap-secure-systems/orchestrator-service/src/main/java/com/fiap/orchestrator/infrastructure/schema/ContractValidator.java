@@ -1,5 +1,10 @@
 package com.fiap.orchestrator.infrastructure.schema;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Set;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
@@ -7,11 +12,6 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Set;
 
 public class ContractValidator {
 
@@ -35,19 +35,20 @@ public class ContractValidator {
         String localPrefix = contractsDir.toURI().toString();
         if (!localPrefix.endsWith("/")) localPrefix = localPrefix + "/";
         final String localPrefixFinal = localPrefix;
-        JsonSchemaFactory factory = JsonSchemaFactory
-                .getInstance(SpecVersion.VersionFlag.V7,
-                        builder -> builder.schemaMappers(
-                                m -> m.mapPrefix(SCHEMA_ID_PREFIX, localPrefixFinal)));
+        JsonSchemaFactory factory =
+                JsonSchemaFactory.getInstance(
+                        SpecVersion.VersionFlag.V7,
+                        builder ->
+                                builder.schemaMappers(
+                                        m -> m.mapPrefix(SCHEMA_ID_PREFIX, localPrefixFinal)));
 
-        this.analysisJob    = load(factory, cfg, contractsDir, "analysis-jobs.schema.json");
+        this.analysisJob = load(factory, cfg, contractsDir, "analysis-jobs.schema.json");
         this.analysisResult = load(factory, cfg, contractsDir, "analysis-results.schema.json");
-        this.sessionEvent   = load(factory, cfg, contractsDir, "session-events.schema.json");
+        this.sessionEvent = load(factory, cfg, contractsDir, "session-events.schema.json");
     }
 
     private static JsonSchema load(
-            JsonSchemaFactory factory, SchemaValidatorsConfig cfg,
-            File dir, String fileName) {
+            JsonSchemaFactory factory, SchemaValidatorsConfig cfg, File dir, String fileName) {
         File f = new File(dir, fileName);
         if (!f.isFile()) {
             throw new IllegalStateException("schema file missing: " + f);
@@ -61,9 +62,17 @@ public class ContractValidator {
         }
     }
 
-    public void validateAnalysisJob(Object body)    { run(analysisJob, body, "analysis-jobs"); }
-    public void validateAnalysisResult(Object body) { run(analysisResult, body, "analysis-results"); }
-    public void validateSessionEvent(Object body)   { run(sessionEvent, body, "session-events"); }
+    public void validateAnalysisJob(Object body) {
+        run(analysisJob, body, "analysis-jobs");
+    }
+
+    public void validateAnalysisResult(Object body) {
+        run(analysisResult, body, "analysis-results");
+    }
+
+    public void validateSessionEvent(Object body) {
+        run(sessionEvent, body, "session-events");
+    }
 
     private static void run(JsonSchema schema, Object body, String label) {
         JsonNode node = MAPPER.valueToTree(body);

@@ -1,9 +1,9 @@
 package com.fiap.gateway.domain.model;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
 
 class EmailTest {
 
@@ -19,6 +19,7 @@ class EmailTest {
 
     @Test
     void rejects_missing_at() {
-        assertThatThrownBy(() -> Email.of("not-an-email")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Email.of("not-an-email"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

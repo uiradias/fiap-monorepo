@@ -1,14 +1,15 @@
 package com.fiap.orchestrator.application.service;
 
+import java.time.Instant;
+import java.util.*;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.fiap.orchestrator.domain.model.*;
 import com.fiap.orchestrator.domain.port.in.CreateSessionUseCase;
 import com.fiap.orchestrator.domain.port.out.OutboxPort;
 import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.*;
 
 @Service
 public class CreateSessionService implements CreateSessionUseCase {
@@ -34,15 +35,28 @@ public class CreateSessionService implements CreateSessionUseCase {
         sessions.insertIfAbsent(created);
 
         EventId evId = new EventId(UUID.randomUUID());
-        SessionEvent ev = SessionEvent.initial(evId, sessionId, SessionState.ASSETS_UPLOADED,
-                Map.of("assetCount", assets.size()), now);
+        SessionEvent ev =
+                SessionEvent.initial(
+                        evId,
+                        sessionId,
+                        SessionState.ASSETS_UPLOADED,
+                        Map.of("assetCount", assets.size()),
+                        now);
         sessions.appendEvent(ev);
 
-        outbox.append(sessionId, OutboxPort.Destination.SNS_SESSION_EVENTS, "SessionStateChanged",
-                sessionEventPayload(ev, userId), now);
+        outbox.append(
+                sessionId,
+                OutboxPort.Destination.SNS_SESSION_EVENTS,
+                "SessionStateChanged",
+                sessionEventPayload(ev, userId),
+                now);
 
-        outbox.append(sessionId, OutboxPort.Destination.SQS_ANALYSIS_JOBS, "AnalysisJobRequested",
-                analysisJobPayload(sessionId, userId, assets, now), now);
+        outbox.append(
+                sessionId,
+                OutboxPort.Destination.SQS_ANALYSIS_JOBS,
+                "AnalysisJobRequested",
+                analysisJobPayload(sessionId, userId, assets, now),
+                now);
 
         return created;
     }
@@ -62,13 +76,17 @@ public class CreateSessionService implements CreateSessionUseCase {
 
     private static Map<String, Object> analysisJobPayload(
             SessionId sid, UserId uid, List<AssetRef> assets, Instant now) {
-        List<Map<String, Object>> assetMaps = assets.stream().map(a -> Map.<String, Object>of(
-                "assetId", a.assetId().toString(),
-                "s3Key", a.s3Key(),
-                "contentType", a.contentType(),
-                "filename", a.filename(),
-                "sizeBytes", a.sizeBytes()
-        )).toList();
+        List<Map<String, Object>> assetMaps =
+                assets.stream()
+                        .map(
+                                a ->
+                                        Map.<String, Object>of(
+                                                "assetId", a.assetId().toString(),
+                                                "s3Key", a.s3Key(),
+                                                "contentType", a.contentType(),
+                                                "filename", a.filename(),
+                                                "sizeBytes", a.sizeBytes()))
+                        .toList();
         return Map.of(
                 "schemaVersion", 1,
                 "jobId", UUID.randomUUID().toString(),
@@ -76,7 +94,6 @@ public class CreateSessionService implements CreateSessionUseCase {
                 "userId", uid.toString(),
                 "assets", assetMaps,
                 "promptVersion", "v1",
-                "submittedAt", now.toString()
-        );
+                "submittedAt", now.toString());
     }
 }

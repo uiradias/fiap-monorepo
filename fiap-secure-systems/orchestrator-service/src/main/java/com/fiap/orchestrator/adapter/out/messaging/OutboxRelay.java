@@ -1,5 +1,16 @@
 package com.fiap.orchestrator.adapter.out.messaging;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.fiap.orchestrator.application.service.Clock;
 import com.fiap.orchestrator.application.service.CreateSessionService;
 import com.fiap.orchestrator.domain.model.*;
@@ -8,16 +19,6 @@ import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
 import com.fiap.orchestrator.domain.statemachine.SessionStateMachine;
 import com.fiap.orchestrator.domain.statemachine.Transition;
 import com.fiap.orchestrator.infrastructure.config.OutboxRelayProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
 
 @Component
 public class OutboxRelay {
@@ -65,8 +66,11 @@ public class OutboxRelay {
                 if (attempts >= props.maxPublishAttemptsBeforeAlert()) {
                     log.warn("outbox row {} has failed {}× last={}", entry.id(), attempts, msg);
                 } else {
-                    log.info("outbox publish failed (attempt {}/{}): {}",
-                            attempts, props.maxPublishAttemptsBeforeAlert(), msg);
+                    log.info(
+                            "outbox publish failed (attempt {}/{}): {}",
+                            attempts,
+                            props.maxPublishAttemptsBeforeAlert(),
+                            msg);
                 }
             }
         }
@@ -75,16 +79,18 @@ public class OutboxRelay {
     private void publish(OutboxPort.OutboxEntry entry) {
         switch (entry.destination()) {
             case SQS_ANALYSIS_JOBS ->
-                    jobsPublisher.publishPreSerialized(entry.payload(), entry.aggregateId().toString());
-            case SNS_SESSION_EVENTS ->
-                    eventsPublisher.publishPreSerialized(entry.payload());
+                    jobsPublisher.publishPreSerialized(
+                            entry.payload(), entry.aggregateId().toString());
+            case SNS_SESSION_EVENTS -> eventsPublisher.publishPreSerialized(entry.payload());
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void advanceAfterJobPublished(SessionId sessionId) {
-        Session s = sessions.findById(sessionId)
-                .orElseThrow(() -> new IllegalStateException("unknown session: " + sessionId));
+        Session s =
+                sessions.findById(sessionId)
+                        .orElseThrow(
+                                () -> new IllegalStateException("unknown session: " + sessionId));
         if (s.state() != SessionState.ASSETS_UPLOADED) {
             return;
         }
@@ -92,11 +98,20 @@ public class OutboxRelay {
         Transition t = sm.next(s.state(), SessionStateMachine.Trigger.OUTBOX_JOB_PUBLISHED);
         Session moved = s.withState(t.to(), now);
         sessions.save(moved);
-        SessionEvent ev = SessionEvent.transition(
-                new EventId(UUID.randomUUID()), sessionId, t.from(), t.to(),
-                Map.of("trigger", "OUTBOX_JOB_PUBLISHED"), now);
+        SessionEvent ev =
+                SessionEvent.transition(
+                        new EventId(UUID.randomUUID()),
+                        sessionId,
+                        t.from(),
+                        t.to(),
+                        Map.of("trigger", "OUTBOX_JOB_PUBLISHED"),
+                        now);
         sessions.appendEvent(ev);
-        outbox.append(sessionId, OutboxPort.Destination.SNS_SESSION_EVENTS, "SessionStateChanged",
-                CreateSessionService.sessionEventPayload(ev, moved.userId()), now);
+        outbox.append(
+                sessionId,
+                OutboxPort.Destination.SNS_SESSION_EVENTS,
+                "SessionStateChanged",
+                CreateSessionService.sessionEventPayload(ev, moved.userId()),
+                now);
     }
 }

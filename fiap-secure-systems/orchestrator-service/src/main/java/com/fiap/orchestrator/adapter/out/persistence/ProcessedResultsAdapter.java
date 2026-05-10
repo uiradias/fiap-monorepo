@@ -1,14 +1,15 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
-import com.fiap.orchestrator.domain.model.AnalysisStatus;
-import com.fiap.orchestrator.domain.model.JobId;
-import com.fiap.orchestrator.domain.port.out.ProcessedResultsPort;
+import java.time.Instant;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import com.fiap.orchestrator.domain.model.AnalysisStatus;
+import com.fiap.orchestrator.domain.model.JobId;
+import com.fiap.orchestrator.domain.port.out.ProcessedResultsPort;
 
 @Repository
 public class ProcessedResultsAdapter implements ProcessedResultsPort {

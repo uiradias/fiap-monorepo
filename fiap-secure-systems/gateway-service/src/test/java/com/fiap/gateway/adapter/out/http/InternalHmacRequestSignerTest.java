@@ -1,18 +1,22 @@
 package com.fiap.gateway.adapter.out.http;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 class InternalHmacRequestSignerTest {
 
     @Test
     void produces_stable_canonical_form() {
         InternalHmacRequestSigner signer = new InternalHmacRequestSigner("secret");
-        String canonical = signer.canonicalize(1714003200000L, "POST", "/internal/sessions",
-                "{\"k\":\"v\"}".getBytes(StandardCharsets.UTF_8));
+        String canonical =
+                signer.canonicalize(
+                        1714003200000L,
+                        "POST",
+                        "/internal/sessions",
+                        "{\"k\":\"v\"}".getBytes(StandardCharsets.UTF_8));
         // separator='\n', sha256 of '{"k":"v"}' = a8a3...
         assertThat(canonical).startsWith("1714003200000\nPOST\n/internal/sessions\n");
         assertThat(canonical).hasSize("1714003200000\nPOST\n/internal/sessions\n".length() + 64);

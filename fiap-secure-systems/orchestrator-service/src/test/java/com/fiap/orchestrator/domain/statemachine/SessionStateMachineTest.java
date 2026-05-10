@@ -1,14 +1,15 @@
 package com.fiap.orchestrator.domain.statemachine;
 
-import com.fiap.orchestrator.domain.model.SessionState;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-
 import static com.fiap.orchestrator.domain.model.SessionState.*;
 import static com.fiap.orchestrator.domain.statemachine.SessionStateMachine.Trigger.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import com.fiap.orchestrator.domain.model.SessionState;
 
 class SessionStateMachineTest {
 
@@ -35,7 +36,9 @@ class SessionStateMachineTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = SessionState.class, names = {"REPORT_READY", "FAILED", "CANCELED"})
+    @EnumSource(
+            value = SessionState.class,
+            names = {"REPORT_READY", "FAILED", "CANCELED"})
     void cancel_from_terminal_is_illegal(SessionState terminal) {
         assertThatThrownBy(() -> sm.next(terminal, CANCEL))
                 .isInstanceOf(IllegalSessionTransitionException.class)

@@ -10,7 +10,8 @@ public record User(
         Instant createdAt,
         Instant updatedAt) {
 
-    public static User newUser(UserId id, Email email, PasswordHash hash, String displayName, Instant now) {
+    public static User newUser(
+            UserId id, Email email, PasswordHash hash, String displayName, Instant now) {
         return new User(id, email, hash, displayName, now, now);
     }
 }

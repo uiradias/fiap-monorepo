@@ -1,11 +1,11 @@
 package com.fiap.orchestrator.domain.port.out;
 
-import com.fiap.orchestrator.domain.model.SessionId;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.fiap.orchestrator.domain.model.SessionId;
 
 public interface OutboxPort {
 
@@ -22,11 +22,14 @@ public interface OutboxPort {
             Map<String, Object> payload,
             Instant createdAt,
             int attempts,
-            String lastError
-    ) {}
+            String lastError) {}
 
-    void append(SessionId aggregateId, Destination destination, String eventType,
-                Map<String, Object> payload, Instant now);
+    void append(
+            SessionId aggregateId,
+            Destination destination,
+            String eventType,
+            Map<String, Object> payload,
+            Instant now);
 
     List<OutboxEntry> fetchUnpublished(int limit);
 

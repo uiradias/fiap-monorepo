@@ -1,20 +1,20 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
+import java.time.Instant;
+import java.util.UUID;
+
 import com.fiap.orchestrator.domain.model.Session;
 import com.fiap.orchestrator.domain.model.SessionId;
 import com.fiap.orchestrator.domain.model.SessionState;
 import com.fiap.orchestrator.domain.model.UserId;
-import jakarta.persistence.*;
 
-import java.time.Instant;
-import java.util.UUID;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "sessions")
 public class SessionEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
@@ -56,14 +56,37 @@ public class SessionEntity {
 
     public Session toDomain() {
         return new Session(
-                new SessionId(id), new UserId(userId), state, assetCount,
-                failureReason, createdAt, updatedAt, version);
+                new SessionId(id),
+                new UserId(userId),
+                state,
+                assetCount,
+                failureReason,
+                createdAt,
+                updatedAt,
+                version);
     }
 
-    public UUID getId() { return id; }
-    public long getVersion() { return version; }
-    public SessionState getState() { return state; }
-    void setState(SessionState s) { this.state = s; }
-    void setUpdatedAt(Instant t) { this.updatedAt = t; }
-    void setFailureReason(String r) { this.failureReason = r; }
+    public UUID getId() {
+        return id;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public SessionState getState() {
+        return state;
+    }
+
+    void setState(SessionState s) {
+        this.state = s;
+    }
+
+    void setUpdatedAt(Instant t) {
+        this.updatedAt = t;
+    }
+
+    void setFailureReason(String r) {
+        this.failureReason = r;
+    }
 }

@@ -1,25 +1,28 @@
 package com.fiap.gateway.adapter.in.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fiap.gateway.domain.model.SessionEventLogEntry;
-import com.fiap.gateway.domain.model.SessionId;
-import com.fiap.gateway.domain.port.out.SessionEventBroadcastPort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fiap.gateway.domain.model.SessionEventLogEntry;
+import com.fiap.gateway.domain.model.SessionId;
+import com.fiap.gateway.domain.port.out.SessionEventBroadcastPort;
+
 public class InProcessSessionEventBroadcaster implements SessionEventBroadcastPort {
 
-    private static final Logger log = LoggerFactory.getLogger(InProcessSessionEventBroadcaster.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(InProcessSessionEventBroadcaster.class);
 
-    private final Map<SessionId, CopyOnWriteArrayList<WebSocketSession>> subscribers = new ConcurrentHashMap<>();
+    private final Map<SessionId, CopyOnWriteArrayList<WebSocketSession>> subscribers =
+            new ConcurrentHashMap<>();
     private final ObjectMapper mapper;
 
     public InProcessSessionEventBroadcaster(ObjectMapper mapper) {
@@ -63,7 +66,10 @@ public class InProcessSessionEventBroadcaster implements SessionEventBroadcastPo
                 if (s.isOpen()) s.sendMessage(new TextMessage(frame));
             } catch (Exception sendErr) {
                 log.warn("WS send failed for session {}; closing socket", e.sessionId(), sendErr);
-                try { s.close(); } catch (Exception ignored) {}
+                try {
+                    s.close();
+                } catch (Exception ignored) {
+                }
             }
         }
     }

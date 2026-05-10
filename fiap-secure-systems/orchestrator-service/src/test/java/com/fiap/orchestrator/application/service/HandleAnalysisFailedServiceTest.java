@@ -1,12 +1,13 @@
 package com.fiap.orchestrator.application.service;
 
-import com.fiap.orchestrator.domain.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.fiap.orchestrator.domain.model.*;
 
 class HandleAnalysisFailedServiceTest {
 
@@ -17,7 +18,9 @@ class HandleAnalysisFailedServiceTest {
     HandleAnalysisFailedService svc;
 
     @BeforeEach
-    void setup() { svc = new HandleAnalysisFailedService(repo, outbox, dedup, clock); }
+    void setup() {
+        svc = new HandleAnalysisFailedService(repo, outbox, dedup, clock);
+    }
 
     @Test
     void failed_drives_to_FAILED_and_records_reason() {
@@ -27,11 +30,15 @@ class HandleAnalysisFailedServiceTest {
         s = s.withState(SessionState.ANALYZING, clock.now());
         repo.store.put(sid.value(), s);
 
-        AnalysisOutcome out = new AnalysisOutcome(
-                new JobId(UUID.randomUUID()), sid, AnalysisStatus.FAILED,
-                null, null,
-                new AnalysisFailure("MODEL_RATE_LIMITED", "exhausted"),
-                clock.now());
+        AnalysisOutcome out =
+                new AnalysisOutcome(
+                        new JobId(UUID.randomUUID()),
+                        sid,
+                        AnalysisStatus.FAILED,
+                        null,
+                        null,
+                        new AnalysisFailure("MODEL_RATE_LIMITED", "exhausted"),
+                        clock.now());
 
         svc.onFailed(out);
 

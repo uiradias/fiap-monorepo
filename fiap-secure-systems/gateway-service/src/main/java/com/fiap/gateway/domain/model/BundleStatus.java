@@ -1,7 +1,10 @@
 package com.fiap.gateway.domain.model;
 
 public enum BundleStatus {
-    INITIATED, UPLOADING, UPLOADED, FAILED;
+    INITIATED,
+    UPLOADING,
+    UPLOADED,
+    FAILED;
 
     public boolean isTerminal() {
         return this == FAILED;

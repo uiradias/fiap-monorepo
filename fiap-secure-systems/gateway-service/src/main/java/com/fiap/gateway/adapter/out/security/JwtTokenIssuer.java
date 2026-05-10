@@ -1,14 +1,5 @@
 package com.fiap.gateway.adapter.out.security;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.fiap.gateway.domain.exception.InvalidTokenException;
-import com.fiap.gateway.domain.model.UserId;
-import com.fiap.gateway.domain.port.out.TokenIssuerPort;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,20 +17,37 @@ import java.util.Date;
 import java.util.HexFormat;
 import java.util.UUID;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fiap.gateway.domain.exception.InvalidTokenException;
+import com.fiap.gateway.domain.model.UserId;
+import com.fiap.gateway.domain.port.out.TokenIssuerPort;
+
 public class JwtTokenIssuer implements TokenIssuerPort {
 
     private final RSAPrivateKey privateKey;
     private final RSAPublicKey publicKey;
     private final String issuer;
     private final Duration accessTtl;
-    @SuppressWarnings("unused") // ttl recorded for completeness; actual refresh expiry comes from RefreshToken.issue
+
+    @SuppressWarnings("unused") // ttl recorded for completeness; actual refresh expiry comes from
+    // RefreshToken.issue
     private final Duration refreshTtl;
+
     private final Algorithm algorithm;
     private final JWTVerifier verifier;
     private final SecureRandom random = new SecureRandom();
 
-    public JwtTokenIssuer(String privateKeyPath, String publicKeyPath, String issuer,
-                          Duration accessTtl, Duration refreshTtl) throws IOException {
+    public JwtTokenIssuer(
+            String privateKeyPath,
+            String publicKeyPath,
+            String issuer,
+            Duration accessTtl,
+            Duration refreshTtl)
+            throws IOException {
         this.privateKey = readPrivateKey(Path.of(privateKeyPath));
         this.publicKey = readPublicKey(Path.of(publicKeyPath));
         this.issuer = issuer;
@@ -91,26 +99,30 @@ public class JwtTokenIssuer implements TokenIssuerPort {
     // --- PEM parsing helpers ---
 
     private static RSAPrivateKey readPrivateKey(Path path) throws IOException {
-        String pem = Files.readString(path)
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s+", "");
+        String pem =
+                Files.readString(path)
+                        .replace("-----BEGIN PRIVATE KEY-----", "")
+                        .replace("-----END PRIVATE KEY-----", "")
+                        .replaceAll("\\s+", "");
         byte[] der = Base64.getDecoder().decode(pem);
         try {
-            return (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(der));
+            return (RSAPrivateKey)
+                    KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(der));
         } catch (Exception e) {
             throw new IOException("invalid PKCS8 RSA private key at " + path, e);
         }
     }
 
     private static RSAPublicKey readPublicKey(Path path) throws IOException {
-        String pem = Files.readString(path)
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s+", "");
+        String pem =
+                Files.readString(path)
+                        .replace("-----BEGIN PUBLIC KEY-----", "")
+                        .replace("-----END PUBLIC KEY-----", "")
+                        .replaceAll("\\s+", "");
         byte[] der = Base64.getDecoder().decode(pem);
         try {
-            return (RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der));
+            return (RSAPublicKey)
+                    KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der));
         } catch (Exception e) {
             throw new IOException("invalid X.509 RSA public key at " + path, e);
         }

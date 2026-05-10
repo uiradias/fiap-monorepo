@@ -20,8 +20,12 @@ public record RefreshToken(
         Objects.requireNonNull(createdAt, "createdAt");
     }
 
-    public static RefreshToken issue(RefreshTokenId id, UserId userId, String tokenHash,
-                                     Instant now, java.time.Duration ttl) {
+    public static RefreshToken issue(
+            RefreshTokenId id,
+            UserId userId,
+            String tokenHash,
+            Instant now,
+            java.time.Duration ttl) {
         return new RefreshToken(id, userId, tokenHash, now.plus(ttl), now, null);
     }
 

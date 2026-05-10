@@ -1,18 +1,21 @@
 package com.fiap.gateway.adapter.out.persistence;
 
-import com.fiap.gateway.domain.model.*;
-import com.fiap.gateway.domain.port.out.AssetBundleRepositoryPort;
+import java.util.Optional;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import com.fiap.gateway.domain.model.*;
+import com.fiap.gateway.domain.port.out.AssetBundleRepositoryPort;
 
 @Repository
 public class AssetBundleRepositoryAdapter implements AssetBundleRepositoryPort {
 
     private final AssetBundleJpaRepository repo;
 
-    public AssetBundleRepositoryAdapter(AssetBundleJpaRepository repo) { this.repo = repo; }
+    public AssetBundleRepositoryAdapter(AssetBundleJpaRepository repo) {
+        this.repo = repo;
+    }
 
     @Override
     @Transactional

@@ -9,10 +9,6 @@ plugins {
 }
 
 spotless {
-    // Only format files changed since origin/main so introducing Spotless does not
-    // produce a repo-wide reformat diff. Drop this line to enforce on every file.
-    ratchetFrom("origin/main")
-
     format("misc") {
         target("*.gradle.kts", "*.md", ".gitignore")
         trimTrailingWhitespace()

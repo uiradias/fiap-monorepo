@@ -8,8 +8,8 @@ public enum ContentType {
     IMAGE_JPEG("image/jpeg"),
     IMAGE_WEBP("image/webp");
 
-    private static final Set<String> ALLOWED = Set.of(
-            APPLICATION_PDF.value, IMAGE_PNG.value, IMAGE_JPEG.value, IMAGE_WEBP.value);
+    private static final Set<String> ALLOWED =
+            Set.of(APPLICATION_PDF.value, IMAGE_PNG.value, IMAGE_JPEG.value, IMAGE_WEBP.value);
 
     public final String value;
 

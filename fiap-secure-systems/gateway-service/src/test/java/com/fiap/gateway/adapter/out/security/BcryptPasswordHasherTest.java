@@ -1,9 +1,10 @@
 package com.fiap.gateway.adapter.out.security;
 
-import com.fiap.gateway.domain.model.PasswordHash;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.fiap.gateway.domain.model.PasswordHash;
 
 class BcryptPasswordHasherTest {
 

@@ -1,21 +1,23 @@
 package com.fiap.orchestrator.adapter.in.security;
 
-import com.fiap.orchestrator.application.service.Clock;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockFilterChain;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockFilterChain;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+import com.fiap.orchestrator.application.service.Clock;
 
 class InternalHmacFilterTest {
 
@@ -55,7 +57,11 @@ class InternalHmacFilterTest {
         MockHttpServletRequest req = jsonRequest("POST", "/internal/sessions", "{}");
         long ts = clock.now().getEpochSecond();
         req.addHeader("X-Internal-Timestamp", String.valueOf(ts));
-        req.addHeader("X-Internal-Signature", hmac("wrong-secret-min-16chars", canonical(ts, "POST", "/internal/sessions", "{}")));
+        req.addHeader(
+                "X-Internal-Signature",
+                hmac(
+                        "wrong-secret-min-16chars",
+                        canonical(ts, "POST", "/internal/sessions", "{}")));
         MockHttpServletResponse resp = new MockHttpServletResponse();
         filter.doFilter(req, resp, new MockFilterChain());
         assertThat(resp.getStatus()).isEqualTo(401);
@@ -66,7 +72,9 @@ class InternalHmacFilterTest {
         MockHttpServletRequest req = jsonRequest("POST", "/internal/sessions", "{}");
         long ts = clock.now().minusSeconds(600).getEpochSecond();
         req.addHeader("X-Internal-Timestamp", String.valueOf(ts));
-        req.addHeader("X-Internal-Signature", hmac(SECRET, canonical(ts, "POST", "/internal/sessions", "{}")));
+        req.addHeader(
+                "X-Internal-Signature",
+                hmac(SECRET, canonical(ts, "POST", "/internal/sessions", "{}")));
         MockHttpServletResponse resp = new MockHttpServletResponse();
         filter.doFilter(req, resp, new MockFilterChain());
         assertThat(resp.getStatus()).isEqualTo(401);
@@ -97,17 +105,24 @@ class InternalHmacFilterTest {
     private static String canonical(long ts, String method, String path, String body) {
         return ts + "\n" + method + "\n" + path + "\n" + sha256Hex(body);
     }
+
     private static String sha256Hex(String s) {
         try {
-            return HEX.formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(s.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception e) { throw new RuntimeException(e); }
+            return HEX.formatHex(
+                    MessageDigest.getInstance("SHA-256")
+                            .digest(s.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
+
     private static String hmac(String secret, String message) {
         try {
             Mac m = Mac.getInstance("HmacSHA256");
             m.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
             return HEX.formatHex(m.doFinal(message.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

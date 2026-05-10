@@ -1,19 +1,21 @@
 package com.fiap.gateway.adapter.out.http;
 
-import com.fiap.gateway.domain.model.*;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.web.client.RestClient;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestClient;
+
+import com.fiap.gateway.domain.model.*;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 class OrchestratorRestClientTest {
 
@@ -24,17 +26,20 @@ class OrchestratorRestClientTest {
     void up() throws Exception {
         server = new MockWebServer();
         server.start();
-        client = new OrchestratorRestClient(
-                RestClient.builder()
-                        .baseUrl(server.url("/").toString().replaceAll("/$", ""))
-                        .build(),
-                new InternalHmacRequestSigner("secret"),
-                () -> 1714003200L,                        // fixed clock (epoch-seconds)
-                "secret");
+        client =
+                new OrchestratorRestClient(
+                        RestClient.builder()
+                                .baseUrl(server.url("/").toString().replaceAll("/$", ""))
+                                .build(),
+                        new InternalHmacRequestSigner("secret"),
+                        () -> 1714003200L, // fixed clock (epoch-seconds)
+                        "secret");
     }
 
     @AfterEach
-    void down() throws Exception { server.shutdown(); }
+    void down() throws Exception {
+        server.shutdown();
+    }
 
     @Test
     void posts_create_session_with_hmac_headers() throws Exception {
@@ -43,10 +48,16 @@ class OrchestratorRestClientTest {
         SessionId sid = new SessionId(UUID.randomUUID());
         UserId uid = new UserId(UUID.randomUUID());
         BundleId bid = new BundleId(sid.value());
-        Asset asset = new Asset(
-                new AssetId(UUID.randomUUID()), bid,
-                "sessions/" + sid + "/x.png", "x.png", ContentType.IMAGE_PNG,
-                100L, "deadbeef".repeat(8), Instant.now());
+        Asset asset =
+                new Asset(
+                        new AssetId(UUID.randomUUID()),
+                        bid,
+                        "sessions/" + sid + "/x.png",
+                        "x.png",
+                        ContentType.IMAGE_PNG,
+                        100L,
+                        "deadbeef".repeat(8),
+                        Instant.now());
         client.createSession(sid, uid, 1, List.of(asset));
 
         RecordedRequest rec = server.takeRequest();
@@ -64,18 +75,21 @@ class OrchestratorRestClientTest {
     void getReport_returns_parsed_payload() throws Exception {
         SessionId sid = new SessionId(UUID.randomUUID());
         ReportId rid = new ReportId(UUID.randomUUID());
-        server.enqueue(new MockResponse()
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {
-                          "reportId":"%s",
-                          "sessionId":"%s",
-                          "summary":"ok",
-                          "confidence":"high",
-                          "payload":{"summary":"ok"},
-                          "modelMetadata":{"model":"x"},
-                          "createdAt":"2026-05-09T12:00:00Z"
-                        }""".formatted(rid.value(), sid.value())));
+        server.enqueue(
+                new MockResponse()
+                        .setHeader("Content-Type", "application/json")
+                        .setBody(
+                                """
+                                {
+                                  "reportId":"%s",
+                                  "sessionId":"%s",
+                                  "summary":"ok",
+                                  "confidence":"high",
+                                  "payload":{"summary":"ok"},
+                                  "modelMetadata":{"model":"x"},
+                                  "createdAt":"2026-05-09T12:00:00Z"
+                                }"""
+                                        .formatted(rid.value(), sid.value())));
 
         AnalysisReport r = client.getReport(sid);
         assertThat(r.id()).isEqualTo(rid);

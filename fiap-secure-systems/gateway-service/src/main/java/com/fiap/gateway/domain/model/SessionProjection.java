@@ -9,8 +9,8 @@ public record SessionProjection(
         UserId userId,
         SessionState state,
         Instant lastEventAt,
-        String failureReason,           // populated on FAILED transitions
-        ReportId reportId) {            // populated when REPORT_READY arrives
+        String failureReason, // populated on FAILED transitions
+        ReportId reportId) { // populated when REPORT_READY arrives
 
     public SessionProjection {
         Objects.requireNonNull(id, "id");
@@ -19,8 +19,8 @@ public record SessionProjection(
         Objects.requireNonNull(lastEventAt, "lastEventAt");
     }
 
-    public static SessionProjection initial(SessionId id, UserId userId,
-                                            SessionState toState, Instant occurredAt) {
+    public static SessionProjection initial(
+            SessionId id, UserId userId, SessionState toState, Instant occurredAt) {
         return new SessionProjection(id, userId, toState, occurredAt, null, null);
     }
 
@@ -37,16 +37,23 @@ public record SessionProjection(
         ReportId nextReportId = reportId;
         if (e.toState() == SessionState.FAILED) {
             Object code = e.payload().get("errorCode");
-            nextFailure = code != null ? code.toString() : (failureReason != null ? failureReason : "FAILED");
+            nextFailure =
+                    code != null
+                            ? code.toString()
+                            : (failureReason != null ? failureReason : "FAILED");
         }
         if (e.toState() == SessionState.REPORT_READY) {
             Object rid = e.payload().get("reportId");
             if (rid != null) {
-                try { nextReportId = new ReportId(java.util.UUID.fromString(rid.toString())); }
-                catch (IllegalArgumentException ignored) { /* keep prior */ }
+                try {
+                    nextReportId = new ReportId(java.util.UUID.fromString(rid.toString()));
+                } catch (IllegalArgumentException ignored) {
+                    /* keep prior */
+                }
             }
         }
-        return new SessionProjection(id, userId, e.toState(), nextEventAt, nextFailure, nextReportId);
+        return new SessionProjection(
+                id, userId, e.toState(), nextEventAt, nextFailure, nextReportId);
     }
 
     public Optional<ReportId> reportIdOpt() {

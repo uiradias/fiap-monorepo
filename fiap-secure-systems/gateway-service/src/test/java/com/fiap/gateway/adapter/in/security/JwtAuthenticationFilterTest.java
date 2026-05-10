@@ -1,21 +1,22 @@
 package com.fiap.gateway.adapter.in.security;
 
-import com.fiap.gateway.application.service.InMemoryFakes;
-import com.fiap.gateway.domain.model.UserId;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletResponse;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import java.time.Instant;
+import java.util.UUID;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.time.Instant;
-import java.util.UUID;
+import com.fiap.gateway.application.service.InMemoryFakes;
+import com.fiap.gateway.domain.model.UserId;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import jakarta.servlet.FilterChain;
 
 class JwtAuthenticationFilterTest {
 
@@ -23,7 +24,9 @@ class JwtAuthenticationFilterTest {
     private final JwtAuthenticationFilter filter = new JwtAuthenticationFilter(tokens);
 
     @AfterEach
-    void clear() { SecurityContextHolder.clearContext(); }
+    void clear() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void valid_bearer_sets_principal() throws Exception {
@@ -36,7 +39,8 @@ class JwtAuthenticationFilterTest {
 
         filter.doFilter(req, res, chain);
 
-        assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal()).isEqualTo(uid);
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                .isEqualTo(uid);
         verify(chain).doFilter(req, res);
     }
 

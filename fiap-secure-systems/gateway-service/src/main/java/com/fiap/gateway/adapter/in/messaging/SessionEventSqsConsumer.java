@@ -1,24 +1,26 @@
 package com.fiap.gateway.adapter.in.messaging;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.gateway.application.service.Clock;
 import com.fiap.gateway.domain.model.*;
 import com.fiap.gateway.domain.port.in.RecordSessionEventUseCase;
 import com.fiap.gateway.infrastructure.schema.ContractValidator;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SessionEventSqsConsumer {
 
@@ -36,9 +38,14 @@ public class SessionEventSqsConsumer {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Thread worker;
 
-    public SessionEventSqsConsumer(SqsClient sqs, String queueUrl, int waitSeconds,
-                                   ObjectMapper mapper, ContractValidator validator,
-                                   RecordSessionEventUseCase recorder, Clock clock) {
+    public SessionEventSqsConsumer(
+            SqsClient sqs,
+            String queueUrl,
+            int waitSeconds,
+            ObjectMapper mapper,
+            ContractValidator validator,
+            RecordSessionEventUseCase recorder,
+            Clock clock) {
         this.sqs = sqs;
         this.queueUrl = queueUrl;
         this.waitSeconds = waitSeconds;
@@ -70,18 +77,24 @@ public class SessionEventSqsConsumer {
     private void loop() {
         while (running.get()) {
             try {
-                var resp = sqs.receiveMessage(ReceiveMessageRequest.builder()
-                        .queueUrl(queueUrl)
-                        .waitTimeSeconds(waitSeconds)
-                        .maxNumberOfMessages(10)
-                        .build());
+                var resp =
+                        sqs.receiveMessage(
+                                ReceiveMessageRequest.builder()
+                                        .queueUrl(queueUrl)
+                                        .waitTimeSeconds(waitSeconds)
+                                        .maxNumberOfMessages(10)
+                                        .build());
                 for (Message m : resp.messages()) {
                     handleOne(m);
                 }
             } catch (Exception e) {
                 if (!running.get()) return;
                 log.warn("session-events loop iteration failed", e);
-                try { Thread.sleep(1_000); } catch (InterruptedException ignored) { return; }
+                try {
+                    Thread.sleep(1_000);
+                } catch (InterruptedException ignored) {
+                    return;
+                }
             }
         }
     }
@@ -92,7 +105,9 @@ public class SessionEventSqsConsumer {
             body = mapper.readValue(m.body(), MAP_TYPE);
             validator.validateSessionEvent(body);
         } catch (Exception parseError) {
-            log.warn("dropping unparseable/invalid session-event message: {}", parseError.getMessage());
+            log.warn(
+                    "dropping unparseable/invalid session-event message: {}",
+                    parseError.getMessage());
             deleteSafely(m);
             return;
         }
@@ -104,23 +119,33 @@ public class SessionEventSqsConsumer {
             String fromStr = (String) body.get("fromState");
             SessionState fromState = (fromStr == null) ? null : SessionState.valueOf(fromStr);
             @SuppressWarnings("unchecked")
-            Map<String, Object> payload = (Map<String, Object>) body.getOrDefault("payload", Map.of());
+            Map<String, Object> payload =
+                    (Map<String, Object>) body.getOrDefault("payload", Map.of());
             Instant occurredAt = Instant.parse((String) body.get("occurredAt"));
 
             recorder.record(eid, sid, uid, fromState, toState, payload, occurredAt, clock.now());
             deleteSafely(m);
         } catch (Exception useCaseError) {
-            log.error("recordSessionEvent failed for eventId={} sessionId={}; leaving for redelivery",
-                    body.get("eventId"), body.get("sessionId"), useCaseError);
+            log.error(
+                    "recordSessionEvent failed for eventId={} sessionId={}; leaving for redelivery",
+                    body.get("eventId"),
+                    body.get("sessionId"),
+                    useCaseError);
         }
     }
 
     private void deleteSafely(Message m) {
         try {
-            sqs.deleteMessage(DeleteMessageRequest.builder()
-                    .queueUrl(queueUrl).receiptHandle(m.receiptHandle()).build());
+            sqs.deleteMessage(
+                    DeleteMessageRequest.builder()
+                            .queueUrl(queueUrl)
+                            .receiptHandle(m.receiptHandle())
+                            .build());
         } catch (Exception e) {
-            log.warn("failed to delete session-events message {}: {}", m.messageId(), e.getMessage());
+            log.warn(
+                    "failed to delete session-events message {}: {}",
+                    m.messageId(),
+                    e.getMessage());
         }
     }
 }

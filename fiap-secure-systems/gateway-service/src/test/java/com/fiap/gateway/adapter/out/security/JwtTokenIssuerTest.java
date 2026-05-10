@@ -1,10 +1,7 @@
 package com.fiap.gateway.adapter.out.security;
 
-import com.fiap.gateway.domain.exception.InvalidTokenException;
-import com.fiap.gateway.domain.model.UserId;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,13 +13,16 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import com.fiap.gateway.domain.exception.InvalidTokenException;
+import com.fiap.gateway.domain.model.UserId;
 
 class JwtTokenIssuerTest {
 
-    @TempDir
-    static Path tmp;
+    @TempDir static Path tmp;
 
     static Path priv;
     static Path pub;
@@ -36,12 +36,16 @@ class JwtTokenIssuerTest {
         priv = tmp.resolve("priv.pem");
         pub = tmp.resolve("pub.pem");
 
-        String privPem = "-----BEGIN PRIVATE KEY-----\n"
-                + Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(kp.getPrivate().getEncoded())
-                + "\n-----END PRIVATE KEY-----\n";
-        String pubPem = "-----BEGIN PUBLIC KEY-----\n"
-                + Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(kp.getPublic().getEncoded())
-                + "\n-----END PUBLIC KEY-----\n";
+        String privPem =
+                "-----BEGIN PRIVATE KEY-----\n"
+                        + Base64.getMimeEncoder(64, "\n".getBytes())
+                                .encodeToString(kp.getPrivate().getEncoded())
+                        + "\n-----END PRIVATE KEY-----\n";
+        String pubPem =
+                "-----BEGIN PUBLIC KEY-----\n"
+                        + Base64.getMimeEncoder(64, "\n".getBytes())
+                                .encodeToString(kp.getPublic().getEncoded())
+                        + "\n-----END PUBLIC KEY-----\n";
 
         Files.writeString(priv, privPem);
         Files.writeString(pub, pubPem);
@@ -49,8 +53,11 @@ class JwtTokenIssuerTest {
 
     private JwtTokenIssuer newIssuer() throws IOException {
         return new JwtTokenIssuer(
-                priv.toString(), pub.toString(), "gateway-service",
-                Duration.ofMinutes(15), Duration.ofDays(7));
+                priv.toString(),
+                pub.toString(),
+                "gateway-service",
+                Duration.ofMinutes(15),
+                Duration.ofDays(7));
     }
 
     @Test
@@ -87,7 +94,7 @@ class JwtTokenIssuerTest {
         assertThat(t1).hasSizeGreaterThan(20);
 
         String h = issuer.hashRefreshToken(t1);
-        assertThat(h).hasSize(64);                                  // sha256 hex
-        assertThat(h).isEqualTo(issuer.hashRefreshToken(t1));       // deterministic
+        assertThat(h).hasSize(64); // sha256 hex
+        assertThat(h).isEqualTo(issuer.hashRefreshToken(t1)); // deterministic
     }
 }

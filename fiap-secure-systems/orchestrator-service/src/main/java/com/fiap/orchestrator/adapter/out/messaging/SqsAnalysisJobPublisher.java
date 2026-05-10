@@ -1,15 +1,16 @@
 package com.fiap.orchestrator.adapter.out.messaging;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.orchestrator.domain.model.AnalysisJob;
 import com.fiap.orchestrator.domain.port.out.AnalysisJobPublisherPort;
 import com.fiap.orchestrator.infrastructure.schema.ContractValidator;
+
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class SqsAnalysisJobPublisher implements AnalysisJobPublisherPort {
 
@@ -33,13 +34,18 @@ public class SqsAnalysisJobPublisher implements AnalysisJobPublisherPort {
         body.put("jobId", job.jobId().toString());
         body.put("sessionId", job.sessionId().toString());
         body.put("userId", job.userId().toString());
-        body.put("assets", job.assets().stream().map(a -> Map.<String, Object>of(
-                "assetId", a.assetId().toString(),
-                "s3Key", a.s3Key(),
-                "contentType", a.contentType(),
-                "filename", a.filename(),
-                "sizeBytes", a.sizeBytes()
-        )).toList());
+        body.put(
+                "assets",
+                job.assets().stream()
+                        .map(
+                                a ->
+                                        Map.<String, Object>of(
+                                                "assetId", a.assetId().toString(),
+                                                "s3Key", a.s3Key(),
+                                                "contentType", a.contentType(),
+                                                "filename", a.filename(),
+                                                "sizeBytes", a.sizeBytes()))
+                        .toList());
         body.put("promptVersion", job.promptVersion());
         body.put("submittedAt", job.submittedAt().toString());
         publishPreSerialized(body, job.sessionId().toString());
@@ -49,13 +55,18 @@ public class SqsAnalysisJobPublisher implements AnalysisJobPublisherPort {
     public void publishPreSerialized(Map<String, Object> body, String sessionIdAttr) {
         validator.validateAnalysisJob(body);
         try {
-            sqs.sendMessage(SendMessageRequest.builder()
-                    .queueUrl(queueUrl)
-                    .messageBody(mapper.writeValueAsString(body))
-                    .messageAttributes(Map.of(
-                            "sessionId", MessageAttributeValue.builder()
-                                    .dataType("String").stringValue(sessionIdAttr).build()))
-                    .build());
+            sqs.sendMessage(
+                    SendMessageRequest.builder()
+                            .queueUrl(queueUrl)
+                            .messageBody(mapper.writeValueAsString(body))
+                            .messageAttributes(
+                                    Map.of(
+                                            "sessionId",
+                                            MessageAttributeValue.builder()
+                                                    .dataType("String")
+                                                    .stringValue(sessionIdAttr)
+                                                    .build()))
+                            .build());
         } catch (Exception e) {
             throw new RuntimeException("failed to publish analysis-job", e);
         }

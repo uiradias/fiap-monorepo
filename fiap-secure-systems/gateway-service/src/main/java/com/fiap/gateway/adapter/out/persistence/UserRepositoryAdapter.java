@@ -1,20 +1,23 @@
 package com.fiap.gateway.adapter.out.persistence;
 
-import com.fiap.gateway.domain.exception.DuplicateEmailException;
-import com.fiap.gateway.domain.model.*;
-import com.fiap.gateway.domain.port.out.UserRepositoryPort;
+import java.util.Optional;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import com.fiap.gateway.domain.exception.DuplicateEmailException;
+import com.fiap.gateway.domain.model.*;
+import com.fiap.gateway.domain.port.out.UserRepositoryPort;
 
 @Repository
 public class UserRepositoryAdapter implements UserRepositoryPort {
 
     private final UserJpaRepository repo;
 
-    public UserRepositoryAdapter(UserJpaRepository repo) { this.repo = repo; }
+    public UserRepositoryAdapter(UserJpaRepository repo) {
+        this.repo = repo;
+    }
 
     @Override
     @Transactional

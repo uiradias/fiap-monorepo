@@ -1,19 +1,21 @@
 package com.fiap.gateway.adapter.in.ratelimit;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import com.fiap.gateway.infrastructure.config.RateLimitProperties;
+
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -28,7 +30,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+    protected void doFilterInternal(
+            HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
         if (!shouldRateLimit(req)) {
             chain.doFilter(req, res);
@@ -48,7 +51,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String path = req.getRequestURI();
         String method = req.getMethod();
         if ("POST".equals(method) && path.equals("/api/v1/auth/login")) return true;
-        if ("POST".equals(method) && path.startsWith("/api/v1/asset-bundles/") && path.endsWith("/assets")) return true;
+        if ("POST".equals(method)
+                && path.startsWith("/api/v1/asset-bundles/")
+                && path.endsWith("/assets")) return true;
         return false;
     }
 
@@ -56,13 +61,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
         boolean authed = req.getHeader("Authorization") != null;
         int rate = authed ? authedPerMinute : anonPerMinute;
         return Bucket.builder()
-                .addLimit(Bandwidth.builder().capacity(rate).refillIntervally(rate, Duration.ofMinutes(1)).build())
+                .addLimit(
+                        Bandwidth.builder()
+                                .capacity(rate)
+                                .refillIntervally(rate, Duration.ofMinutes(1))
+                                .build())
                 .build();
     }
 
     private String clientKey(HttpServletRequest req) {
         String auth = req.getHeader("Authorization");
-        if (auth != null) return "u:" + auth;          // already namespaced by token
+        if (auth != null) return "u:" + auth; // already namespaced by token
         String fwd = req.getHeader("X-Forwarded-For");
         return "ip:" + (fwd != null ? fwd.split(",")[0].trim() : req.getRemoteAddr());
     }

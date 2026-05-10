@@ -1,15 +1,16 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
-import com.fiap.orchestrator.PostgresTestcontainersBase;
-import com.fiap.orchestrator.domain.model.AnalysisStatus;
-import com.fiap.orchestrator.domain.model.JobId;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.fiap.orchestrator.PostgresTestcontainersBase;
+import com.fiap.orchestrator.domain.model.AnalysisStatus;
+import com.fiap.orchestrator.domain.model.JobId;
 
 class ProcessedResultsIT extends PostgresTestcontainersBase {
 

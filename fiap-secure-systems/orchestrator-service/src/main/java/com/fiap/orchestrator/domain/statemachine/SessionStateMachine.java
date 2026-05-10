@@ -1,8 +1,8 @@
 package com.fiap.orchestrator.domain.statemachine;
 
-import com.fiap.orchestrator.domain.model.SessionState;
-
 import static com.fiap.orchestrator.domain.model.SessionState.*;
+
+import com.fiap.orchestrator.domain.model.SessionState;
 
 public class SessionStateMachine {
 
@@ -20,18 +20,16 @@ public class SessionStateMachine {
         if (from.isTerminal()) {
             throw new IllegalSessionTransitionException(from, trigger);
         }
-        SessionState to = switch (trigger) {
-            case OUTBOX_JOB_PUBLISHED ->
-                    from == ASSETS_UPLOADED ? QUEUED_FOR_ANALYSIS : null;
-            case RECEIVE_RESULT_STARTED ->
-                    from == QUEUED_FOR_ANALYSIS ? ANALYZING : null;
-            case RECEIVE_RESULT_SUCCEEDED ->
-                    from == ANALYZING ? ANALYSIS_COMPLETED : null;
-            case REPORT_PERSISTED ->
-                    from == ANALYSIS_COMPLETED ? REPORT_READY : null;
-            case RECEIVE_RESULT_FAILED, DLQ_TRIPPED -> FAILED;
-            case CANCEL -> CANCELED;
-        };
+        SessionState to =
+                switch (trigger) {
+                    case OUTBOX_JOB_PUBLISHED ->
+                            from == ASSETS_UPLOADED ? QUEUED_FOR_ANALYSIS : null;
+                    case RECEIVE_RESULT_STARTED -> from == QUEUED_FOR_ANALYSIS ? ANALYZING : null;
+                    case RECEIVE_RESULT_SUCCEEDED -> from == ANALYZING ? ANALYSIS_COMPLETED : null;
+                    case REPORT_PERSISTED -> from == ANALYSIS_COMPLETED ? REPORT_READY : null;
+                    case RECEIVE_RESULT_FAILED, DLQ_TRIPPED -> FAILED;
+                    case CANCEL -> CANCELED;
+                };
         if (to == null) {
             throw new IllegalSessionTransitionException(from, trigger);
         }

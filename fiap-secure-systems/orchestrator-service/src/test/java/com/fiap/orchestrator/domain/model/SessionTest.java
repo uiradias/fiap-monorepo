@@ -1,12 +1,12 @@
 package com.fiap.orchestrator.domain.model;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
 
 class SessionTest {
 
@@ -49,7 +49,8 @@ class SessionTest {
     @Test
     void failed_session_with_reason() {
         Session s = Session.newSession(SID, UID, 3, NOW);
-        Session failed = s.withFailure(SessionState.FAILED, "MODEL_RATE_LIMITED", NOW.plusSeconds(5));
+        Session failed =
+                s.withFailure(SessionState.FAILED, "MODEL_RATE_LIMITED", NOW.plusSeconds(5));
         assertThat(failed.state()).isEqualTo(SessionState.FAILED);
         assertThat(failed.failureReason()).isEqualTo("MODEL_RATE_LIMITED");
         assertThat(failed.version()).isEqualTo(1L);

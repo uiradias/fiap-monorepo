@@ -1,16 +1,17 @@
 package com.fiap.orchestrator.adapter.out.messaging;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.orchestrator.domain.model.SessionEvent;
 import com.fiap.orchestrator.domain.model.UserId;
 import com.fiap.orchestrator.domain.port.out.SessionEventPublisherPort;
 import com.fiap.orchestrator.infrastructure.schema.ContractValidator;
+
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class SnsSessionEventPublisher implements SessionEventPublisherPort {
 
@@ -45,15 +46,17 @@ public class SnsSessionEventPublisher implements SessionEventPublisherPort {
         validator.validateSessionEvent(body);
         try {
             String json = mapper.writeValueAsString(body);
-            Map<String, MessageAttributeValue> attrs = Map.of(
-                    "sessionId", attr(String.valueOf(body.get("sessionId"))),
-                    "userId",    attr(String.valueOf(body.get("userId"))),
-                    "toState",   attr(String.valueOf(body.get("toState"))));
-            sns.publish(PublishRequest.builder()
-                    .topicArn(topicArn)
-                    .message(json)
-                    .messageAttributes(attrs)
-                    .build());
+            Map<String, MessageAttributeValue> attrs =
+                    Map.of(
+                            "sessionId", attr(String.valueOf(body.get("sessionId"))),
+                            "userId", attr(String.valueOf(body.get("userId"))),
+                            "toState", attr(String.valueOf(body.get("toState"))));
+            sns.publish(
+                    PublishRequest.builder()
+                            .topicArn(topicArn)
+                            .message(json)
+                            .messageAttributes(attrs)
+                            .build());
         } catch (Exception e) {
             throw new RuntimeException("failed to publish session-event", e);
         }

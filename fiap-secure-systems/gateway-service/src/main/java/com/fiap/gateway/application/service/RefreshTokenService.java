@@ -1,17 +1,18 @@
 package com.fiap.gateway.application.service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.fiap.gateway.domain.exception.InvalidTokenException;
 import com.fiap.gateway.domain.model.*;
 import com.fiap.gateway.domain.port.in.LoginUseCase;
 import com.fiap.gateway.domain.port.in.RefreshTokenUseCase;
 import com.fiap.gateway.domain.port.out.RefreshTokenRepositoryPort;
 import com.fiap.gateway.domain.port.out.TokenIssuerPort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.UUID;
 
 @Service
 public class RefreshTokenService implements RefreshTokenUseCase {
@@ -23,8 +24,11 @@ public class RefreshTokenService implements RefreshTokenUseCase {
     private final Clock clock;
     private final Duration refreshTtl;
 
-    public RefreshTokenService(RefreshTokenRepositoryPort refreshTokens,
-                               TokenIssuerPort issuer, Clock clock, Duration refreshTtl) {
+    public RefreshTokenService(
+            RefreshTokenRepositoryPort refreshTokens,
+            TokenIssuerPort issuer,
+            Clock clock,
+            Duration refreshTtl) {
         this.refreshTokens = refreshTokens;
         this.issuer = issuer;
         this.clock = clock;
@@ -35,17 +39,26 @@ public class RefreshTokenService implements RefreshTokenUseCase {
     @Transactional
     public LoginUseCase.TokenPair refresh(String refreshTokenPlain) {
         String hash = issuer.hashRefreshToken(refreshTokenPlain);
-        RefreshToken active = refreshTokens.findActiveByHash(hash)
-                .orElseThrow(() -> new InvalidTokenException("refresh token not found or revoked"));
+        RefreshToken active =
+                refreshTokens
+                        .findActiveByHash(hash)
+                        .orElseThrow(
+                                () ->
+                                        new InvalidTokenException(
+                                                "refresh token not found or revoked"));
 
         Instant now = clock.now();
         refreshTokens.revoke(active.id(), now);
 
         String newAccess = issuer.issueAccessToken(active.userId(), now);
         String newPlain = issuer.generateRefreshTokenPlaintext();
-        refreshTokens.insert(RefreshToken.issue(
-                new RefreshTokenId(UUID.randomUUID()), active.userId(),
-                issuer.hashRefreshToken(newPlain), now, refreshTtl));
+        refreshTokens.insert(
+                RefreshToken.issue(
+                        new RefreshTokenId(UUID.randomUUID()),
+                        active.userId(),
+                        issuer.hashRefreshToken(newPlain),
+                        now,
+                        refreshTtl));
 
         return new LoginUseCase.TokenPair(newAccess, newPlain, ACCESS_TTL_SECONDS);
     }

@@ -34,27 +34,33 @@ public record AssetBundle(
                     "bundle " + id + " is " + status + "; cannot accept assets");
         }
         if (assetCount >= MAX_ASSETS) {
-            throw new IllegalStateException("bundle " + id + " already at the " + MAX_ASSETS + " asset cap");
+            throw new IllegalStateException(
+                    "bundle " + id + " already at the " + MAX_ASSETS + " asset cap");
         }
-        return new AssetBundle(id, userId, BundleStatus.UPLOADING,
-                assetCount + 1, totalBytes + sizeBytes, createdAt, now);
+        return new AssetBundle(
+                id,
+                userId,
+                BundleStatus.UPLOADING,
+                assetCount + 1,
+                totalBytes + sizeBytes,
+                createdAt,
+                now);
     }
 
     public AssetBundle finalize(Instant now) {
         if (status == BundleStatus.UPLOADED) return this;
         if (!status.canBeFinalized()) {
-            throw new IllegalStateException(
-                    "bundle " + id + " is " + status + "; cannot finalize");
+            throw new IllegalStateException("bundle " + id + " is " + status + "; cannot finalize");
         }
-        return new AssetBundle(id, userId, BundleStatus.UPLOADED,
-                assetCount, totalBytes, createdAt, now);
+        return new AssetBundle(
+                id, userId, BundleStatus.UPLOADED, assetCount, totalBytes, createdAt, now);
     }
 
     public AssetBundle markFailed(Instant now) {
         if (status == BundleStatus.UPLOADED || status == BundleStatus.FAILED) {
             return this;
         }
-        return new AssetBundle(id, userId, BundleStatus.FAILED,
-                assetCount, totalBytes, createdAt, now);
+        return new AssetBundle(
+                id, userId, BundleStatus.FAILED, assetCount, totalBytes, createdAt, now);
     }
 }

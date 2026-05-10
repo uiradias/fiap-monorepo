@@ -1,5 +1,8 @@
 package com.fiap.orchestrator.adapter.in.rest;
 
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -7,11 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.*;
-
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/replay")
@@ -36,15 +37,26 @@ public class AdminReplayController {
     public ResponseEntity<Map<String, Object>> replayDlq() {
         int replayed = 0;
         while (true) {
-            ReceiveMessageResponse resp = sqs.receiveMessage(ReceiveMessageRequest.builder()
-                    .queueUrl(dlqUrl).maxNumberOfMessages(10).waitTimeSeconds(1).build());
+            ReceiveMessageResponse resp =
+                    sqs.receiveMessage(
+                            ReceiveMessageRequest.builder()
+                                    .queueUrl(dlqUrl)
+                                    .maxNumberOfMessages(10)
+                                    .waitTimeSeconds(1)
+                                    .build());
             List<Message> msgs = resp.messages();
             if (msgs.isEmpty()) break;
             for (Message m : msgs) {
-                sqs.sendMessage(SendMessageRequest.builder()
-                        .queueUrl(mainUrl).messageBody(m.body()).build());
-                sqs.deleteMessage(DeleteMessageRequest.builder()
-                        .queueUrl(dlqUrl).receiptHandle(m.receiptHandle()).build());
+                sqs.sendMessage(
+                        SendMessageRequest.builder()
+                                .queueUrl(mainUrl)
+                                .messageBody(m.body())
+                                .build());
+                sqs.deleteMessage(
+                        DeleteMessageRequest.builder()
+                                .queueUrl(dlqUrl)
+                                .receiptHandle(m.receiptHandle())
+                                .build());
                 replayed++;
             }
         }

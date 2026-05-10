@@ -11,9 +11,7 @@ public abstract class LocalStackTestcontainersBase extends PostgresTestcontainer
     @Container
     public static final LocalStackContainer LOCALSTACK =
             new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.5"))
-                    .withServices(
-                            LocalStackContainer.Service.SQS,
-                            LocalStackContainer.Service.SNS);
+                    .withServices(LocalStackContainer.Service.SQS, LocalStackContainer.Service.SNS);
 
     @DynamicPropertySource
     static void registerLocalStackProperties(DynamicPropertyRegistry registry) {

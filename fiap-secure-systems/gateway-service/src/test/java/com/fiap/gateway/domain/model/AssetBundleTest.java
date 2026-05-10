@@ -1,12 +1,12 @@
 package com.fiap.gateway.domain.model;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.Test;
 
 class AssetBundleTest {
 
@@ -24,7 +24,8 @@ class AssetBundleTest {
 
     @Test
     void registerAsset_moves_to_UPLOADING_and_increments_counts() {
-        AssetBundle b = AssetBundle.newBundle(BID, UID, NOW).registerAsset(1024, NOW.plusSeconds(1));
+        AssetBundle b =
+                AssetBundle.newBundle(BID, UID, NOW).registerAsset(1024, NOW.plusSeconds(1));
         assertThat(b.status()).isEqualTo(BundleStatus.UPLOADING);
         assertThat(b.assetCount()).isEqualTo(1);
         assertThat(b.totalBytes()).isEqualTo(1024);
@@ -44,36 +45,39 @@ class AssetBundleTest {
     @Test
     void finalize_rejected_on_INITIATED() {
         AssetBundle empty = AssetBundle.newBundle(BID, UID, NOW);
-        assertThatThrownBy(() -> empty.finalize(NOW))
-                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> empty.finalize(NOW)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void finalize_moves_to_UPLOADED() {
-        AssetBundle b = AssetBundle.newBundle(BID, UID, NOW)
-                .registerAsset(1, NOW)
-                .finalize(NOW.plusSeconds(2));
+        AssetBundle b =
+                AssetBundle.newBundle(BID, UID, NOW)
+                        .registerAsset(1, NOW)
+                        .finalize(NOW.plusSeconds(2));
         assertThat(b.status()).isEqualTo(BundleStatus.UPLOADED);
         assertThat(b.updatedAt()).isEqualTo(NOW.plusSeconds(2));
     }
 
     @Test
     void finalize_is_idempotent_on_already_UPLOADED() {
-        AssetBundle uploaded = AssetBundle.newBundle(BID, UID, NOW)
-                .registerAsset(1, NOW)
-                .finalize(NOW.plusSeconds(2));
+        AssetBundle uploaded =
+                AssetBundle.newBundle(BID, UID, NOW)
+                        .registerAsset(1, NOW)
+                        .finalize(NOW.plusSeconds(2));
         AssetBundle again = uploaded.finalize(NOW.plusSeconds(3));
         assertThat(again).isSameAs(uploaded);
     }
 
     @Test
     void markFailed_is_a_noop_on_terminal_bundles() {
-        AssetBundle uploaded = AssetBundle.newBundle(BID, UID, NOW)
-                .registerAsset(1, NOW)
-                .finalize(NOW.plusSeconds(2));
+        AssetBundle uploaded =
+                AssetBundle.newBundle(BID, UID, NOW)
+                        .registerAsset(1, NOW)
+                        .finalize(NOW.plusSeconds(2));
         assertThat(uploaded.markFailed(NOW.plusSeconds(3))).isSameAs(uploaded);
 
-        AssetBundle alreadyFailed = AssetBundle.newBundle(BID, UID, NOW).markFailed(NOW.plusSeconds(1));
+        AssetBundle alreadyFailed =
+                AssetBundle.newBundle(BID, UID, NOW).markFailed(NOW.plusSeconds(1));
         assertThat(alreadyFailed.markFailed(NOW.plusSeconds(2))).isSameAs(alreadyFailed);
     }
 }

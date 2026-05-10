@@ -1,13 +1,13 @@
 package com.fiap.gateway.domain.port.out;
 
-import com.fiap.gateway.domain.model.*;
-
 import java.util.List;
+
+import com.fiap.gateway.domain.model.*;
 
 public interface SessionEventLogRepositoryPort {
     /**
-     * Insert if absent (PK conflict on event_id => silent ack).
-     * Returns true if the row was newly inserted.
+     * Insert if absent (PK conflict on event_id => silent ack). Returns true if the row was newly
+     * inserted.
      */
     boolean insertIfAbsent(SessionEventLogEntry entry);
 

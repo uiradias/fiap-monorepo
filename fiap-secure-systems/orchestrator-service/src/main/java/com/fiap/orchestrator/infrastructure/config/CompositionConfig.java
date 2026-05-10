@@ -1,5 +1,12 @@
 package com.fiap.orchestrator.infrastructure.config;
 
+import java.io.File;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.orchestrator.adapter.in.messaging.AnalysisResultSqsConsumer;
 import com.fiap.orchestrator.adapter.out.messaging.SnsSessionEventPublisher;
@@ -9,14 +16,9 @@ import com.fiap.orchestrator.domain.port.in.HandleAnalysisCompletedUseCase;
 import com.fiap.orchestrator.domain.port.in.HandleAnalysisFailedUseCase;
 import com.fiap.orchestrator.domain.port.in.HandleAnalysisStartedUseCase;
 import com.fiap.orchestrator.infrastructure.schema.ContractValidator;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
-
-import java.io.File;
 
 @Configuration
 public class CompositionConfig {
@@ -68,7 +70,15 @@ public class CompositionConfig {
             HandleAnalysisFailedUseCase failed,
             Clock clock) {
         return new AnalysisResultSqsConsumer(
-                sqs, queueUrl, dlqUrl, waitSeconds, mapper, validator,
-                started, completed, failed, clock);
+                sqs,
+                queueUrl,
+                dlqUrl,
+                waitSeconds,
+                mapper,
+                validator,
+                started,
+                completed,
+                failed,
+                clock);
     }
 }

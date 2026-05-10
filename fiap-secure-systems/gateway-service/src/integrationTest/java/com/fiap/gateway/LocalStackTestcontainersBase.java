@@ -25,7 +25,8 @@ public abstract class LocalStackTestcontainersBase extends PostgresTestcontainer
         registry.add("gateway.aws.secret-key", LOCALSTACK::getSecretKey);
         registry.add("gateway.s3.bucket", () -> Provisioning.bucket);
         registry.add("gateway.sqs.session-events-url", () -> Provisioning.sessionEventsUrl);
-        registry.add("gateway.contracts-dir", () ->
-                new java.io.File("../infrastructure/contracts").getAbsolutePath());
+        registry.add(
+                "gateway.contracts-dir",
+                () -> new java.io.File("../infrastructure/contracts").getAbsolutePath());
     }
 }

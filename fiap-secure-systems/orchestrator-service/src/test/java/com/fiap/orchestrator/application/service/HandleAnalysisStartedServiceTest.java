@@ -1,13 +1,14 @@
 package com.fiap.orchestrator.application.service;
 
-import com.fiap.orchestrator.domain.model.*;
-import com.fiap.orchestrator.domain.port.out.OutboxPort;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.fiap.orchestrator.domain.model.*;
+import com.fiap.orchestrator.domain.port.out.OutboxPort;
 
 class HandleAnalysisStartedServiceTest {
 
@@ -38,10 +39,12 @@ class HandleAnalysisStartedServiceTest {
         JobId job = new JobId(UUID.randomUUID());
         svc.onStarted(job, sid);
         assertThat(repo.store.get(sid.value()).state()).isEqualTo(SessionState.ANALYZING);
-        assertThat(repo.events).singleElement()
+        assertThat(repo.events)
+                .singleElement()
                 .satisfies(ev -> assertThat(ev.toState()).isEqualTo(SessionState.ANALYZING));
         assertThat(outbox.rows).hasSize(1);
-        assertThat(outbox.rows.get(0).destination()).isEqualTo(OutboxPort.Destination.SNS_SESSION_EVENTS);
+        assertThat(outbox.rows.get(0).destination())
+                .isEqualTo(OutboxPort.Destination.SNS_SESSION_EVENTS);
     }
 
     @Test

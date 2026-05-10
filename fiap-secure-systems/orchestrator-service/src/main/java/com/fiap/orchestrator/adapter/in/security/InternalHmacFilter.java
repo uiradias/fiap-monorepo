@@ -1,17 +1,5 @@
 package com.fiap.orchestrator.adapter.in.security;
 
-import com.fiap.orchestrator.application.service.Clock;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletInputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,10 +9,24 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.List;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.fiap.orchestrator.application.service.Clock;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletResponse;
+
 public class InternalHmacFilter extends OncePerRequestFilter {
 
-    private static final List<String> WHITELIST = List.of(
-            "/actuator/health", "/actuator/info");
+    private static final List<String> WHITELIST = List.of("/actuator/health", "/actuator/info");
     private static final HexFormat HEX = HexFormat.of();
 
     private final byte[] secret;
@@ -90,18 +92,34 @@ public class InternalHmacFilter extends OncePerRequestFilter {
             this.cachedBody = cachedBody;
         }
 
-        @Override public ServletInputStream getInputStream() {
+        @Override
+        public ServletInputStream getInputStream() {
             ByteArrayInputStream inner = new ByteArrayInputStream(cachedBody);
             return new ServletInputStream() {
-                @Override public boolean isFinished() { return inner.available() == 0; }
-                @Override public boolean isReady() { return true; }
-                @Override public void setReadListener(ReadListener readListener) {}
-                @Override public int read() { return inner.read(); }
+                @Override
+                public boolean isFinished() {
+                    return inner.available() == 0;
+                }
+
+                @Override
+                public boolean isReady() {
+                    return true;
+                }
+
+                @Override
+                public void setReadListener(ReadListener readListener) {}
+
+                @Override
+                public int read() {
+                    return inner.read();
+                }
             };
         }
 
-        @Override public BufferedReader getReader() {
-            return new BufferedReader(new InputStreamReader(getInputStream(), StandardCharsets.UTF_8));
+        @Override
+        public BufferedReader getReader() {
+            return new BufferedReader(
+                    new InputStreamReader(getInputStream(), StandardCharsets.UTF_8));
         }
     }
 
@@ -113,9 +131,12 @@ public class InternalHmacFilter extends OncePerRequestFilter {
 
     private static String sha256Hex(String s) {
         try {
-            return HEX.formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(s.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception e) { throw new RuntimeException(e); }
+            return HEX.formatHex(
+                    MessageDigest.getInstance("SHA-256")
+                            .digest(s.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String hmacHex(String message) {
@@ -123,15 +144,19 @@ public class InternalHmacFilter extends OncePerRequestFilter {
             Mac m = Mac.getInstance("HmacSHA256");
             m.init(new SecretKeySpec(secret, "HmacSHA256"));
             return HEX.formatHex(m.doFinal(message.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void problem(HttpServletResponse response, String detail) throws IOException {
         response.setStatus(401);
         response.setContentType("application/problem+json");
-        String body = """
-                {"type":"about:blank","title":"Unauthorized","status":401,"detail":"%s","code":"INTERNAL_HMAC_REJECTED"}
-                """.formatted(detail.replace("\"", "\\\""));
+        String body =
+                """
+{"type":"about:blank","title":"Unauthorized","status":401,"detail":"%s","code":"INTERNAL_HMAC_REJECTED"}
+"""
+                        .formatted(detail.replace("\"", "\\\""));
         response.getWriter().write(body);
     }
 }

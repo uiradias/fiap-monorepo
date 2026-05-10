@@ -11,8 +11,7 @@ public record AnalysisReport(
         String confidence,
         Map<String, Object> payload,
         Map<String, Object> modelMetadata,
-        Instant createdAt
-) {
+        Instant createdAt) {
     public AnalysisReport {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(sessionId, "sessionId");

@@ -1,20 +1,21 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
-import com.fiap.orchestrator.domain.model.*;
-import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.fiap.orchestrator.domain.model.*;
+
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "session_events")
 public class SessionEventEntity {
 
-    @Id
-    private UUID id;
+    @Id private UUID id;
 
     @Column(name = "session_id", nullable = false)
     private UUID sessionId;

@@ -1,14 +1,15 @@
 package com.fiap.gateway.adapter.out.s3;
 
+import java.io.InputStream;
+
 import com.fiap.gateway.domain.model.AssetId;
 import com.fiap.gateway.domain.model.BundleId;
 import com.fiap.gateway.domain.model.ContentType;
 import com.fiap.gateway.domain.port.out.AssetStoragePort;
+
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-
-import java.io.InputStream;
 
 public class S3AssetStorageAdapter implements AssetStoragePort {
 
@@ -21,10 +22,16 @@ public class S3AssetStorageAdapter implements AssetStoragePort {
     }
 
     @Override
-    public String put(BundleId bundleId, AssetId assetId, String filename,
-                      ContentType contentType, long sizeBytes, InputStream body) {
+    public String put(
+            BundleId bundleId,
+            AssetId assetId,
+            String filename,
+            ContentType contentType,
+            long sizeBytes,
+            InputStream body) {
         String key = "sessions/" + bundleId + "/" + filename;
-        s3.putObject(PutObjectRequest.builder()
+        s3.putObject(
+                PutObjectRequest.builder()
                         .bucket(bucket)
                         .key(key)
                         .contentType(contentType.value)

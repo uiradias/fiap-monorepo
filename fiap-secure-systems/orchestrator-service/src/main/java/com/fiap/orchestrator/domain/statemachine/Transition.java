@@ -1,8 +1,8 @@
 package com.fiap.orchestrator.domain.statemachine;
 
-import com.fiap.orchestrator.domain.model.SessionState;
-
 import java.util.Objects;
+
+import com.fiap.orchestrator.domain.model.SessionState;
 
 public record Transition(SessionState from, SessionState to, SessionStateMachine.Trigger trigger) {
     public Transition {

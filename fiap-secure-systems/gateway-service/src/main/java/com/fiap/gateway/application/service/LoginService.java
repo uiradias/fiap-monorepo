@@ -1,15 +1,16 @@
 package com.fiap.gateway.application.service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.fiap.gateway.domain.exception.InvalidCredentialsException;
 import com.fiap.gateway.domain.model.*;
 import com.fiap.gateway.domain.port.in.LoginUseCase;
 import com.fiap.gateway.domain.port.out.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.UUID;
 
 @Service
 public class LoginService implements LoginUseCase {
@@ -23,12 +24,13 @@ public class LoginService implements LoginUseCase {
     private final Clock clock;
     private final Duration refreshTtl;
 
-    public LoginService(UserRepositoryPort users,
-                        RefreshTokenRepositoryPort refreshTokens,
-                        PasswordHasherPort hasher,
-                        TokenIssuerPort issuer,
-                        Clock clock,
-                        Duration refreshTtl) {
+    public LoginService(
+            UserRepositoryPort users,
+            RefreshTokenRepositoryPort refreshTokens,
+            PasswordHasherPort hasher,
+            TokenIssuerPort issuer,
+            Clock clock,
+            Duration refreshTtl) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.hasher = hasher;
@@ -49,8 +51,13 @@ public class LoginService implements LoginUseCase {
         String accessJws = issuer.issueAccessToken(u.id(), now);
         String refreshPlain = issuer.generateRefreshTokenPlaintext();
         String refreshHash = issuer.hashRefreshToken(refreshPlain);
-        refreshTokens.insert(RefreshToken.issue(
-                new RefreshTokenId(UUID.randomUUID()), u.id(), refreshHash, now, refreshTtl));
+        refreshTokens.insert(
+                RefreshToken.issue(
+                        new RefreshTokenId(UUID.randomUUID()),
+                        u.id(),
+                        refreshHash,
+                        now,
+                        refreshTtl));
 
         return new TokenPair(accessJws, refreshPlain, ACCESS_TTL_SECONDS);
     }

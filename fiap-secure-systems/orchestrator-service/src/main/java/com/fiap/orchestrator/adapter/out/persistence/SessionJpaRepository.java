@@ -1,7 +1,7 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SessionJpaRepository extends JpaRepository<SessionEntity, UUID> {}

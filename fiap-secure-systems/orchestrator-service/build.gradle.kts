@@ -8,6 +8,10 @@ plugins {
     id("com.diffplug.spotless") version "6.25.0"
 }
 
+// Override Spring Boot 3.4.0's pinned testcontainers.version (1.20.4) — its bundled
+// docker-java fails handshakes against modern Docker Desktop (returns 400 on /info).
+extra["testcontainers.version"] = "1.21.3"
+
 spotless {
     format("misc") {
         target("*.gradle.kts", "*.md", ".gitignore")
@@ -106,17 +110,36 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     shouldRunAfter("test")
     useJUnitPlatform()
     systemProperty("spring.profiles.active", "test")
-    // Propagate DOCKER_HOST so Testcontainers finds the Docker Desktop socket on macOS.
+    // Point DOCKER_HOST at Docker Desktop's engine socket, not the CLI proxy at
+    // ~/.docker/run/docker.sock — the proxy responds with HTTP 400 + a redirect Label
+    // that the docker CLI follows but docker-java (used by Testcontainers) does not.
     val explicitDockerHost = System.getenv("DOCKER_HOST")
     if (explicitDockerHost != null) {
         environment("DOCKER_HOST", explicitDockerHost)
     } else {
         val home = System.getProperty("user.home")
-        val candidate = Paths.get(home, ".docker", "run", "docker.sock")
-        if (Files.exists(candidate)) {
-            environment("DOCKER_HOST", "unix://" + candidate.toAbsolutePath().toString())
+        val candidates =
+                listOf(
+                        Paths.get(
+                                home,
+                                "Library",
+                                "Containers",
+                                "com.docker.docker",
+                                "Data",
+                                "docker.raw.sock"),
+                        Paths.get(home, ".docker", "run", "docker.sock"))
+        candidates.firstOrNull { Files.exists(it) }?.let {
+            environment("DOCKER_HOST", "unix://" + it.toAbsolutePath().toString())
         }
     }
+    // docker-java's default API version (1.32) is below Docker Desktop's minimum (1.40),
+    // and the `/info` probe happens before docker-java would auto-negotiate via `/version`.
+    // The `api.version` system property is the documented override docker-java reads.
+    systemProperty("api.version", "1.43")
+    // Ryuk and other helper containers can't bind-mount Docker Desktop's internal
+    // ~/Library/Containers/.../docker.raw.sock path. Tell Testcontainers to mount the
+    // canonical /var/run/docker.sock path inside helper containers instead.
+    environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")
 }
 
 tasks.named<Test>("test") {

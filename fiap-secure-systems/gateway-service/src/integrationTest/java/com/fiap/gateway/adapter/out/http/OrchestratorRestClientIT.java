@@ -8,6 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.web.client.RestClient;
 
+import com.fiap.gateway.domain.model.Asset;
+import com.fiap.gateway.domain.model.AssetId;
+import com.fiap.gateway.domain.model.BundleId;
+import com.fiap.gateway.domain.model.ContentType;
 import com.fiap.gateway.domain.model.SessionId;
 import com.fiap.gateway.domain.model.UserId;
 
@@ -31,7 +35,18 @@ class OrchestratorRestClientIT {
 
         SessionId sid = new SessionId(UUID.randomUUID());
         UserId uid = new UserId(UUID.randomUUID());
-        client.createSession(sid, uid, 1, List.of("sessions/" + sid + "/test.png"));
+        BundleId bid = new BundleId(sid.value());
+        Asset asset =
+                new Asset(
+                        new AssetId(UUID.randomUUID()),
+                        bid,
+                        "sessions/" + sid + "/test.png",
+                        "test.png",
+                        ContentType.IMAGE_PNG,
+                        100L,
+                        "deadbeef".repeat(8),
+                        Instant.now());
+        client.createSession(sid, uid, 1, List.of(asset));
 
         // Read it back
         var session = client.getSession(sid);

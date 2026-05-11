@@ -3,18 +3,23 @@ package com.fiap.gateway;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
+// Singleton container pattern — see PostgresTestcontainersBase for the rationale on why
+// @Testcontainers/@Container are intentionally absent here.
 public abstract class LocalStackTestcontainersBase extends PostgresTestcontainersBase {
 
-    @Container
-    static final LocalStackContainer LOCALSTACK =
-            new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.5"))
-                    .withServices(
-                            LocalStackContainer.Service.S3,
-                            LocalStackContainer.Service.SQS,
-                            LocalStackContainer.Service.SNS);
+    static final LocalStackContainer LOCALSTACK;
+
+    static {
+        LOCALSTACK =
+                new LocalStackContainer(DockerImageName.parse("localstack/localstack:3.5"))
+                        .withServices(
+                                LocalStackContainer.Service.S3,
+                                LocalStackContainer.Service.SQS,
+                                LocalStackContainer.Service.SNS);
+        LOCALSTACK.start();
+    }
 
     @DynamicPropertySource
     static void registerLocalStackProperties(DynamicPropertyRegistry registry) throws Exception {

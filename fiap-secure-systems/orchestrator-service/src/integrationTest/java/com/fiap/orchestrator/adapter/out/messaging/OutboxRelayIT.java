@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,16 +33,15 @@ class OutboxRelayIT extends LocalStackTestcontainersBase {
         UserId uid = new UserId(UUID.randomUUID());
         sessions.insertIfAbsent(Session.newSession(sid, uid, 1, clock.now()));
 
-        Map<String, Object> body =
-                Map.of(
-                        "schemaVersion", 1,
-                        "eventId", UUID.randomUUID().toString(),
-                        "sessionId", sid.toString(),
-                        "userId", uid.toString(),
-                        "fromState", null,
-                        "toState", "ASSETS_UPLOADED",
-                        "payload", Map.of(),
-                        "occurredAt", Instant.now().toString());
+        Map<String, Object> body = new HashMap<>();
+        body.put("schemaVersion", 1);
+        body.put("eventId", UUID.randomUUID().toString());
+        body.put("sessionId", sid.toString());
+        body.put("userId", uid.toString());
+        body.put("fromState", null);
+        body.put("toState", "ASSETS_UPLOADED");
+        body.put("payload", Map.of());
+        body.put("occurredAt", Instant.now().toString());
         outbox.append(
                 sid,
                 OutboxPort.Destination.SNS_SESSION_EVENTS,

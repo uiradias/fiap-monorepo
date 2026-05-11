@@ -11,13 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.fiap.gateway.LocalStackTestcontainersBase;
 import com.fiap.gateway.Provisioning;
 import com.fiap.gateway.domain.model.*;
+import com.fiap.gateway.domain.port.out.AssetStoragePort;
 
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 class S3AssetStorageAdapterIT extends LocalStackTestcontainersBase {
 
-    @Autowired S3AssetStorageAdapter storage;
+    @Autowired AssetStoragePort storage;
     @Autowired S3Client s3;
 
     @Test

@@ -96,6 +96,14 @@ smart-shell: ## (smart-service) exec a shell inside the running smart-service
 round-trip: ## (smart-service) end-to-end synthetic SQS round-trip (requires stack up)
 	@./infrastructure/smoke/round-trip.sh
 
+.PHONY: smart-ingest-corpus
+smart-ingest-corpus:  ## Ingest seed corpus into smart_db via pgvector (needs VOYAGE_API_KEY)
+	docker compose exec smart-service uv run smart-ingest-corpus
+
+.PHONY: smart-eval
+smart-eval:  ## Run the eval harness against golden architectures (slow, needs live API keys)
+	cd smart-service && uv run pytest -m eval -v
+
 # === orchestrator-service ===
 
 .PHONY: orch-build

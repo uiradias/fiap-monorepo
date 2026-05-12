@@ -25,6 +25,7 @@ public class AwsSdkConfig {
         return AwsSdkTelemetry.builder(openTelemetry)
                 .setCaptureExperimentalSpanAttributes(true)
                 .setMessagingReceiveInstrumentationEnabled(true)
+                .setUseConfiguredPropagatorForMessaging(true)
                 .build()
                 .newExecutionInterceptor();
     }

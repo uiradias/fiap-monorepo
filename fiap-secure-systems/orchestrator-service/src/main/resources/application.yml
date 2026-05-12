@@ -33,6 +33,13 @@ management:
   observations:
     key-values:
       service: orchestrator-service
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4317}
+      transport: ${OTEL_EXPORTER_OTLP_PROTOCOL:grpc}
 
 orchestrator:
   internal-hmac-secret: ${INTERNAL_HMAC_SECRET:change-me-32-bytes-min-for-real-deployments}
@@ -54,11 +61,3 @@ orchestrator:
     access-key: ${AWS_ACCESS_KEY_ID:test}
     secret-key: ${AWS_SECRET_ACCESS_KEY:test}
   contracts-dir: ${ORCHESTRATOR_CONTRACTS_DIR:./contracts}
-
-otel:
-  exporter:
-    otlp:
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
-      protocol: ${OTEL_EXPORTER_OTLP_PROTOCOL:grpc}
-  service:
-    name: ${OTEL_SERVICE_NAME:orchestrator-service}

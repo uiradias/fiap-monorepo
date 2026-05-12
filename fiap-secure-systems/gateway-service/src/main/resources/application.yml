@@ -42,6 +42,10 @@ management:
   tracing:
     sampling:
       probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4317}
+      transport: ${OTEL_EXPORTER_OTLP_PROTOCOL:grpc}
 
 gateway:
   contracts-dir: ${GATEWAY_CONTRACTS_DIR:./infrastructure/contracts}

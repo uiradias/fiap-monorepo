@@ -44,31 +44,64 @@ make up-obs             # adds Tempo + Loki + Prometheus + Grafana
 
 See [`docs/superpowers/specs/2026-05-05-fiap-secure-systems-design.md`](docs/superpowers/specs/2026-05-05-fiap-secure-systems-design.md) for the design doc; sub-plans land under [`docs/superpowers/plans/`](docs/superpowers/plans/).
 
-```
-                         ┌─────────────────────┐
-                         │   React + Vite SPA  │   :5173 (host) → :80 (nginx)
-                         └──────────┬──────────┘
-                            REST + WebSocket
-                                    │
-                          ┌─────────▼─────────┐
-                          │  gateway-service  │   :8080  Spring Boot 3.4 / Java 21
-                          └────┬───────┬──────┘   - JWT (RS256) + bcrypt
-                               │       ▲
-                       REST    │       │  consumes session-events SQS
-                               │       │
-                          ┌────▼───────┴──────┐
-                          │ orchestrator-svc  │   :8081  Spring Boot 3.4 / Java 21
-                          └────┬──────────────┘   - SessionStateMachine + outbox + OutboxRelay
-                               │
-                          analysis-jobs SQS
-                               ▼
-                          ┌────────────────────┐
-                          │   smart-service    │   :8000  Python 3.12 / FastAPI
-                          └────────────────────┘   - Anthropic Claude (with prompt caching)
+```mermaid
+flowchart TB
+    User(["End user<br/>(browser)"])
 
-  postgres :5432  (gateway_db / orchestrator_db / smart_db)
-  localstack :4566 (S3 / SNS / SQS)
+    subgraph Apps["Application services"]
+        Front["React + Vite SPA<br/>:5173 → :80 nginx"]
+        GW["gateway-service<br/>:8080  Spring Boot 3.4 / Java 21<br/>JWT RS256, multipart upload,<br/>internal HMAC signer,<br/>WebSocket broadcaster"]
+        Orch["orchestrator-service<br/>:8081  Spring Boot 3.4 / Java 21<br/>SessionStateMachine, outbox + relay,<br/>internal REST + HMAC filter,<br/>analysis-result consumer"]
+        Smart["smart-service<br/>:8000  Python 3.12 / FastAPI<br/>baseline (Sonnet) + grounded (RAG)<br/>see smart-service/README.md"]
+    end
+
+    subgraph Data["Shared data plane"]
+        PG[("postgres :5432<br/>gateway_db / orchestrator_db /<br/>smart_db (+ pgvector)")]
+        LS[("localstack :4566<br/>S3 / SNS / SQS / DLQs")]
+    end
+
+    subgraph Ext["External AI providers (smart-service only)"]
+        Claude[("Anthropic<br/>Sonnet 4.6 + Haiku 4.5")]
+        Voyage[("Voyage AI<br/>voyage-3 embeddings")]
+    end
+
+    User -->|HTTPS| Front
+    Front -->|REST + WebSocket| GW
+    GW -->|REST (HMAC)| Orch
+    GW -->|session-events SQS| GW
+    Orch -->|analysis-jobs SQS| Smart
+    Smart -->|analysis-results SQS| Orch
+    Orch -->|session-events SNS → SQS| GW
+
+    GW --- PG
+    Orch --- PG
+    Smart --- PG
+    GW --- LS
+    Orch --- LS
+    Smart --- LS
+
+    Smart -.->|when grounded| Voyage
+    Smart -.-> Claude
+
+    classDef store fill:#e8f4f8,stroke:#0c5460
+    classDef ext fill:#fff3cd,stroke:#856404
+    classDef app fill:#e8f5e9,stroke:#1b5e20
+    class PG,LS store
+    class Claude,Voyage ext
+    class Front,GW,Orch,Smart app
 ```
+
+The smart-service module supports two interchangeable analysis pipelines
+selected at boot via `SMART_ANALYSIS_STRATEGY`:
+
+- **`baseline`** (default): single Sonnet 4.6 call with prompt-engineered JSON.
+- **`grounded`**: four-stage RAG (Haiku vision extraction → canonicalisation →
+  pgvector retrieval against a curated 30-pattern corpus → Sonnet tool-use
+  emission with hallucination filter).
+
+The two paths share the same `analysis-report.schema.json` and SQS envelope;
+the optional `citations` field is populated on grounded outputs only. See
+[`smart-service/README.md`](smart-service/README.md) for diagrams and details.
 
 ## Contributing
 

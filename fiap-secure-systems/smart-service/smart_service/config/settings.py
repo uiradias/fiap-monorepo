@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = Field(default=None, alias="ANTHROPIC_API_KEY")
     anthropic_model: str = Field(alias="ANTHROPIC_MODEL")
 
+    # Voyage AI (embeddings)
+    voyage_api_key: SecretStr | None = Field(default=None, alias="VOYAGE_API_KEY")
+    voyage_model: str = Field(default="voyage-3", alias="VOYAGE_MODEL")
+
     # Internal HMAC secret (used by /admin/replay)
     internal_hmac_secret: SecretStr = Field(alias="INTERNAL_HMAC_SECRET")
 

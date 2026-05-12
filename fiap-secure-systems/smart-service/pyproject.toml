@@ -30,6 +30,9 @@ dependencies = [
   "opentelemetry-instrumentation-logging>=0.48b0,<1",
 ]
 
+[project.scripts]
+smart-ingest-corpus = "smart_service.cli.ingest_corpus:main"
+
 [dependency-groups]
 dev = [
   "pytest>=8.2,<9",

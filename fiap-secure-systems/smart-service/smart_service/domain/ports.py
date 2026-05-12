@@ -61,3 +61,20 @@ class AnalysisModelError(Exception):
         super().__init__(f"{code}: {message}")
         self.code = code
         self.message = message
+
+
+class EmbeddingPort(Protocol):
+    """Embeds a batch of text strings into fixed-dimension vectors.
+
+    Returns a list of float lists in the same order as the input. Implementations
+    must surface API failures as EmbeddingError; the caller decides retry policy.
+    """
+
+    def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+
+class EmbeddingError(Exception):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(f"{code}: {message}")
+        self.code = code
+        self.message = message

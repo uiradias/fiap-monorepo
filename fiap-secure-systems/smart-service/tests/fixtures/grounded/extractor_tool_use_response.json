@@ -1,0 +1,29 @@
+{
+  "id": "msg_test",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-haiku-4-5-20251001",
+  "stop_reason": "tool_use",
+  "stop_sequence": null,
+  "usage": {"input_tokens": 1200, "output_tokens": 250},
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_test",
+      "name": "submit_component_graph",
+      "input": {
+        "components": [
+          {"node_id": "n1", "label": "React SPA", "kind": "ext:user"},
+          {"node_id": "n2", "label": "API Gateway", "kind": "net:gateway"},
+          {"node_id": "n3", "label": "Auth Svc", "kind": "compute:container"},
+          {"node_id": "n4", "label": "Users DB", "kind": "db:relational"}
+        ],
+        "edges": [
+          {"from_node": "n1", "to_node": "n2", "protocol": "http:sync", "label": "REST"},
+          {"from_node": "n2", "to_node": "n3", "protocol": "http:sync", "label": "/auth"},
+          {"from_node": "n3", "to_node": "n4", "protocol": "db:query", "label": "SQL"}
+        ]
+      }
+    }
+  ]
+}

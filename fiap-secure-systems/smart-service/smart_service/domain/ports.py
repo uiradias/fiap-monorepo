@@ -97,3 +97,17 @@ class PatternRetrievalPort(Protocol):
         applies_to_any: list[str],
         top_k: int,
     ) -> list[PatternMatch]: ...
+
+
+from smart_service.domain.graph import ComponentGraph  # noqa: E402
+
+
+class ComponentExtractorPort(Protocol):
+    """Extracts a ComponentGraph from image/PDF bytes.
+
+    Input is a list of (media_type, bytes) pairs — one per asset in the job.
+    Implementations MAY call out to a vision model. Failures surface as
+    AnalysisModelError (callers already handle that error type).
+    """
+
+    def extract(self, asset_bytes: list[tuple[str, bytes]]) -> ComponentGraph: ...

@@ -11,6 +11,11 @@ class Profile(StrEnum):
     E2E = "e2e"
 
 
+class AnalysisStrategy(StrEnum):
+    BASELINE = "baseline"
+    GROUNDED = "grounded"
+
+
 class Settings(BaseSettings):
     """All env-driven configuration for smart-service.
 
@@ -58,3 +63,14 @@ class Settings(BaseSettings):
     sqs_long_poll_seconds: int = Field(default=20, alias="SMART_SQS_LONG_POLL_SECONDS")
     sqs_visibility_seconds: int = Field(default=300, alias="SMART_SQS_VISIBILITY_SECONDS")
     prompt_version: str = Field(default="v1", alias="SMART_PROMPT_VERSION")
+
+    # Analysis pipeline
+    analysis_strategy: AnalysisStrategy = Field(
+        default=AnalysisStrategy.BASELINE, alias="SMART_ANALYSIS_STRATEGY"
+    )
+    haiku_model: str = Field(
+        default="claude-haiku-4-5-20251001", alias="SMART_HAIKU_MODEL"
+    )
+    embedding_dim: int = Field(default=1024, alias="SMART_EMBEDDING_DIM")
+    rag_top_k_per_component: int = Field(default=3, alias="SMART_RAG_TOPK_COMPONENT")
+    rag_top_k_topology: int = Field(default=5, alias="SMART_RAG_TOPK_TOPOLOGY")

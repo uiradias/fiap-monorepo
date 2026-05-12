@@ -33,7 +33,7 @@ from smart_service.domain.model import (
 
 @pytest.fixture(scope="module")
 def pg_engine():
-    with PostgresContainer("postgres:16-alpine", driver="psycopg") as pg:
+    with PostgresContainer("pgvector/pgvector:pg16", driver="psycopg") as pg:
         url = pg.get_connection_url()
         env = {**os.environ, "SMART_DATABASE_URL": url}
         subprocess.run(

@@ -11,6 +11,8 @@ from uuid import UUID
 
 import boto3
 from botocore.config import Config
+from opentelemetry import context as otel_context, trace
+from opentelemetry.propagate import extract
 
 from smart_service.adapter.schema.validation import (
     SchemaValidationError,
@@ -122,11 +124,24 @@ class SqsAnalysisJobConsumer:
             self._delete(receipt)
             return
 
+        carrier = {
+            name: attr.get("StringValue", "")
+            for name, attr in msg.get("MessageAttributes", {}).items()
+        }
+        parent_ctx = extract(carrier)
+        token = otel_context.attach(parent_ctx)
         try:
-            self._svc.run(job)
-            self._delete(receipt)
+            tracer = trace.get_tracer("smart-service.sqs-consumer")
+            with tracer.start_as_current_span(
+                "analysis-jobs process",
+                kind=trace.SpanKind.CONSUMER,
+            ):
+                self._svc.run(job)
+                self._delete(receipt)
         except Exception:
             log.exception("processing failed; leaving message for redelivery")
+        finally:
+            otel_context.detach(token)
 
     def _delete(self, receipt: str) -> None:
         self._sqs.delete_message(QueueUrl=self._queue_url, ReceiptHandle=receipt)

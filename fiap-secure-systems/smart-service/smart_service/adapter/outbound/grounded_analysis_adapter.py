@@ -238,7 +238,7 @@ class GroundedAnalysisAdapter:
     ) -> list[PatternMatch]:
         if not queries:
             return []
-        vecs = self._embedder.embed_query(queries)  # type: ignore[attr-defined]
+        vecs = self._embedder.embed_query(queries)
         out: list[PatternMatch] = []
         for vec, tags in zip(vecs, tag_lists, strict=True):
             out.extend(self._retriever.search(vec, tags, top_k))

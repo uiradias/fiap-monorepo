@@ -68,9 +68,14 @@ class EmbeddingPort(Protocol):
 
     Returns a list of float lists in the same order as the input. Implementations
     must surface API failures as EmbeddingError; the caller decides retry policy.
+
+    `embed` is used at ingestion time (corpus documents); `embed_query` at
+    retrieval time. Adapters that support an asymmetric input-type hint
+    (e.g. Voyage's document/query distinction) should use it on `embed_query`.
     """
 
     def embed(self, texts: list[str]) -> list[list[float]]: ...
+    def embed_query(self, texts: list[str]) -> list[list[float]]: ...
 
 
 class EmbeddingError(Exception):

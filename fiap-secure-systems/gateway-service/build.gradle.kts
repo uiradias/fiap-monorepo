@@ -37,6 +37,7 @@ dependencyManagement {
     imports {
         mavenBom("software.amazon.awssdk:bom:2.28.0")
         mavenBom("io.opentelemetry:opentelemetry-bom:1.42.1")
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha:2.8.0-alpha")
     }
 }
 
@@ -56,6 +57,7 @@ dependencies {
     implementation("software.amazon.awssdk:sqs")
     implementation("software.amazon.awssdk:sns")
     implementation("software.amazon.awssdk:url-connection-client")
+    implementation("io.opentelemetry.instrumentation:opentelemetry-aws-sdk-2.2")
 
     implementation("io.github.resilience4j:resilience4j-spring-boot3:2.2.0")
     implementation("com.bucket4j:bucket4j-core:8.10.1")

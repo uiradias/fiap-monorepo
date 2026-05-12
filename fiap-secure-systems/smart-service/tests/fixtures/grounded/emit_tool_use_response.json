@@ -1,0 +1,53 @@
+{
+  "id": "msg_emit",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-4-6",
+  "stop_reason": "tool_use",
+  "usage": {"input_tokens": 4500, "output_tokens": 900},
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_emit",
+      "name": "submit_analysis_report",
+      "input": {
+        "summary": "Three-service web app with synchronous auth chain and an unsharded RDBMS.",
+        "confidence": "medium",
+        "components": [
+          {"name": "API Gateway", "kind": "gateway", "responsibility": "ingress",
+           "relevance": "high", "evidence": "Labeled 'API Gateway' in diagram"},
+          {"name": "Auth Svc", "kind": "service", "responsibility": "JWT mint",
+           "relevance": "high", "evidence": "Edge labelled /auth"},
+          {"name": "Users DB", "kind": "datastore", "responsibility": "User records",
+           "relevance": "medium", "evidence": "Postgres icon"}
+        ],
+        "risks": [
+          {
+            "title": "Synchronous auth call chain amplifies latency",
+            "category": "availability", "severity": "high",
+            "description": "Gateway -> Auth -> DB is a 3-hop sync path with no circuit breaker.",
+            "affected_components": ["API Gateway", "Auth Svc", "Users DB"],
+            "recommendation": "Add bulkheads and timeouts shorter than upstream.",
+            "citations": [
+              {"doc_id": "WA-REL-04-sync-coupling", "chunk_index": 0}
+            ]
+          },
+          {
+            "title": "Uninvented risk with no citation",
+            "category": "security", "severity": "low",
+            "description": "This one has no citation and must be filtered.",
+            "affected_components": ["Auth Svc"], "recommendation": "n/a"
+          }
+        ],
+        "improvements": [
+          {"title": "Add timeouts", "rationale": "Bound failure blast radius",
+           "impact": "high", "effort": "low",
+           "affected_components": ["API Gateway"]}
+        ],
+        "strengths": [
+          {"title": "Clear ingress", "description": "Single edge into the system."}
+        ]
+      }
+    }
+  ]
+}

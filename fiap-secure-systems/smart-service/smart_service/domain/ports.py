@@ -78,3 +78,22 @@ class EmbeddingError(Exception):
         super().__init__(f"{code}: {message}")
         self.code = code
         self.message = message
+
+
+from smart_service.domain.corpus import PatternMatch  # noqa: E402
+
+
+class PatternRetrievalPort(Protocol):
+    """Retrieves corpus chunks relevant to a query embedding.
+
+    `applies_to_any` filters chunks whose `applies_to` array intersects the given
+    tags. An empty list disables the filter (topology-level queries). `top_k` caps
+    results. Results are ordered by similarity (highest first).
+    """
+
+    def search(
+        self,
+        query_embedding: list[float],
+        applies_to_any: list[str],
+        top_k: int,
+    ) -> list[PatternMatch]: ...

@@ -10,6 +10,8 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
+from smart_service.domain.citation import Citation
+
 
 class ContentType(StrEnum):
     APPLICATION_PDF = "application/pdf"
@@ -105,6 +107,7 @@ class Risk:
     description: str
     affected_components: tuple[str, ...]
     recommendation: str
+    citations: tuple[Citation, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

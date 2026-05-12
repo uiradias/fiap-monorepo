@@ -36,7 +36,21 @@
           "severity":            { "type": "string", "enum": ["critical", "high", "medium", "low"] },
           "description":         { "type": "string", "minLength": 1 },
           "affected_components": { "type": "array", "items": { "type": "string" } },
-          "recommendation":      { "type": "string", "minLength": 1 }
+          "recommendation":      { "type": "string", "minLength": 1 },
+          "citations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["doc_id", "source", "title", "chunk_index"],
+              "properties": {
+                "doc_id":      { "type": "string" },
+                "source":      { "type": "string" },
+                "title":       { "type": "string" },
+                "chunk_index": { "type": "integer", "minimum": 0 },
+                "score":       { "type": "number" }
+              }
+            }
+          }
         }
       }
     },

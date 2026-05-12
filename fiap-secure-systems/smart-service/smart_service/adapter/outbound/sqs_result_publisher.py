@@ -94,4 +94,9 @@ def _report_to_jsonable(report: StructuredReport) -> dict[str, Any]:
         return obj
 
     result: dict[str, Any] = _enum_to_str(asdict(report))
+    # Preserve wire compatibility: omit `citations` key on risks where it's empty so
+    # existing consumers (gateway, orchestrator) see an identical payload shape.
+    for risk in result.get("risks", []):
+        if not risk.get("citations"):
+            risk.pop("citations", None)
     return result

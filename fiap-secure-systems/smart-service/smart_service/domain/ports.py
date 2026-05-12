@@ -111,3 +111,14 @@ class ComponentExtractorPort(Protocol):
     """
 
     def extract(self, asset_bytes: list[tuple[str, bytes]]) -> ComponentGraph: ...
+
+
+class CanonicalizerPort(Protocol):
+    """Refines a ComponentGraph by re-classifying UNKNOWN components.
+
+    Implementations MAY return the input graph unchanged. Implementations MUST
+    NOT alter edges or node_ids — only `kind` on components. Returning the input
+    on any API failure is acceptable (best-effort refinement).
+    """
+
+    def canonicalize(self, graph: ComponentGraph) -> ComponentGraph: ...

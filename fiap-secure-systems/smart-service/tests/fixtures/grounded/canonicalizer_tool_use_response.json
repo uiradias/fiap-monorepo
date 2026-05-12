@@ -1,0 +1,21 @@
+{
+  "id": "msg_test",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-haiku-4-5-20251001",
+  "stop_reason": "tool_use",
+  "usage": {"input_tokens": 100, "output_tokens": 50},
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "toolu_test",
+      "name": "submit_canonical_kinds",
+      "input": {
+        "mappings": [
+          {"node_id": "u1", "kind": "db:keyvalue"},
+          {"node_id": "u2", "kind": "msg:stream"}
+        ]
+      }
+    }
+  ]
+}

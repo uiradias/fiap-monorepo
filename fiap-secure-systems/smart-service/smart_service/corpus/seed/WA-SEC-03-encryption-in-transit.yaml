@@ -1,0 +1,56 @@
+doc_id: WA-SEC-03-encryption-in-transit
+source: aws-well-architected
+title: "SEC-03: Encryption in transit and mTLS"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "http:sync"
+      - "grpc"
+    content: |
+      Every network hop must encrypt traffic in transit, including hops
+      inside a virtual private cloud and between services running in the
+      same cluster. The historical assumption that a private network is
+      automatically trusted no longer holds: lateral movement after an
+      initial foothold is the most common pattern in modern breaches, and
+      unencrypted internal traffic exposes credentials, session tokens, and
+      data to any attacker who reaches the network. Use TLS 1.2 at minimum
+      and prefer TLS 1.3 where available, with modern cipher suites and
+      forward secrecy. Disable SSLv3, TLS 1.0, and TLS 1.1 at every
+      termination point. Validate certificates strictly: never accept
+      self-signed certificates in production, never disable hostname
+      verification, and rotate certificates before expiry through an
+      automated mechanism such as cert-manager or ACM. Set the certificate
+      lifetime short, typically 90 days or less, so that the rotation
+      pipeline is continuously exercised and never atrophies. For
+      service-to-service traffic inside a cluster, mutual TLS provides both
+      encryption and workload identity: each side proves who it is by
+      presenting a certificate signed by a trusted internal CA, eliminating
+      bearer tokens that can be stolen and replayed. Service meshes such
+      as Istio, Linkerd, or Consul make mTLS the default with negligible
+      operational overhead per service.
+  - applies_to:
+      - "net:gateway"
+      - "net:loadbalancer"
+    content: |
+      TLS termination points are high-value targets and deserve explicit
+      attention in any architecture review. A load balancer that terminates
+      TLS must re-encrypt to the backend if the backend network is shared
+      with untrusted tenants; passthrough TLS is the safest default but
+      requires backends to manage their own certificates. In a diagram,
+      identify every edge labelled HTTPS or TLS and confirm whether the
+      next hop is also encrypted; an unlabelled internal edge after a
+      labelled external one is a common gap. Gateways must enforce a
+      minimum TLS version and reject downgrade attempts. Configure
+      HTTP Strict Transport Security headers at the gateway so browsers
+      refuse to connect over plain HTTP. For internal traffic terminating
+      at a load balancer, enable target group TLS to the backend pods, not
+      just at the listener. Common pitfalls include load balancers
+      configured with HTTP backends inside the VPC for convenience,
+      hard-coded plain-HTTP health checks that bypass the TLS
+      configuration, and certificate-rotation tooling that only updates
+      the load balancer but not the backends performing mTLS handshakes
+      with it. Verify that internal CAs are auditable and short-lived,
+      and that workload certificates rotate automatically on a schedule
+      shorter than the workload's typical uptime, so a compromised
+      certificate cannot survive a redeploy.

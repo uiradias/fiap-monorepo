@@ -1,0 +1,57 @@
+doc_id: CN-04-runtime-misconfig
+source: cloud-native-security
+title: "CN-04: Container runtime misconfiguration"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "compute:container"
+    content: |
+      Privileged containers and host-path mounts are the two highest-
+      impact runtime misconfigurations in Kubernetes, because each
+      effectively dissolves the boundary between the container and the
+      host kernel. A privileged container has the full set of Linux
+      capabilities, can mount any filesystem, and can interact with
+      kernel facilities such as loading modules and accessing arbitrary
+      devices. From a privileged container, breaking out to the host is
+      not exploitation; it is a feature of the configuration. Likewise,
+      a pod that mounts the host root filesystem can write to any file
+      on the node, including kubelet credentials, SSH keys, and the
+      container runtime socket, achieving complete node takeover from
+      what looks like a routine deployment. Block both patterns at
+      admission time with a PodSecurityAdmission policy set to
+      'restricted' for application namespaces, and exempt only specific
+      infrastructure namespaces that genuinely require elevated access,
+      with explicit review on every change to those namespaces. Audit
+      running pods for hostPath, hostNetwork, hostPID, and privileged
+      settings on a continuous basis; even one privileged pod undoes
+      most cluster-wide hardening because attackers will find it and
+      pivot through it. In a diagram, suspect runtime risk whenever a
+      pod is annotated as requiring access to the host kernel, the
+      Docker socket, or the kubelet API; each of these is a route to
+      full node compromise that bypasses the rest of the cluster's
+      security configuration.
+  - applies_to:
+      - "compute:container"
+    content: |
+      Beyond the headline misconfigurations, several smaller settings
+      compound risk. allowPrivilegeEscalation should be set to false so
+      setuid binaries inside the container cannot gain capabilities the
+      pod was denied. readOnlyRootFilesystem should be set to true so
+      attackers cannot stage tooling in the container after exploit;
+      writable directories should be explicit volumes scoped narrowly.
+      runAsNonRoot should be enforced; running as UID 0 inside the
+      container is unnecessary for almost every application and yet
+      remains the default for many base images. Drop all Linux
+      capabilities and re-add only those genuinely required; the most
+      commonly needed are NET_BIND_SERVICE for binding privileged
+      ports below 1024, which is unnecessary in containers behind a
+      service mesh or load balancer that uses higher ports. Apply
+      seccomp profiles, ideally the runtime default or a tighter
+      custom profile, to block uncommon syscalls that are favourite
+      targets for kernel exploits. Apply AppArmor or SELinux profiles
+      where the platform supports them. Disable automounting of the
+      service account token for pods that do not call the kubernetes
+      API; a leaked token is a credential to the API server with the
+      pod's service account permissions, and most application pods
+      have no legitimate need to call the API.

@@ -1,0 +1,57 @@
+doc_id: WA-COST-01-rightsizing
+source: aws-well-architected
+title: "COST-01: Rightsizing compute and storage"
+category: cost
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "compute:vm"
+      - "compute:container"
+    content: |
+      Compute rightsizing means matching provisioned capacity to actual
+      observed demand plus a safety margin, then revisiting the match
+      regularly as workload patterns change. The default state of any
+      cloud workload is over-provisioned, because the initial sizing was
+      chosen conservatively to prevent launch incidents and was never
+      revisited once the workload became stable. Instances typically run
+      at 10 to 20 percent average CPU utilisation, which means 80 percent
+      of the spend is buying idle capacity. Target average utilisation
+      between 40 and 60 percent with autoscaling configured to absorb
+      bursts; this leaves headroom for traffic spikes while eliminating
+      most of the idle waste. For container workloads on Kubernetes, set
+      requests close to the observed median and limits close to the
+      observed P99, monitored over at least two weeks to capture
+      weekly cycles. Use the Vertical Pod Autoscaler in recommendation
+      mode to surface drift, but apply changes through deployment
+      manifests rather than letting VPA mutate live pods, since
+      automatic resizing causes pod restarts that disrupt service.
+      Capacity bought through reserved instances or savings plans should
+      cover the baseline that runs continuously; capacity above the
+      baseline runs on-demand or spot to avoid committing to peaks that
+      occur for a small fraction of the month. Track the wasted
+      capacity as a first-class metric so the team has visibility into
+      where money is going.
+  - applies_to:
+      - "storage:block"
+    content: |
+      Block storage costs are dominated by provisioned capacity, not
+      consumed capacity, so a 1 TB volume that is 5 percent full costs
+      the same as a 1 TB volume that is 95 percent full. Audit volume
+      utilisation quarterly and shrink volumes that consistently run
+      below 30 percent occupancy. For volumes that hold logs or
+      backups, prefer time-based archival to object storage over
+      provisioning ever-larger block volumes; object storage is
+      typically an order of magnitude cheaper per gigabyte and offers
+      built-in lifecycle policies for tiered cost reduction. Watch for
+      orphaned volumes left behind after instance termination; these
+      are pure waste and a common multi-thousand-dollar monthly leak in
+      mature accounts. Configure provisioned IOPS only when latency
+      requirements clearly justify it; the default general-purpose tier
+      handles most workloads adequately and costs significantly less.
+      Snapshots accumulate quickly when retention is not configured;
+      apply a lifecycle policy that retains daily snapshots for one
+      week, weekly snapshots for one month, and monthly snapshots for
+      one year, deleting older snapshots automatically. In a diagram,
+      flag any datastore or compute node attached to multiple
+      large block volumes without an obvious data partitioning rationale,
+      since this often indicates organic growth that needs rightsizing.

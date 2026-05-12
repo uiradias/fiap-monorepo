@@ -1,0 +1,59 @@
+doc_id: OWASP-A01-broken-access-control
+source: owasp
+title: "OWASP A01: Broken access control"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "net:gateway"
+      - "identity:auth"
+    content: |
+      Broken access control is the most prevalent class of web vulnerability
+      and the most damaging when exploited, because it bypasses the
+      authorization checks that protect every other security property. The
+      flaw arises when access decisions are made on data the client can
+      manipulate, such as user-supplied identifiers in URLs, hidden form
+      fields, or client-side flags. Authorization must always be enforced on
+      the server side using server-derived identity, never inferred from the
+      request shape. Identify the policy decision point in the architecture:
+      where does the system actually decide whether a request is allowed?
+      That point should be a single, audited component such as an API
+      gateway with policy plug-ins, a service mesh with authorization
+      policies, or an authorization service consulted by every protected
+      resource. Distributed authorization scattered across application code
+      grows inconsistent over time, with some endpoints checking roles and
+      others assuming a previous layer did. In a diagram, look for the
+      gateway and the identity provider; the line between them should be
+      explicit, and every internal service should sit behind that boundary
+      with no public ingress of its own. Suspect broken access control when
+      services accept user-supplied identifiers without a server-side
+      ownership check, when admin endpoints are co-mingled with regular
+      endpoints on the same port without a separate authorization policy,
+      and when role information travels in headers without cryptographic
+      verification.
+  - applies_to:
+      - "compute:container"
+      - "compute:function"
+    content: |
+      Once the request reaches the workload, the workload must still enforce
+      authorization at the resource level, because gateway-level checks
+      typically only verify identity and coarse scopes, not whether this
+      specific user owns this specific resource. The classic failure mode is
+      Insecure Direct Object Reference, where the endpoint accepts an
+      identifier and returns the corresponding record without checking that
+      the authenticated user owns it. Defence requires every resource read
+      and every mutation to filter by user identity or membership, ideally
+      enforced in the data layer through row-level security or query
+      builders that automatically inject ownership predicates. For function
+      workloads, beware of permissive default policies on the platform side:
+      a Lambda exposed via API Gateway with AWS_IAM auth that allows any
+      authenticated AWS principal is a common misconfiguration that
+      effectively makes the function public to anyone with an AWS account.
+      Audit function trigger configurations as carefully as application
+      code. For container workloads, kubernetes RBAC must be tight: cluster-
+      admin assigned to service accounts beyond cluster operators is a
+      complete authorization bypass for any workload running in the cluster.
+      Common pitfalls include client-side role checks in single-page
+      applications without matching server-side checks, missing function-
+      level authorization on internal admin endpoints, and trusting JWT
+      claims without verifying the signature on every request.

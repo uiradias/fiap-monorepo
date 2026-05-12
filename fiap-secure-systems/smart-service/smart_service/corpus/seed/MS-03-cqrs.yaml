@@ -1,0 +1,57 @@
+doc_id: MS-03-cqrs
+source: microservices-patterns
+title: "MS-03: CQRS read and write separation"
+category: data
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "db:relational"
+      - "db:document"
+    content: |
+      Command Query Responsibility Segregation separates the write model
+      from the read model so each can be optimised independently. The
+      write side accepts commands and persists them to a normalised store
+      optimised for transactional consistency, typically a relational
+      database. The read side materialises one or more denormalised
+      projections optimised for the specific queries the application
+      needs, typically in a document store, a search index, or a
+      key-value cache. CQRS pays off when the read and write workloads
+      have meaningfully different shapes: many low-cardinality writes
+      and high-volume, complex reads with aggregations or joins that
+      would be expensive against the normalised store. The cost is the
+      operational complexity of maintaining synchronisation between the
+      two models, which is always eventually consistent rather than
+      strongly consistent. Reads see writes after a propagation delay
+      that depends on the projection mechanism, ranging from
+      milliseconds for stream-based projections to seconds or minutes
+      for batch-based ones. Surface the propagation latency in the API
+      contract or in the UI so users do not see writes that appear to
+      not persist; the most common CQRS complaint is users completing
+      a write and then querying the read side and seeing stale data.
+  - applies_to:
+      - "msg:stream"
+    content: |
+      The synchronisation channel between write and read sides is the
+      load-bearing element of any CQRS design. Stream-based
+      synchronisation, using Kafka, Kinesis, or another append-only
+      log, is the most flexible because the stream can drive arbitrarily
+      many projections without burdening the write store. Each
+      projection consumer maintains its own offset and replays the
+      stream from any point in time when a projection schema changes,
+      which is a recurring operational need that batch-based
+      synchronisation handles poorly. Event sourcing is the strict
+      version of this pattern, where the stream itself is the system of
+      record and the write store is just another projection; this
+      simplifies temporal queries and audit but complicates schema
+      evolution because every consumer must handle every historical
+      event version. In a diagram, look for a write store and a read
+      store with a synchronisation arrow between them; the absence of
+      this arrow when distinct read and write stores exist suggests
+      they are kept in sync by application-level dual writes, which is
+      the failure mode CQRS is meant to eliminate. Common pitfalls
+      include applying CQRS prematurely to workloads with similar read
+      and write shapes, where the operational overhead exceeds the
+      benefit; using CQRS as a justification for unbounded denormali-
+      sation, leading to projection stores that grow faster than they
+      can be queried; and conflating CQRS with event sourcing, which
+      are independent choices that can be combined or used separately.

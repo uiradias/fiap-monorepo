@@ -1,0 +1,61 @@
+doc_id: MS-10-distributed-monolith
+source: microservices-patterns
+title: "MS-10: Distributed monolith and chatty inter-service calls"
+category: maintainability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "http:sync"
+      - "grpc"
+    content: |
+      A distributed monolith is a system decomposed into multiple
+      services that nevertheless behaves like a single monolith because
+      the services are deployed, scaled, and changed together. The
+      hallmark symptom is chatty inter-service communication: rendering
+      a single user-facing page requires the front-end service to make
+      ten or twenty synchronous calls to other services, each of which
+      makes its own onward calls, producing call graphs that fan out
+      across the entire service inventory for trivial operations. This
+      pattern multiplies the cost of every request: latency is the sum
+      of synchronous hops, error probability compounds, and any
+      degradation in one service affects every other service that
+      transitively calls it. The architecture is worse than a monolith
+      because it carries the operational complexity of distribution,
+      the latency penalty of network hops, and the failure-domain
+      coupling of synchronous chains, without the benefits microservices
+      were meant to provide. Call-graph depth greater than three or four
+      services for a single user request is a strong signal of this
+      anti-pattern. The cure is to rethink the service boundaries: each
+      service should encapsulate a business capability that can be
+      exercised end-to-end with no more than one or two outward
+      synchronous calls in the common path.
+  - applies_to:
+      - "compute:container"
+    content: |
+      Several diagram-level signals indicate a distributed monolith.
+      The first is request-level fan-out greater than five services
+      from a single front-end on a common page; this is often visible
+      in the diagram as a node with many outgoing arrows. The second
+      is bidirectional synchronous arrows between services, which
+      indicates that the services are too tightly coupled to be
+      separable: if A calls B and B calls A within the same request,
+      the boundary between them is wrong. The third is shared
+      libraries or shared database schemas across services, which couple
+      deployments and force lockstep releases. The fourth is a single
+      release pipeline that deploys all services together, which is the
+      operational evidence that the services cannot be released
+      independently. The fifth is the absence of any asynchronous
+      messaging between services, since pure synchronous architectures
+      typically devolve into distributed monoliths under feature
+      pressure. Remediation is slow and expensive: it requires
+      identifying the business capabilities that each user request
+      exercises and reshaping service boundaries around those
+      capabilities, often through a strangler-fig migration to a new
+      set of coarser-grained services that own end-to-end flows.
+      Avoid the trap by designing the initial service boundaries
+      around capabilities rather than data or layers; layered
+      decomposition (one service per architectural layer, such as a
+      separate auth service, profile service, and notifications
+      service for every domain) produces distributed monoliths
+      reliably and is the most common decomposition mistake in
+      first-generation microservices designs.

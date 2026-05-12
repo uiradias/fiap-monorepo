@@ -1,0 +1,56 @@
+doc_id: OWASP-API-04-resource-consumption
+source: owasp
+title: "OWASP API-04: Unrestricted resource consumption"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "net:gateway"
+      - "http:sync"
+    content: |
+      An API without rate limits is denial-of-service waiting to happen,
+      and the cost of the absence rises sharply once any endpoint touches
+      a paid third-party service or an expensive internal resource. Rate
+      limiting must be enforced at the gateway, before the request
+      reaches any backend service that could be overloaded. Limits should
+      be per-client and per-route, not global; a global limit punishes
+      well-behaved clients for the misbehaviour of one. Per-client
+      identifiers should be the authenticated user id for authenticated
+      endpoints and the source IP for unauthenticated ones, with
+      additional caution for unauthenticated endpoints since IP-based
+      limits are easily bypassed by attackers with botnet capacity.
+      Reasonable default starting points are 100 requests per minute for
+      authenticated read endpoints, 30 per minute for write endpoints,
+      and 10 per minute for expensive operations such as report
+      generation or password reset emails. Return 429 with a Retry-After
+      header rather than dropping the connection so clients can back off
+      politely. Combine rate limits with per-client quotas measured over
+      longer windows such as a day or month for endpoints that consume
+      metered resources downstream. Quotas prevent a client from spending
+      a year's worth of metered capacity in a single hour even if it
+      stays under the per-minute rate.
+  - applies_to:
+      - "compute:container"
+    content: |
+      Rate limiting at the gateway is necessary but not sufficient; the
+      workload itself must defend against resource consumption that the
+      gateway cannot see, such as memory exhaustion via large response
+      payloads, CPU exhaustion via expensive regular expressions or query
+      patterns, and storage exhaustion via uploads or log volumes. Bound
+      every input size at the framework layer: maximum request body
+      size, maximum file upload size, maximum query parameter count, and
+      maximum header size. Bound every output: paginate every list
+      endpoint with a default page size and a hard maximum, never
+      returning unbounded result sets. Bound every algorithmic cost:
+      reject queries whose complexity score exceeds a threshold, use
+      timeouts on database queries, and avoid user-supplied regular
+      expressions or use a regex engine with bounded backtracking. For
+      container workloads, set resource requests and limits that allow
+      the container to be evicted before it impacts neighbours; a
+      container without memory limits can be killed by the kernel OOM
+      killer at an inconvenient time, taking down unrelated workloads
+      on the same node. Common pitfalls include rate limiting at one
+      layer while leaving another exposed, exempting internal callers
+      entirely from limits and then discovering a single-tenant
+      runaway, and forgetting to set request body size limits on
+      multipart upload endpoints.

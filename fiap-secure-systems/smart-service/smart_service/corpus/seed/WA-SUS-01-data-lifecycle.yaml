@@ -1,0 +1,55 @@
+doc_id: WA-SUS-01-data-lifecycle
+source: aws-well-architected
+title: "SUS-01: Data lifecycle, TTLs, and tiered storage"
+category: sustainability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "storage:object"
+      - "storage:block"
+    content: |
+      Storing data forever is a default that is almost always wrong from
+      both a sustainability and a cost perspective. Every dataset has a
+      working set of recent and frequently accessed records, a warm tail
+      of occasionally accessed records, and a cold tail of records that
+      are essentially never read but cannot be deleted for regulatory or
+      contractual reasons. Each tier should live on storage matched to
+      its access pattern. For object storage, configure lifecycle rules
+      that transition objects from standard to infrequent-access tier
+      after 30 days, to archive tier after 90 days, and to deep-archive
+      tier after one year. Each transition reduces both monetary cost
+      and embodied carbon per byte stored. Delete objects entirely when
+      their retention window expires; data retained beyond its required
+      lifetime is a liability that increases discovery cost in legal
+      proceedings without providing operational value. For block
+      storage, snapshot older data to object storage and detach the
+      original volume, since block storage carries a premium that
+      cannot be justified for cold data. Verify that lifecycle rules
+      run on a real schedule and that their effect is visible in
+      storage-tier breakdown reports; rules that look correct in
+      configuration but never execute are common in misconfigured
+      buckets.
+  - applies_to:
+      - "db:relational"
+    content: |
+      Relational databases are the most expensive place to keep data,
+      because they pay for transactional consistency on every byte
+      stored even if the data is never queried under a transaction.
+      Aged-out records should move from primary tables to archive
+      tables on cheaper storage or to an analytical warehouse, and
+      finally to cold object storage when retention requirements no
+      longer demand interactive access. Partition large tables by
+      time so that aged-out partitions can be detached in a single
+      metadata operation rather than a row-by-row delete; row-by-row
+      deletion of millions of records on a busy production table is
+      a common cause of self-inflicted outages because it generates
+      enormous undo and WAL traffic. Configure auto-vacuum policies
+      so that deleted rows are reclaimed promptly; without vacuum,
+      table bloat grows indefinitely and degrades query performance.
+      In a diagram, look for relational stores that hold both hot
+      transactional data and cold historical data without any
+      separation, since this is structurally inefficient: the same
+      indexes pay for both access patterns, but only the hot data
+      benefits. Suspect data-lifecycle absence whenever a database
+      diagram shows no replication or export to an analytical or
+      archival store.

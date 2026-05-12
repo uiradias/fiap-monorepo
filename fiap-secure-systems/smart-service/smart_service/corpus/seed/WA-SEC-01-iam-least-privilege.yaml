@@ -1,0 +1,58 @@
+doc_id: WA-SEC-01-iam-least-privilege
+source: aws-well-architected
+title: "SEC-01: IAM least privilege and role separation"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "compute:container"
+      - "compute:function"
+    content: |
+      Every workload identity must be granted only the permissions required
+      to perform its specific function, and no more. The default starting
+      point for any role is zero permissions; permissions are added one at a
+      time as the workload demonstrates a need. This is the opposite of the
+      common anti-pattern of granting a broad managed policy and trusting
+      that the application will not exercise the extras. Broad policies
+      become permanent because nobody can prove they are safe to remove,
+      and over time the blast radius of any compromised credential grows
+      without bound. Each compute identity should have a distinct role per
+      workload: never share a role across two services with different
+      responsibilities, and never share a role across environments. The
+      service that writes objects to a bucket should not have permission to
+      read the audit log bucket, and the service that reads customer
+      records should not have permission to delete them. For container
+      workloads, use workload identity federation or IAM Roles for Service
+      Accounts so the pod assumes a role tied to its Kubernetes service
+      account, rather than mounting long-lived static credentials. For
+      serverless functions, attach an execution role specific to the
+      function and avoid sharing roles across functions, even when they
+      share code, because shared roles defeat per-function blast-radius
+      analysis. Audit the role's effective permissions, not the policy
+      document, because resource policies and SCP boundaries change what
+      the role can actually do.
+  - applies_to:
+      - "db:relational"
+      - "storage:object"
+    content: |
+      Data-tier access must be scoped per workload and per environment. A
+      relational database role used by the application should not have DDL
+      permissions; schema changes are performed by a separate role used only
+      by migration tooling. Read replicas must enforce read-only at the role
+      level, not just at the connection-string level, because connection
+      strings get copy-pasted into the wrong environment. Object storage
+      grants must specify exact bucket and prefix; a grant on a whole
+      bucket where only a single prefix is needed is a least-privilege
+      violation that frequently leaks blast radius across tenants in
+      multi-tenant systems. Avoid wildcards in resource ARNs except in
+      carefully reviewed administrative contexts. Suspect over-broad access
+      in a diagram when one application connects to many databases or
+      buckets without a clear data-ownership boundary, since database-per-
+      service or bucket-per-domain is the structural enforcement of
+      least-privilege at the storage layer. Look for shared service
+      accounts that span multiple applications, particularly in legacy
+      systems where a single admin role was created and never refined. The
+      remedy is to inventory effective permissions per role, identify
+      the actual API calls each workload performs over a representative
+      window, and reduce policies to the observed minimum plus a small
+      buffer for legitimate edge cases.

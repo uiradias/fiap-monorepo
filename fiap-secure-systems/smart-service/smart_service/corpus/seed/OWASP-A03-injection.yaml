@@ -1,0 +1,55 @@
+doc_id: OWASP-A03-injection
+source: owasp
+title: "OWASP A03: Injection"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "db:relational"
+      - "db:document"
+    content: |
+      Injection vulnerabilities arise when untrusted input is concatenated
+      into a query, command, or expression interpreted by a downstream
+      system. The interpreter cannot distinguish data from code unless the
+      application uses a primitive that preserves the boundary, and string
+      concatenation almost never preserves it. SQL injection remains the
+      canonical example and is preventable by exclusive use of parameterised
+      queries or query-builders that escape parameters automatically. ORMs
+      typically generate parameterised queries by default, but raw query
+      escape hatches reintroduce the risk, so audit every place where the
+      application drops out of the ORM into raw SQL. Document stores are
+      not immune: NoSQL injection allows attackers to manipulate query
+      objects when the application builds them from user input without
+      sanitisation, particularly in JavaScript-based stores where operators
+      like dollar-sign-ne or dollar-sign-gt smuggled in JSON change the
+      semantics of a comparison. In a diagram, look at every edge into a
+      data store and ask which application code generates the query: if
+      the answer involves any string concatenation with user input, the
+      edge is a candidate injection site. Apply the same scrutiny to LDAP
+      queries, XPath queries, and any other expression language the
+      application constructs from user data.
+  - applies_to:
+      - "db:search"
+    content: |
+      Search engines such as Elasticsearch or OpenSearch are particularly
+      prone to injection because their query DSL is rich and most
+      applications build queries by string interpolation or by passing
+      user input directly into query objects. Allowing a user to control
+      the query body enables information disclosure across index
+      boundaries and, on misconfigured clusters, command execution via
+      scripted queries. Restrict scripting languages to safe sandboxed
+      options such as Painless, and disable scripting entirely on
+      clusters that do not need it. Index per tenant and authenticate
+      queries with per-tenant credentials so cross-tenant queries are
+      structurally impossible rather than relying on filter clauses that
+      the user might bypass. Apply field-level security to ensure that
+      sensitive fields cannot be returned to queries from low-privilege
+      contexts. Common pitfalls include exposing the search cluster
+      directly to user-facing applications without an intermediary
+      service that constructs queries safely, granting cluster-admin to
+      application credentials, and indexing both sensitive and public
+      documents in the same index without per-document access controls.
+      Treat the search cluster as a privileged datastore that requires
+      a guarded query interface; the convenience of allowing the
+      front-end to query directly almost always outweighs the
+      security cost.

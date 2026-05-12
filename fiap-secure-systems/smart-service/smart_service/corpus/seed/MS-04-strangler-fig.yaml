@@ -1,0 +1,59 @@
+doc_id: MS-04-strangler-fig
+source: microservices-patterns
+title: "MS-04: Strangler fig migration"
+category: maintainability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "net:gateway"
+      - "http:sync"
+    content: |
+      The strangler fig pattern migrates a legacy monolith to a new
+      architecture incrementally, by extracting one capability at a
+      time and routing requests for that capability to the new
+      implementation while the legacy continues to serve everything
+      else. Over time the new system grows and the monolith shrinks,
+      ideally until the monolith is small enough to retire. The pattern
+      avoids the high risk and long lead time of a full rewrite, in
+      which a new system runs in parallel for years before reaching
+      feature parity, and during which the legacy continues to evolve,
+      moving the target. The routing layer is the load-bearing element:
+      it must be able to dispatch each request to either the legacy or
+      the new implementation based on the request path, the request
+      content, or even per-user feature flags during phased rollouts.
+      An API gateway is the natural place to host this routing because
+      it sits at the edge and sees every request, but the routing logic
+      can also live in a dedicated reverse proxy or in the legacy
+      itself as an internal redirect. Start with read-only capabilities
+      that are easiest to extract, then move to writes once read
+      parity is proven. Keep both implementations in lockstep on shared
+      data through dual writes or a shared database during the
+      migration window, with explicit plans to split the data once the
+      migration completes.
+  - applies_to:
+      - "compute:container"
+    content: |
+      The shared-data window is the most operationally fragile part of
+      strangler-fig migrations. While both implementations write to the
+      same database, schema changes must be backwards-compatible with
+      both, which constrains schema evolution. While both write
+      independently to separate stores, the data must be reconciled to
+      detect divergence; reconciliation jobs are essential and
+      frequently postponed. Treat reconciliation as a first-class
+      capability with its own dashboards and alerts. Each extracted
+      capability is a new container or service in the topology, often
+      managed by a different team than the legacy. Make ownership
+      boundaries explicit and document which team is responsible for
+      which paths through the gateway. In a diagram, the pattern
+      appears as a gateway with conditional routes to either a legacy
+      monolith or one of several new services; the absence of a
+      clearly defined routing point suggests the migration is happening
+      through direct client changes, which scales badly because every
+      client must be updated for every move. Common pitfalls include
+      starting with the hardest capability to extract, which discourages
+      the team before momentum builds; treating the migration as
+      complete when half the capabilities have moved, leading to a
+      permanently bifurcated system that is more complex than either
+      the original or a clean rewrite; and skipping the retirement
+      step, leaving the legacy alive indefinitely as a maintenance
+      burden long after its useful life.

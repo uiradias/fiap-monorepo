@@ -1,0 +1,55 @@
+doc_id: OWASP-API-08-security-misconfig
+source: owasp
+title: "OWASP API-08: Security misconfiguration"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "net:gateway"
+      - "net:loadbalancer"
+    content: |
+      Security misconfiguration is the umbrella defect category covering
+      everything from default credentials left in place to permissive CORS
+      policies to verbose error messages that leak stack traces. The
+      common thread is that the platform shipped with safe defaults but
+      those defaults were relaxed during development for convenience and
+      never re-tightened for production. Gateways and load balancers are
+      the most exposed layer and the most consequential to misconfigure.
+      Enforce TLS 1.2 or higher with modern cipher suites; explicitly
+      disable older protocols rather than relying on the platform default,
+      which may not match your security requirements. Configure CORS
+      narrowly: never allow wildcard origins on endpoints that return
+      authenticated data, never echo the request Origin without validating
+      against an allow-list, and never set Access-Control-Allow-Credentials
+      to true alongside a wildcard origin. Strip identifying response
+      headers such as Server or X-Powered-By so attackers cannot
+      fingerprint specific versions of known software. Configure security
+      headers consistently: Content-Security-Policy with a tight policy,
+      Strict-Transport-Security with a long max-age and includeSubDomains,
+      X-Content-Type-Options nosniff, and X-Frame-Options deny or
+      a Content-Security-Policy frame-ancestors directive. Disable HTTP
+      methods that are not used by the API such as TRACE.
+  - applies_to:
+      - "compute:container"
+    content: |
+      Container workloads inherit a long list of platform defaults that
+      should be reviewed in production. Run containers as a non-root
+      user with the smallest set of Linux capabilities required, dropping
+      the rest. Set the filesystem read-only and grant write access only
+      to specific mounts that need it; this defeats common post-
+      exploitation techniques such as writing tools to disk. Disable
+      privilege escalation in pod security contexts to prevent setuid
+      binaries from elevating privilege inside the container. Audit base
+      images for unused packages and switch to distroless or minimal
+      images so the attack surface inside the container is small. Set
+      seccomp profiles to the runtime default at minimum and to a
+      custom profile for high-value workloads. Avoid mounting the
+      Docker socket or the host filesystem unless absolutely required;
+      both are routes to full host compromise. Keep platform components
+      patched: the cluster control plane, container runtime, and base
+      images age out of support quickly and unpatched versions accumulate
+      known vulnerabilities. Verify that the cluster ingress controller
+      enforces TLS and that admission controllers reject pods that
+      violate baseline security policies. The most expensive
+      misconfiguration is the one nobody knows about because the system
+      shipped insecure-by-default and nobody re-evaluated.

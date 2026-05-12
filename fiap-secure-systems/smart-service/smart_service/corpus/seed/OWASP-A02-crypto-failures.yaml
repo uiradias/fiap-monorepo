@@ -1,0 +1,56 @@
+doc_id: OWASP-A02-crypto-failures
+source: owasp
+title: "OWASP A02: Cryptographic failures"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "db:relational"
+      - "storage:object"
+    content: |
+      Cryptographic failures cover every weakness in how sensitive data is
+      protected at rest and in transit, and the most damaging incidents
+      stem not from cryptographic primitives being broken but from data
+      being stored unprotected in the first place. Classify every data
+      element in the system as public, internal, confidential, or
+      restricted, and apply encryption commensurate with the
+      classification. For relational stores and object storage, enable
+      encryption at rest using the platform-native primitive with a key
+      held in a key management service rather than in the storage layer
+      itself; this allows the key to be rotated and revoked independently
+      of the data. Field-level encryption is required for the highest-
+      sensitivity data such as payment card numbers, identity numbers,
+      and health records, because storage-tier encryption only protects
+      the bytes on disk, not the bytes returned by a query to a
+      compromised application. Use authenticated encryption modes such as
+      AES-GCM rather than legacy modes; the latter are vulnerable to
+      manipulation even when the key is secret. Do not roll your own
+      cryptography; use well-reviewed libraries that ship safe defaults.
+      Hash passwords using a slow, memory-hard algorithm such as Argon2id
+      or bcrypt with appropriate cost parameters; fast hashes such as
+      MD5, SHA-1, or unsalted SHA-256 are unsuitable for password storage
+      because they can be brute-forced trivially with modern hardware.
+  - applies_to:
+      - "identity:vault"
+    content: |
+      Key management is the load-bearing element of any encryption
+      design. The encryption algorithm matters far less than the key
+      lifecycle, because a key that is shared widely or never rotated is
+      effectively a plaintext credential. Store keys in a dedicated KMS
+      or vault that supports per-key access policies, audit logging, and
+      cryptographic operations that never expose the key material to the
+      application. Use envelope encryption: the KMS issues short-lived
+      data keys that encrypt the actual payload, and only the data key
+      is wrapped by the master key in the KMS. This pattern enables key
+      rotation without rewriting every encrypted record. Rotate master
+      keys annually and data keys on every encryption operation. Audit
+      every KMS access; unexpected access patterns are the earliest
+      signal of a compromised workload identity. Common pitfalls
+      include hard-coding keys in source or configuration, using the
+      same key across environments, treating encryption as a tick-box
+      requirement satisfied by enabling a platform default without
+      designing the key boundary, and storing the key alongside the
+      data it protects, which provides no real protection against
+      exfiltration. In a diagram, look for explicit KMS or vault
+      components attached to encrypted stores; their absence indicates
+      that key management has not been designed.

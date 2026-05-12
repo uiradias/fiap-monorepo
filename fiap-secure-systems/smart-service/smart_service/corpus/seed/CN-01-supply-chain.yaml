@@ -1,0 +1,56 @@
+doc_id: CN-01-supply-chain
+source: cloud-native-security
+title: "CN-01: Software supply chain integrity"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "compute:container"
+    content: |
+      Container images and their build pipelines are increasingly the
+      target of choice for sophisticated attackers, because compromising a
+      base image or a popular dependency yields execution on thousands of
+      downstream systems at once. Treat every image as a supply-chain
+      artefact whose provenance must be verifiable end to end. Build
+      images from a small set of vetted base images maintained by your
+      organisation, not from arbitrary public registries pulled at build
+      time. Pin every dependency to an immutable digest, not a mutable
+      tag such as 'latest' or even a semantic version that can be
+      overwritten upstream. Generate a Software Bill of Materials in
+      SPDX or CycloneDX format for every build and store it alongside
+      the image so vulnerabilities discovered later can be matched
+      against deployed artefacts in seconds rather than weeks. Sign
+      images with Sigstore or a comparable signing system and verify
+      signatures at admission time so unsigned images cannot run in
+      production clusters. Scan images for known vulnerabilities at
+      build time, at admission time, and continuously while running,
+      because new CVEs are disclosed daily and an image clean at build
+      time becomes vulnerable on a schedule the vendor controls.
+      Restrict registries that production can pull from to a small set
+      of internal or verified mirrors; allowing pulls from the public
+      internet at runtime exposes the cluster to typosquatted and
+      compromised images.
+  - applies_to:
+      - "compute:function"
+    content: |
+      Function workloads have the same supply-chain risks as containers
+      but with a flatter build process that often skips defences common
+      in container pipelines. Each function deployment is effectively a
+      bundle of application code plus dependencies, and the dependency
+      tree of a typical function in modern ecosystems runs to hundreds
+      of transitive packages. Lock dependency versions with a manifest
+      that includes integrity hashes and refuse to install dependencies
+      whose hashes do not match. Run dependency vulnerability scans on
+      every deployment, not just on the application code. Vendor or
+      mirror critical dependencies so a sudden upstream change cannot
+      break or compromise production. Sign function packages and verify
+      signatures in the deployment pipeline. Restrict which principals
+      can deploy functions; a compromised CI credential that can push a
+      function update is equivalent to remote code execution. Be
+      particularly cautious with platform-provided runtimes that
+      auto-update minor versions; pin to specific runtime versions and
+      test runtime upgrades explicitly. In a diagram, look for
+      functions whose deployment origin is unclear or where the same
+      function deploys from multiple sources, since this is a classic
+      supply-chain ambiguity that allows malicious updates to be
+      published through the least-controlled path.

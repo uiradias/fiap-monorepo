@@ -1,0 +1,74 @@
+doc_id: WA-REL-05-bounded-retry
+source: aws-well-architected
+title: "REL-05: Bounded retries with exponential backoff and jitter"
+category: reliability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "http:sync"
+      - "grpc"
+    content: |
+      Retries are the single most common cause of self-inflicted outages.
+      Unbounded retries turn transient downstream errors into sustained
+      overload, and synchronised retries from many callers create thundering
+      herds that prevent recovery. Every retry policy must specify a maximum
+      attempt count, a base delay, a maximum delay, and a jitter strategy.
+      Exponential backoff doubles the delay between attempts so that callers
+      back off proportionally to how long the downstream has been failing.
+      Full jitter, where each attempt sleeps for a uniformly random duration
+      between zero and the current exponential cap, breaks synchronisation
+      between callers and spreads load across the recovery window. Cap total
+      retry budget at three attempts for interactive requests and at most
+      five attempts for background work; beyond that, the request is almost
+      certainly doomed and the retries are pure load amplification. Retries
+      must only be issued for idempotent operations or for operations
+      protected by an idempotency key. Retrying a non-idempotent POST that
+      timed out after the server committed creates duplicate side effects,
+      which is often worse than the original failure. Distinguish retriable
+      from non-retriable errors: 5xx and connection failures may be retried,
+      4xx generally must not. Propagate the deadline so that retries respect
+      the caller's overall budget rather than reset the clock at each hop.
+  - applies_to:
+      - "http:sync"
+      - "grpc"
+    content: |
+      In a diagram, look for retry policies declared at multiple layers of a
+      synchronous chain. Stacked retries multiply: three retries at each of
+      three hops produces up to 27 downstream calls for a single client
+      request, which is enough to convert a brownout into an outage. The
+      remedy is to retry at exactly one layer, typically the outermost
+      reasonable retry point such as the gateway or the originating client,
+      and to mark inner calls as non-retrying. Surface this in the service
+      contract so library defaults do not silently add retries. Common
+      pitfalls include retrying on 429 without honouring Retry-After,
+      retrying on 4xx codes that indicate a permanent client error, and
+      retrying with constant delay rather than exponential backoff. Watch
+      for retry storms during deploys when a new pod fleet rejects requests
+      while warming up; clients with aggressive retry policies hammer the
+      cold pods and prevent them from reaching steady state. The fix is to
+      combine retries with a circuit breaker that opens when downstream
+      error rates cross a threshold, so retries stop entirely until the
+      circuit half-opens and probes recovery. Always log the retry count on
+      the final success or failure so operators can correlate retry storms
+      with downstream incidents.
+  - applies_to:
+      - "queue"
+    content: |
+      Message-based systems make retries appear free, but the same rules
+      apply. A naive consumer that catches every exception and re-queues the
+      message creates an infinite poison-pill loop that prevents the queue
+      from draining. Bound the redelivery count at the broker level, typically
+      between five and ten attempts, and route messages that exhaust the
+      budget to a dead-letter queue for human investigation. Use the broker's
+      native delayed-redelivery primitive rather than re-publishing with a
+      sleep, since the latter holds a consumer slot during the wait and
+      reduces throughput. For at-least-once delivery brokers, design every
+      consumer to be idempotent: store the message id in a deduplication
+      table or rely on natural keys in the target datastore so that a
+      duplicate delivery is a no-op rather than a duplicated side effect.
+      When a consumer fails repeatedly, the operational signal is the DLQ
+      depth growing, not the main queue depth, so alert on DLQ size with a
+      lower threshold than the main queue. Treat dead-lettered messages as
+      bugs to be fixed and replayed, not as a normal operating condition.
+      Document the replay path in the runbook so on-call engineers can drain
+      the DLQ once the underlying defect is resolved without redeploying.

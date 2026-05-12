@@ -1,0 +1,77 @@
+doc_id: WA-REL-04-sync-coupling
+source: aws-well-architected
+title: "REL-04: Synchronous call chains amplify failure"
+category: reliability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "http:sync"
+      - "grpc"
+    content: |
+      Synchronous request-response chains compound failure probabilities and inflate
+      tail latency multiplicatively. If each hop is 99.9 percent available, four
+      hops in series degrade end-to-end availability to roughly 99.6 percent, and
+      a single 50ms median hop becomes a 200ms median latency budget across the
+      chain before any retry or queueing overhead is considered. Worse, a slow
+      downstream service drags thread pools, file descriptors, and connection
+      pools upstream, propagating brownouts into services that have no logical
+      dependency on the slow path. Treat every synchronous edge as a coupled
+      failure mode that must justify its existence. Where the business semantics
+      permit eventual consistency, replace synchronous chains with asynchronous
+      message handoff and idempotent consumers. Where synchrony is required, cap
+      call-graph depth at three services without an explicit consistency
+      boundary and enforce per-dependency timeout budgets that are strictly
+      shorter than the caller's own timeout to the layer above. Caller timeouts
+      should sit at roughly 80 percent of the upstream deadline so that retries
+      and connection establishment have time to complete before the outer
+      request gives up. Make the chain visible: surface call-graph depth in
+      tracing dashboards and alert when synthetic transactions touch more than
+      three internal services. Document the consistency model at each
+      synchronous boundary so operators understand which failures are
+      recoverable.
+  - applies_to:
+      - "http:sync"
+      - "grpc"
+    content: |
+      In a diagram, suspect synchronous coupling whenever you see a fan-out of
+      arrows where a single upstream service calls three or more downstream
+      services on the request path, or a serial chain longer than three hops
+      from gateway to datastore. Look for shared client libraries that talk to
+      multiple services from the same thread pool, since they create implicit
+      bulkhead violations that the diagram will not show. Common pitfalls
+      include treating internal HTTP as free, ignoring connection-pool
+      saturation under partial failure, and retrying on the caller while the
+      callee is already retrying its own dependency, creating retry storms that
+      multiply load on a struggling tier. Watch for missing timeouts at any
+      synchronous edge; absent timeouts default to TCP-level keepalives that
+      may not fire for minutes. Watch for absent deadlines propagated across
+      hops, since a 30s outer deadline with three hops and no propagation
+      allows each hop its own 30s, defeating end-to-end budgets. The remedy is
+      to push state changes onto a queue or topic at the first edge that
+      tolerates asynchrony, and to design idempotent retry-safe consumers
+      downstream. Pair this with circuit breakers that shed load when
+      downstream error rates exceed a threshold, and load shedding at the
+      gateway that returns 503 before the system enters a death spiral.
+  - applies_to:
+      - "net:gateway"
+    content: |
+      The API gateway is the natural location to enforce timeout and retry
+      policy for the entire synchronous tier behind it, because it sees every
+      external request and is the last place where the caller is still a human
+      or a known client rather than another internal service. Configure
+      gateway-level deadlines that match the slowest legitimate operation plus
+      a small margin, and propagate the remaining deadline as a header into
+      the service mesh so downstream services can shed load when there is no
+      time left to complete. Gateways should expose per-route circuit
+      breakers, since a failing downstream should not block unrelated routes;
+      a single-circuit-per-gateway design is a common anti-pattern. Configure
+      explicit rate limits per route and per client so that one runaway client
+      cannot starve the synchronous backend for others. When a gateway is
+      missing from a diagram and external clients talk directly to internal
+      services, every internal service must duplicate timeout, retry, and
+      auth enforcement, which is rarely done uniformly. Flag the absence of a
+      gateway in any diagram with three or more external entry points. When a
+      gateway is present, verify that it terminates TLS, enforces
+      authentication, and applies rate limits before forwarding requests
+      onward, and that its timeouts are tighter than any upstream load
+      balancer to avoid orphaned in-flight work.

@@ -1,0 +1,59 @@
+doc_id: MS-02-saga
+source: microservices-patterns
+title: "MS-02: Saga for distributed transactions"
+category: data
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "msg:queue"
+      - "compute:container"
+    content: |
+      Distributed transactions across microservices using two-phase
+      commit are operationally fragile and rarely supported by modern
+      message brokers and datastores, so the saga pattern has emerged as
+      the standard alternative. A saga decomposes a logical transaction
+      into a sequence of local transactions, each owned by a single
+      service and each committed independently. If any step fails, the
+      saga executes compensating transactions for the steps that
+      succeeded earlier, returning the system to a consistent state.
+      Sagas come in two flavours. Choreography sagas have each service
+      publish events on completion and listen for events from peers;
+      no central coordinator exists, and the saga flow is implicit in
+      the event-handler topology. Orchestration sagas centralise the
+      flow in a dedicated orchestrator service that explicitly commands
+      each step and observes its result. Choreography minimises
+      coupling but makes the saga harder to understand and modify, since
+      no single component owns the full flow. Orchestration concentrates
+      the flow in one place at the cost of an extra service that must
+      itself be highly available. For sagas involving more than three
+      steps or branching logic, orchestration is generally preferable;
+      below that threshold, choreography is simpler. Both flavours
+      require idempotent steps and idempotent compensations, since
+      retries are part of the normal operation, not an exception.
+  - applies_to:
+      - "msg:topic"
+    content: |
+      Designing compensations is the hardest part of saga design and
+      the most common source of subtle bugs. Compensations must
+      semantically undo the original step, but most operations are not
+      strictly reversible: charging a credit card cannot be undone, only
+      refunded, which is a different operation with its own latency and
+      failure modes. Compensation may also race with the original
+      operation if both retry windows overlap, requiring careful
+      sequencing. Document the compensation semantics for each step at
+      design time, not at implementation, and make compensations
+      observable: every compensation should emit an event so operators
+      can reconstruct what was undone. In a diagram, suspect missing
+      saga design when you see a workflow that mutates state in three
+      or more services without any explicit coordinator or
+      compensation flow. The likely outcome is partial failures that
+      silently leave the system in an inconsistent state, discovered
+      weeks later when reconciliation jobs find the discrepancies.
+      Common pitfalls include using synchronous request-response for
+      saga steps, which couples the saga to the availability of every
+      participant; treating compensation as an exception path that is
+      never tested, leading to compensations that work in theory but
+      fail under realistic conditions; and persisting saga state in a
+      single coordinator without making the coordinator itself
+      durable, so a coordinator crash mid-saga loses the in-flight
+      state.

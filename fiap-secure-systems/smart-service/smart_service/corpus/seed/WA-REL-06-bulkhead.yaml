@@ -1,0 +1,54 @@
+doc_id: WA-REL-06-bulkhead
+source: aws-well-architected
+title: "REL-06: Bulkheads and circuit breakers"
+category: reliability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "compute:container"
+    content: |
+      A bulkhead partitions resources so that the failure of one workload
+      cannot starve unrelated workloads sharing the same process or pod.
+      Without bulkheads, a single slow downstream dependency can exhaust the
+      caller's thread pool, connection pool, or memory, taking down endpoints
+      that have no logical relationship to the failing path. The classic
+      example is a single shared HTTP client used to call three external
+      services from the same application: when one service slows down, all
+      its threads block waiting for responses, and the other two services
+      become unreachable because no threads remain to dispatch their calls.
+      The bulkhead remedy assigns each downstream dependency its own bounded
+      thread pool, connection pool, or semaphore, so that exhaustion is
+      contained to the failing dependency. Bulkheads in container workloads
+      also apply at the pod level: separate critical and best-effort
+      workloads into different node pools or namespaces with distinct
+      resource quotas, so that a runaway batch job cannot evict latency-
+      sensitive web pods. Use Kubernetes PodDisruptionBudgets, resource
+      requests, and topology spread constraints to make the bulkhead
+      enforceable rather than aspirational. Size each bulkhead just slightly
+      larger than the steady-state demand so that bursts have headroom but
+      load amplification is contained.
+  - applies_to:
+      - "compute:container"
+      - "http:sync"
+    content: |
+      A circuit breaker is the complement to a bulkhead: where the bulkhead
+      isolates failure, the breaker stops sending requests into a failing
+      dependency entirely. The breaker tracks the recent error rate; when it
+      crosses a threshold, the breaker opens and fails fast on the caller
+      side without consuming bandwidth or threads on the downstream. After a
+      cooldown, it half-opens and admits a small probe to detect recovery,
+      closing fully if the probe succeeds. Pair every cross-service synchronous
+      call with a breaker tuned for the dependency's normal error rate plus
+      a safety margin. Typical defaults are a 50 percent error rate over a
+      sliding window of 20 to 100 requests with a 30 second cooldown. In a
+      diagram, suspect missing bulkheads when a single application calls
+      three or more external dependencies without any indication of pool
+      separation. Suspect missing circuit breakers when retry policies are
+      declared but no fast-fail behaviour is described, since retries
+      without breakers convert brownouts into outages. Common pitfalls
+      include sharing a single breaker across heterogeneous endpoints, which
+      conflates errors on a healthy endpoint with errors on an unhealthy
+      one, and setting breaker thresholds so high that the breaker never
+      trips before the application itself fails. Track breaker state
+      transitions as metrics so operators can correlate them with downstream
+      incidents.

@@ -1,0 +1,60 @@
+doc_id: OWASP-API-01-broken-object-auth
+source: owasp
+title: "OWASP API-01: Broken object level authorization"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "net:gateway"
+      - "identity:auth"
+    content: |
+      Broken Object Level Authorization, or BOLA, is the most common API
+      vulnerability and is responsible for a large share of mass data
+      breaches involving REST APIs. The flaw appears whenever an endpoint
+      accepts an identifier in the path or body and returns or mutates the
+      corresponding resource without verifying that the authenticated user
+      is entitled to that specific object. Gateways and identity providers
+      establish who the caller is, but the workload must still answer
+      whether this caller owns this object, and that check cannot be
+      skipped on the assumption that the gateway already validated it.
+      The gateway validates authentication and coarse scopes such as
+      'reader' or 'writer'; it has no way to know that user 42 is
+      requesting record 99 belonging to user 17. Architecturally, the
+      authorization decision should live in or very close to the resource
+      service that owns the data, ideally enforced through a query layer
+      that automatically attaches an ownership predicate to every read
+      and write. Treat object-level authorization as a structural property
+      of the data access layer rather than as an ad-hoc check in each
+      handler, since ad-hoc checks are forgotten on new endpoints. Audit
+      the data access layer for any path that returns or mutates resources
+      without scoping by the caller's identity.
+  - applies_to:
+      - "http:sync"
+    content: |
+      Several patterns reliably introduce BOLA. The first is exposing
+      sequential or otherwise enumerable identifiers, which allows
+      attackers to script through the namespace and discover what the
+      service is willing to return for arbitrary identifiers; switch to
+      opaque non-enumerable identifiers such as UUIDs or signed tokens.
+      The second is trusting client-side identifiers in nested resources:
+      a request like PATCH /orders/123/items/456 may correctly validate
+      that the caller owns order 123 but neglect to check that item 456
+      belongs to that order, allowing cross-order tampering. The third is
+      bulk endpoints that accept arrays of identifiers and process them
+      without per-item authorization, which makes mass exfiltration a
+      single request away. The fourth is field-level mass assignment,
+      where a PATCH body containing an owner-id field is blindly applied
+      to the record, transferring ownership to the attacker. Use explicit
+      allow-lists for writable fields rather than blacklist patterns.
+      Include automated tests that attempt to access another user's
+      resources from each endpoint; this is the single most cost-
+      effective regression suite for BOLA because it catches the most
+      common omissions and runs every CI build. Trace every endpoint
+      in the architecture that accepts a resource identifier and
+      verify that the receiving service or its data access layer
+      enforces ownership at the row level. The absence of an explicit
+      authorization decision point per resource type is a structural
+      red flag regardless of how clean the gateway and identity layer
+      look in isolation, because authorization correctness is a
+      property of the whole path, not of any single component along
+      the way.

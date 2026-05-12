@@ -1,0 +1,56 @@
+doc_id: MS-06-dual-write-anti
+source: microservices-patterns
+title: "MS-06: Dual writes anti-pattern"
+category: data
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "db:relational"
+      - "msg:queue"
+    content: |
+      Dual writes occur whenever a service writes to two systems in
+      sequence without an atomic primitive joining them, most commonly a
+      database and a message broker. The naive sequence writes the
+      database, then publishes a message about the write. If the database
+      write succeeds and the publish fails, downstream consumers never
+      learn about the change, and the data becomes silently inconsistent
+      across the system. If the publish succeeds and the database write
+      then fails or rolls back, downstream consumers process an event for
+      a state that never persisted. There is no order that makes this
+      safe, because in either order the second step can fail
+      independently of the first. The problem is not solved by adding
+      retries: retrying the failed step assumes the process survives long
+      enough to retry, which is not guaranteed, and retrying after a
+      crash requires durable state about what was attempted, which
+      effectively means inventing an outbox. Dual writes are the single
+      most common cause of mysterious data inconsistencies in event-
+      driven microservices, and they often look correct in code review
+      because each write appears reasonable in isolation. The defect is
+      structural and visible only when the failure window opens. Treat
+      any code that writes to a database and then publishes a message
+      in the same handler as a bug until proven safe by a transactional
+      pattern such as the outbox.
+  - applies_to:
+      - "msg:topic"
+    content: |
+      The correct solutions are transactional outbox, change-data-
+      capture from the database transaction log, or event sourcing with
+      the event store as the system of record. All three eliminate the
+      window by ensuring that the event reaches the broker if and only
+      if the data committed in the database. Outbox and CDC are
+      retrofittable to existing services with minimal model changes,
+      while event sourcing requires designing the service around an
+      event stream from the start. In a diagram, suspect dual writes
+      whenever a service is shown writing to both a datastore and a
+      message broker or topic without any explicit outbox table or CDC
+      connector. The pattern is especially common in services
+      migrated from monoliths, where the original code wrote to a
+      single database and the migration added a message broker without
+      revisiting the consistency design. Common variants include
+      writing to two databases without coordination, writing to a
+      database and an external API, and writing to a database and a
+      cache without invalidation guarantees. Each variant has the same
+      shape and the same fix: introduce a single source of truth and
+      derive all other writes from it through a guaranteed-delivery
+      mechanism, accepting eventual consistency and idempotency at the
+      consumers.

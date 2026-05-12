@@ -1,0 +1,58 @@
+doc_id: MS-07-shared-db-anti
+source: microservices-patterns
+title: "MS-07: Shared database anti-pattern"
+category: maintainability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "db:relational"
+    content: |
+      Sharing a database across multiple services couples their
+      deployments invisibly and forms the single most common cause of
+      failed microservices migrations. When two services read or write
+      the same tables, any schema change requires both services to
+      release in lockstep, and any service that depends on either must
+      also be re-tested against the new schema. This collapses what
+      looks on paper like an independently-deployable set of services
+      into a deployment monolith with extra network hops, which is
+      worse than the original monolith because it carries the
+      operational complexity of distribution without the deployment
+      flexibility. The coupling is invisible in service-level diagrams
+      because each service has its own arrow to the shared database;
+      only by overlaying the arrows is the shared-state coupling
+      revealed. The data-tier coupling also makes the services'
+      failure modes intertwined: a long-running query in one service
+      can lock tables and stall transactions in others, and a poorly
+      designed write in one service can corrupt data that other
+      services rely on, attributed to the wrong owner during incident
+      response. Treat shared databases as a temporary state during a
+      migration, never as a target architecture.
+  - applies_to:
+      - "db:document"
+    content: |
+      Document stores experience the same problem in a slightly
+      different shape: when multiple services write to the same
+      collection, the implicit schema of that collection becomes a
+      contract that no service owns and that nobody can change without
+      coordinating across all writers. Document stores' schemaless
+      nature makes this worse, not better, because there is no central
+      definition to update; the collective behaviour of all writers is
+      the only specification. The remedy is to give each service its
+      own collection or database and to expose data through service
+      APIs. Where shared queries genuinely span service boundaries,
+      build a dedicated reporting database fed by events from each
+      service, owned by an analytics team with explicit dependencies
+      on the publishing services. In a diagram, look for multiple
+      service arrows converging on a single database symbol; each such
+      convergence is a place where two teams' release cycles are
+      coupled. The remediation cost depends on how deeply the schema
+      is shared: tables used only by one service can be split into a
+      dedicated database for that service, while tables genuinely
+      shared require choosing an owner and migrating other services to
+      consume via API or events. Common pitfalls include treating
+      read-only access as benign, when it still couples the consumer
+      to the producer's schema; and adopting a shared cluster as a
+      managed-cost compromise while still maintaining logical
+      separation through schemas, which is acceptable as long as no
+      cross-schema queries are written and the schemas remain
+      owned by exactly one service each.

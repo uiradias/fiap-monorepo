@@ -1,0 +1,53 @@
+doc_id: CN-03-network-policies
+source: cloud-native-security
+title: "CN-03: Default-deny network policies"
+category: security
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "compute:container"
+    content: |
+      A Kubernetes cluster without NetworkPolicies is a flat network where
+      any pod can talk to any other pod and to any external endpoint. This
+      means that once an attacker compromises one pod, they can pivot to
+      any database, message broker, or internal service the cluster hosts,
+      using only the network identity of the compromised pod and any
+      credentials available to it. NetworkPolicies are the cluster-native
+      mechanism for restricting this lateral movement. Start with a
+      default-deny policy in every namespace that drops all ingress and
+      all egress, then add explicit allow-policies for the connections
+      each workload legitimately requires. This is more work upfront but
+      produces a structurally safer cluster: any new pod is denied by
+      default and must be granted access explicitly, which raises a flag
+      in code review when the policy is added. Network policy controllers
+      such as Calico, Cilium, and the built-in implementation in cloud
+      kubernetes distributions enforce these policies at the dataplane
+      level. Verify the CNI installed in the cluster actually supports
+      NetworkPolicy; some lightweight CNIs ignore policy definitions
+      entirely and the user only discovers this during incident
+      response.
+  - applies_to:
+      - "http:sync"
+      - "grpc"
+    content: |
+      The policy graph should match the architecture: each service should
+      only accept ingress from services that legitimately call it, and
+      only egress to services it legitimately calls. Build the allow-list
+      from the architecture diagram: every arrow in the diagram is one
+      NetworkPolicy rule, and any rule that has no matching arrow is
+      unnecessary access. Egress policy is especially important and
+      commonly neglected: a compromised pod with unrestricted egress can
+      exfiltrate data to attacker-controlled servers and download
+      additional tooling. Restrict egress to known internal CIDRs and to
+      a small allow-list of external endpoints for legitimate dependencies
+      such as package registries or third-party APIs. Block egress to
+      the kubernetes API server from workload pods that have no
+      legitimate need to call it, since this is a common pivot path.
+      Common pitfalls include allowing all pods in a namespace to talk
+      to all other pods in the same namespace, which makes the policy
+      boundary the namespace rather than the workload and undermines
+      isolation between unrelated services; allowing all egress as a
+      convenience and never tightening it; and writing policies that
+      look correct but are never tested with the connection patterns
+      the application uses, leaving silent breakage discovered only
+      when a feature fails in production.

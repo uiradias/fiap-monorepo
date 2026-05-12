@@ -1,0 +1,101 @@
+doc_id: WA-OPS-01-observability
+source: aws-well-architected
+title: "OPS-01: Three pillars of observability"
+category: operability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "obs:logging"
+    content: |
+      Logs capture discrete events as structured records that can be
+      searched, aggregated, and correlated. Effective logging emits
+      structured JSON or another machine-readable format with consistent
+      field names across services, so a single query can answer questions
+      that span the system rather than requiring per-service grep. Every
+      log line should include a timestamp in UTC with millisecond
+      precision, the service name, the deployment environment, the log
+      level, and a trace identifier that ties the event to the
+      distributed trace it participates in. Avoid logging at debug level
+      in production unless gated by a per-request flag, because debug
+      traffic dominates storage cost and ingestion bandwidth without
+      proportional value. Never log secrets, credentials, full request
+      bodies for authenticated endpoints, or personally identifiable
+      information without explicit redaction; this is both a compliance
+      issue and a common breach vector. Logs must be retained for the
+      shorter of the regulatory requirement and the operational need;
+      retaining logs longer than necessary is a liability rather than
+      an asset. Sample high-cardinality logs aggressively, especially
+      health-check noise, so that interesting events are not buried in
+      routine traffic. Configure log shipping with a buffered, durable
+      transport such that a service crash does not lose the final
+      seconds of logs that explain the crash.
+  - applies_to:
+      - "obs:metrics"
+    content: |
+      Metrics are aggregated time-series measurements that capture system
+      behaviour at a coarse but cheap-to-query granularity. They answer
+      questions about rates, error percentages, and percentile latencies
+      across windows of time. Every service must expose at minimum the
+      RED metrics: request Rate, Error rate, and Duration distribution,
+      typically as Prometheus-compatible histograms. The USE metrics
+      complement them at the resource layer: Utilisation, Saturation,
+      Errors per resource such as CPU, memory, disk, and network. Choose
+      labels with care, since high-cardinality labels such as user id or
+      request id explode the metric series count and make the metrics
+      store unusable. Limit labels to bounded dimensions such as route,
+      method, status code, and deployment region. Configure alerting on
+      symptoms users feel, not on internal causes: alert on user-facing
+      error rate and P99 latency rather than on CPU utilisation. Causal
+      metrics are useful for diagnosis but make poor alerts because
+      they fire on conditions that may be benign. Scrape intervals
+      should match the alert evaluation window; scraping every 60
+      seconds while alerting on a 30-second window guarantees missed
+      detections. Retain raw metrics for at least 15 days and
+      downsampled metrics for at least one year to support capacity
+      planning and post-incident review.
+  - applies_to:
+      - "obs:tracing"
+    content: |
+      Distributed traces capture the causal chain of a single request as
+      it traverses multiple services, assembling a tree of spans that
+      reveals which service spent how long doing what. Tracing turns
+      mysterious cross-service latency spikes from days of investigation
+      into minutes of inspection. Every request entering the system
+      must originate a trace id at the gateway, propagated downstream
+      via headers such as W3C traceparent. Every service emits spans
+      for its own work and for outgoing calls, and these spans must
+      carry the parent span id so the tree can be reconstructed.
+      Instrument framework integration points such as HTTP servers,
+      HTTP clients, database drivers, and message brokers via
+      autoinstrumentation libraries rather than hand-written spans
+      where possible, because manual instrumentation drifts as code
+      evolves. Tail-sample so that traces with errors or high latency
+      are always retained while routine successful traces are sampled
+      at a low rate. Head-sampling, where the keep decision is made
+      at trace start, throws away most error traces and is rarely
+      worth the storage savings. Without tracing, debugging a slow
+      end-to-end request requires correlating logs across services
+      manually, which scales badly past three services.
+  - applies_to: []
+    content: |
+      Observability must be visible as a tier in the architecture. If a
+      diagram shows no logging, metrics, or tracing component, the
+      analysis should flag the absence explicitly and ask where logs
+      flow, where metrics are scraped, and where traces are collected.
+      Many incidents are protracted not because the underlying defect
+      was hard to find but because the system lacked the instrumentation
+      to find it, and the team spent the outage trying to deploy
+      instrumentation while customers were affected. An observability
+      tier with all three pillars should appear in any production-grade
+      architecture diagram, typically as a sidecar pattern, a daemonset
+      on every node, or an agent baked into the application image.
+      Common pitfalls include shipping logs without trace correlation
+      so logs cannot be filtered to a single request across services,
+      using metrics for high-cardinality data that belongs in traces or
+      logs, and treating tracing as optional rather than as a baseline
+      capability. The minimum acceptable instrumentation for any
+      production service is structured logging with trace ids, RED
+      metrics per endpoint, and distributed traces propagated across
+      every internal edge. Verify that observability data crosses
+      regions or accounts only through encrypted channels, since logs
+      and traces contain sensitive operational detail.

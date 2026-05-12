@@ -1,0 +1,56 @@
+doc_id: MS-08-idempotency-keys
+source: microservices-patterns
+title: "MS-08: Idempotency keys for at-least-once delivery"
+category: data
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "msg:queue"
+      - "msg:stream"
+    content: |
+      At-least-once delivery is the default semantics of essentially
+      every modern message broker because exactly-once requires
+      coordination that is incompatible with high throughput and
+      partial-failure recovery. Consumers must therefore handle the
+      possibility that any given message will be delivered more than
+      once, possibly out of order, and possibly after a significant
+      delay. The remedy is idempotency: design every consumer so that
+      processing the same message twice produces the same end state as
+      processing it once. Idempotency is most reliably implemented by
+      assigning each message a unique key derived from the originating
+      command or event, and recording processed keys in a deduplication
+      store with the message's effect tied to the key write through
+      an atomic operation in the underlying datastore. Before applying
+      the message effect, the consumer checks the dedup store for the
+      key; if present, the message is skipped. If absent, the consumer
+      writes the key and applies the effect in the same transaction. The
+      dedup store can be the application database with a uniqueness
+      constraint on a key column, or a dedicated key-value store with
+      TTL-based eviction. The TTL must exceed the broker's redelivery
+      window plus a safety margin, typically days to weeks; shorter TTLs
+      admit duplicate processing for messages delayed beyond the eviction.
+  - applies_to:
+      - "http:sync"
+    content: |
+      Idempotency also applies to synchronous APIs, particularly any API
+      that triggers a side effect such as creating a resource or
+      transferring money. Clients retry failed requests, and without an
+      idempotency mechanism a retry that the server already processed
+      results in duplicate side effects. The standard pattern is to
+      accept an Idempotency-Key header on every mutating request, in
+      which the client supplies a UUID it has generated for this logical
+      operation. The server records the key and the result of the first
+      successful execution; subsequent requests with the same key return
+      the recorded result without re-executing the operation. Stripe and
+      most modern payment APIs implement this pattern and document it
+      explicitly. Define the key scope clearly: a key is unique per
+      account per resource type, not globally, to avoid collisions
+      between unrelated clients. Persist keys with a TTL appropriate to
+      the operation, typically 24 hours or longer. In a diagram, suspect
+      missing idempotency whenever you see a synchronous mutating API
+      called from a system that retries on failure, which is essentially
+      every modern distributed system. Common pitfalls include scoping
+      keys too narrowly so legitimate retries collide, scoping too
+      broadly so different operations share a key by accident, and
+      caching results indefinitely so the dedup store grows without
+      bound and eventually dominates storage cost.

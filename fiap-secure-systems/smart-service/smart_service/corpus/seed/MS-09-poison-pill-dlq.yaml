@@ -1,0 +1,56 @@
+doc_id: MS-09-poison-pill-dlq
+source: microservices-patterns
+title: "MS-09: Dead-letter queues and poison-pill handling"
+category: reliability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "msg:queue"
+    content: |
+      A poison pill is a message that the consumer cannot process
+      successfully, no matter how many times it is retried. The cause
+      may be a malformed payload, a missing referenced resource, an
+      unrecoverable application bug, or simply a message that the
+      consumer was never designed to handle. Without explicit handling,
+      poison pills block the queue: the broker keeps redelivering the
+      failing message, the consumer keeps failing, no progress is made,
+      and the queue depth grows behind the stuck head. In ordered
+      partitions, the entire partition stalls, often impacting unrelated
+      messages waiting behind the poison pill. The defence is a dead-
+      letter queue. After a bounded number of redelivery attempts,
+      typically five to ten, the broker routes the failing message to a
+      separate DLQ where it is retained for human investigation. The
+      consumer continues processing the next message and the queue
+      drains. The redelivery count must be bounded explicitly: brokers
+      vary in their defaults, and some default to infinite redelivery,
+      which is the configuration that causes the outage. Configure DLQ
+      depth as a first-class alerting metric; a non-zero DLQ depth
+      represents messages that the system cannot process, and each one
+      requires either a code fix and replay or a manual reconciliation.
+  - applies_to:
+      - "msg:topic"
+    content: |
+      The replay path is as important as the DLQ itself, and almost
+      always neglected until an incident demands it. When the underlying
+      bug is fixed, the messages in the DLQ must be replayed into the
+      main queue so the system reaches the state it would have reached
+      had the bug not existed. Build the replay path before it is
+      needed, with tooling that can re-publish DLQ messages to the
+      original queue either individually or in batches, with logging of
+      every replay so operators can audit what was processed. Without
+      a replay path, the DLQ becomes a graveyard that operators avoid
+      because manual reprocessing is too risky. In a diagram, look for
+      explicit DLQ symbols attached to every consumer; their absence is
+      a strong signal that poison-pill handling has not been designed
+      and that the first malformed message in production will cause an
+      incident. Common pitfalls include conflating retriable and
+      non-retriable failures: a transient database error should be
+      retried, but a deserialisation failure should go straight to the
+      DLQ rather than consume the retry budget, since no number of
+      retries will fix a malformed payload. Distinguish these failure
+      categories explicitly in the consumer and route them to the
+      appropriate destination. Apply the same pattern to topics that
+      fan out to multiple consumers: each consumer needs its own DLQ
+      because a message poisonous to one consumer may be processable by
+      another, and routing all failures to a shared DLQ obscures
+      ownership.

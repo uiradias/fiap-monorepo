@@ -1,0 +1,56 @@
+doc_id: MS-01-outbox
+source: microservices-patterns
+title: "MS-01: Transactional outbox"
+category: data
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "db:relational"
+      - "msg:queue"
+    content: |
+      The transactional outbox pattern solves the dual-write problem
+      between a database and a message broker. When a service must
+      atomically commit a state change and publish an event reflecting
+      that change, naive implementations write to the database first and
+      then publish to the broker, or vice versa. Either order admits a
+      window where one succeeds and the other fails, leaving the system
+      in an inconsistent state where the database has changed but no
+      event was emitted, or an event was emitted for a change that
+      never persisted. The outbox eliminates this window by writing both
+      the state change and an outbox row in the same database
+      transaction. A separate relay process polls the outbox table and
+      publishes pending rows to the broker, marking them as published
+      on broker acknowledgement. Because the outbox write is part of the
+      original transaction, it is atomic with the state change; if the
+      transaction rolls back, the outbox row never exists. Because the
+      relay only publishes committed rows, the broker can only see
+      events for state that actually persisted. The relay must be
+      idempotent: at-least-once publication is the price for atomicity,
+      and downstream consumers must handle duplicate events. Most
+      modern implementations use change-data-capture from the database
+      transaction log to drive the relay, eliminating the polling
+      latency and CPU overhead.
+  - applies_to:
+      - "msg:topic"
+    content: |
+      In a diagram, the outbox pattern appears as an arrow from the
+      service to its database carrying both the business write and the
+      outbox row, and a second arrow from the database (often through a
+      CDC connector such as Debezium or platform-native CDC) into the
+      message broker or topic. The absence of this CDC arrow when both a
+      database and a broker appear on a service's diagram is a strong
+      indicator that the service is doing dual writes and accepting the
+      consistency risk. Common pitfalls include polling the outbox at
+      long intervals, which adds latency to event propagation and
+      pressures the database with repeated scans; failing to index the
+      outbox table on the published flag, which causes the relay scan to
+      become a full table scan as the outbox grows; and treating outbox
+      delivery as exactly-once and skipping the idempotency design on
+      consumers, which guarantees duplicates will eventually cause
+      visible bugs. Keep the outbox table small by archiving or
+      deleting published rows on a schedule; an unbounded outbox
+      eventually dominates database storage and slows transactions
+      that touch it. The outbox table is also a useful audit log of
+      events emitted by the service, separate from the business state,
+      and can be retained for that purpose if storage is partitioned
+      appropriately.

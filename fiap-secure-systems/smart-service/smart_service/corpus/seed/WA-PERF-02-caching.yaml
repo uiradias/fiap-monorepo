@@ -1,0 +1,80 @@
+doc_id: WA-PERF-02-caching
+source: aws-well-architected
+title: "PERF-02: Caching tiers, invalidation, and stampede protection"
+category: performance
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "cache:inmem"
+      - "db:relational"
+    content: |
+      Caches trade staleness for latency and load reduction, and the
+      tradeoff must be deliberate. A cache that holds data for one second
+      offers little protection against a hot read pattern; a cache that
+      holds data for one day relieves load but accumulates stale values
+      that surprise users. The cache TTL should be derived from the
+      acceptable freshness bound for the data, not chosen arbitrarily.
+      Read-heavy paths benefit most from caching; write-heavy paths see
+      smaller gains because the cache invalidates faster than it serves.
+      The two canonical patterns are cache-aside, where the application
+      first checks the cache and falls back to the database on miss, and
+      read-through, where the cache itself fetches from the database on
+      miss. Cache-aside gives the application full control; read-through
+      simplifies the application but couples the cache to the data
+      access layer. Whichever pattern is chosen, define the invalidation
+      strategy explicitly. Time-based invalidation through TTL is
+      simplest but cannot reflect writes that occur during the TTL window.
+      Event-based invalidation through change-data-capture or explicit
+      cache busts on write is more accurate but adds operational
+      complexity. TTLs under 60 seconds typically defeat the purpose of
+      caching at any meaningful scale, because the cache warms more slowly
+      than it serves; if 60-second TTLs are required, the underlying data
+      probably should not be cached and the focus should shift to making
+      the underlying datastore faster.
+  - applies_to:
+      - "cache:inmem"
+    content: |
+      Cache stampede, also called dogpiling, occurs when many clients
+      simultaneously miss the cache for the same key and all hammer the
+      backing datastore in parallel. The classic trigger is a popular key
+      expiring at exactly its TTL boundary. Without protection, the
+      database receives N times the request rate for the duration it
+      takes to repopulate the cache. Defences include probabilistic early
+      expiration, where each client treats the entry as expired with
+      probability that increases as the TTL approaches, so refreshes are
+      spread across time rather than synchronised on the expiry; locking,
+      where the first miss acquires a short-lived lock and other clients
+      wait or serve stale; and request coalescing, where the cache layer
+      itself recognises duplicate inflight requests and joins them rather
+      than dispatching independently. In a diagram, suspect stampede risk
+      whenever a cache layer sits in front of a datastore that cannot
+      handle the unmitigated load on miss. Other pitfalls include caching
+      negative results without a separate TTL (caching a missing key with
+      the same TTL as a present one wastes memory and can mask later
+      writes), caching user-specific data with too long a TTL (creates
+      consistency bugs that look like data loss to users), and failing to
+      observe cache hit rate (a cache with a 30 percent hit rate is
+      adding latency rather than removing it).
+  - applies_to:
+      - "net:cdn"
+    content: |
+      CDN caching is the most cost-effective layer for static and
+      semi-static content because it serves bytes from the network edge
+      and never touches the origin. Configure long TTLs for immutable
+      assets and use content-hashed filenames so cache busting is
+      automatic on every deploy. Set short TTLs for HTML and API
+      responses that change with user state, and use surrogate keys or
+      cache tags to invalidate groups of responses on origin events.
+      Avoid Vary headers that fragment the cache excessively; a Vary on
+      User-Agent typically destroys cache effectiveness because every
+      browser version becomes a distinct cache entry. For dynamic
+      content, prefer cache-control directives such as
+      stale-while-revalidate, which lets the CDN serve the stale value
+      while it fetches a fresh one in the background, smoothing origin
+      load during repopulation. In a diagram, look for a CDN sitting
+      between the public internet and the origin gateway; its absence
+      forces every request through the origin and is a common cause of
+      origin overload during traffic spikes. Confirm that the origin
+      enforces authentication so that requests cannot bypass the CDN
+      by addressing the origin directly, and that origin TLS
+      certificates are properly trusted by the CDN.

@@ -1,0 +1,57 @@
+doc_id: MS-05-database-per-service
+source: microservices-patterns
+title: "MS-05: Database per service"
+category: maintainability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "db:relational"
+      - "db:document"
+    content: |
+      Database per service is the structural invariant that makes
+      microservices independently deployable. Each service owns its
+      datastore exclusively; no other service may read or write that
+      datastore directly. All access goes through the owning service's
+      API, which gives the owner full control over the data model and
+      the freedom to evolve it without coordinating schema changes
+      across the organisation. The motivation is not technical purity
+      but deployment independence: when two services share a database,
+      a schema change requires a coordinated deploy of both services,
+      and the coupling propagates to every consumer of either service
+      that depends on the affected schema. This coupling effectively
+      converts the entire system back into a deployment monolith
+      regardless of how many service boundaries exist in the code. Each
+      service may choose its own datastore technology to match its
+      access pattern: a transaction-heavy service may use a relational
+      database while a document-heavy service uses a document store,
+      without forcing one choice on the other. The cost is the loss of
+      cross-service joins in the database; queries that span service
+      boundaries must compose results at the application level or
+      materialise denormalised views via event streams.
+  - applies_to:
+      - "compute:container"
+    content: |
+      In a diagram, database per service appears as each service having
+      its own datastore symbol with no arrows from other services into
+      that datastore. The most common violation is several services
+      sharing a single relational database, sometimes labelled as
+      'shared schema' or 'common DB'. This is structurally a
+      distributed monolith regardless of how the services are deployed,
+      and it is responsible for a large fraction of failed
+      microservices migrations because teams discover, late in the
+      transition, that they cannot deploy independently. Other
+      violations include services that bypass their peer's API to query
+      the peer's database directly for performance reasons; this
+      eliminates the peer's freedom to change schema and reintroduces
+      coupling that the service boundary was meant to remove. The
+      correct remedy is to either move the data into the service that
+      owns the use case or to publish events from the owner that other
+      services consume to build their own local projections. Common
+      pitfalls include thinking that database-per-service means
+      database-per-container, leading to operational proliferation
+      with no benefit; sharing infrastructure such as a relational
+      cluster across services while still maintaining logical
+      separation through schemas, which is acceptable as long as the
+      logical boundary is respected; and failing to plan for cross-
+      service data needs, which surfaces as analytics teams
+      complaining that they cannot run cross-service reports.

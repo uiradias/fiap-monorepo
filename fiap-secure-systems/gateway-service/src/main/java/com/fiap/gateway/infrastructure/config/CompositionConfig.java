@@ -82,9 +82,10 @@ public class CompositionConfig {
             @Value("${gateway.orchestrator.base-url}") String baseUrl,
             InternalHmacRequestSigner signer,
             Clock clock,
-            @Value("${gateway.orchestrator.hmac-secret}") String secret) {
+            @Value("${gateway.orchestrator.hmac-secret}") String secret,
+            RestClient.Builder restClientBuilder) {
         return new OrchestratorRestClient(
-                RestClient.builder().baseUrl(baseUrl).build(), signer, clock, secret);
+                restClientBuilder.baseUrl(baseUrl).build(), signer, clock, secret);
     }
 
     @Bean(initMethod = "start", destroyMethod = "stop")

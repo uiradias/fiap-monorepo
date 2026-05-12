@@ -44,6 +44,12 @@ def test_corpus_chunks_table_exists_with_vector_column(migrated_engine):
     cols = {c["name"] for c in insp.get_columns("corpus_chunks")}
     assert {"id", "document_id", "chunk_index", "content", "embedding",
             "applies_to", "version"} <= cols
+    with migrated_engine.connect() as conn:
+        udt = conn.execute(text(
+            "SELECT udt_name FROM information_schema.columns "
+            "WHERE table_name='corpus_chunks' AND column_name='embedding'"
+        )).scalar_one()
+    assert udt == "vector"
 
 
 def test_corpus_chunks_has_indexes(migrated_engine):
@@ -52,5 +58,5 @@ def test_corpus_chunks_has_indexes(migrated_engine):
             "SELECT indexname FROM pg_indexes WHERE tablename='corpus_chunks'"
         )).all()
     names = {r[0] for r in rows}
-    assert any("hnsw" in n.lower() or "embedding" in n.lower() for n in names)
+    assert any("hnsw" in n.lower() for n in names)
     assert any("applies_to" in n.lower() for n in names)

@@ -1,0 +1,15 @@
+architecture_id: sync-microservices
+description: 5 services calling each other via HTTP. No async messaging.
+expected_components:
+  - "Gateway"
+  - "Service A"
+  - "Service B"
+  - "Service C"
+  - "Service D"
+must_find_risks:
+  - keywords_any: ["synchronous", "sync coupling", "chain", "distributed monolith"]
+    citation_doc_ids_any: ["WA-REL-04-sync-coupling", "MS-10-distributed-monolith"]
+    min_severity: medium
+forbidden_keywords:
+  - "Kafka"
+  - "Stream"

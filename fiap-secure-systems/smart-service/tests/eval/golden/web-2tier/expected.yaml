@@ -1,0 +1,14 @@
+architecture_id: web-2tier
+description: Browser → API service → relational DB. Classic CRUD app with one cache.
+expected_components:
+  - "Browser"
+  - "API"
+  - "Database"
+must_find_risks:
+  - keywords_any: ["rate limit", "rate-limit", "abuse"]
+    citation_doc_ids_any: ["OWASP-API-04-resource-consumption"]
+    min_severity: medium
+forbidden_keywords:
+  - "Kafka"
+  - "Lambda"
+  - "Kubernetes"

@@ -70,7 +70,7 @@ smart-sync: ## (smart-service) install/sync deps via uv
 
 .PHONY: smart-test-unit
 smart-test-unit: ## (smart-service) run unit tests only
-	cd smart-service && uv run pytest -m "not integration"
+	cd smart-service && uv run pytest -m "not integration and not eval"
 
 .PHONY: smart-test-integration
 smart-test-integration: ## (smart-service) run integration tests (Docker required)

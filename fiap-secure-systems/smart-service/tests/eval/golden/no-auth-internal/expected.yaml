@@ -1,0 +1,12 @@
+architecture_id: no-auth-internal
+description: Internet → Service A → Service B. No auth, no mTLS, no network policy between A and B.
+expected_components:
+  - "Service A"
+  - "Service B"
+must_find_risks:
+  - keywords_any: ["zero-trust", "mtls", "broken access", "authn", "authz"]
+    citation_doc_ids_any: ["OWASP-A01-broken-access-control", "WA-SEC-03-encryption-in-transit", "CN-03-network-policies"]
+    min_severity: medium
+forbidden_keywords:
+  - "Postgres"
+  - "Kafka"

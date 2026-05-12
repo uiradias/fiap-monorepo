@@ -80,6 +80,7 @@ testpaths = ["tests"]
 markers = [
   "integration: tests that require Testcontainers (Postgres or LocalStack)",
   "live: tests that hit the real Anthropic API (skipped by default)",
+  "eval: runs the RAG evaluation suite (slow; needs live Anthropic + Voyage keys)",
 ]
 filterwarnings = [
   "error",

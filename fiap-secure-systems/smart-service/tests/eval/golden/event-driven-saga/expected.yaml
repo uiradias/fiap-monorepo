@@ -1,0 +1,15 @@
+architecture_id: event-driven-saga
+description: Three services communicate via SQS + DLQ. Order service emits events, payments service consumes, fulfilment service consumes.
+expected_components:
+  - "Order"
+  - "Payment"
+  - "Fulfilment"
+  - "Queue"
+  - "DLQ"
+must_find_risks:
+  - keywords_any: ["idempotency", "duplicate", "at-least-once"]
+    citation_doc_ids_any: ["MS-08-idempotency-keys", "MS-09-poison-pill-dlq"]
+    min_severity: medium
+forbidden_keywords:
+  - "synchronous chain"
+  - "Postgres"

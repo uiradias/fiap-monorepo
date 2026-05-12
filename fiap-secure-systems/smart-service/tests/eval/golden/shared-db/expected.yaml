@@ -1,0 +1,13 @@
+architecture_id: shared-db
+description: Three services all reading and writing to a single shared Postgres instance.
+expected_components:
+  - "Service A"
+  - "Service B"
+  - "Service C"
+  - "Postgres"
+must_find_risks:
+  - keywords_any: ["shared database", "shared db", "coupling"]
+    citation_doc_ids_any: ["MS-07-shared-db-anti", "MS-05-database-per-service"]
+    min_severity: medium
+forbidden_keywords:
+  - "Kafka"

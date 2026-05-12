@@ -45,6 +45,8 @@ def create_app() -> FastAPI:
             yield
         finally:
             components.consumer.stop(timeout=30.0)
+            if components.voyage_client is not None:
+                components.voyage_client.close()
             components.engine.dispose()
             log.info("smart-service stopped")
 

@@ -1,0 +1,22 @@
+doc_id: WA-REL-04
+source: aws-well-architected
+title: "REL-04: Communicate between components in a distributed system"
+category: reliability
+version: "2026.05"
+chunks:
+  - applies_to:
+      - "msg:queue"
+      - "msg:topic"
+      - "msg:stream"
+    content: |
+      For inter-service communication, prefer asynchronous, idempotent message
+      passing over synchronous chained requests. Synchronous chains compound
+      failures and amplify latency. When sync is required, set explicit
+      timeouts shorter than upstream timeouts and implement bounded retries
+      with exponential backoff and jitter.
+  - applies_to:
+      - "http:sync"
+    content: |
+      Each synchronous call is a coupled failure mode. Use circuit breakers,
+      bulkheads, and per-dependency timeout budgets. Avoid call graphs deeper
+      than three services without an explicit eventual-consistency boundary.

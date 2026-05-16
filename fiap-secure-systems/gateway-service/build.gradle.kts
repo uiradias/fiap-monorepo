@@ -67,6 +67,7 @@ dependencies {
     implementation("com.networknt:json-schema-validator:1.5.1")
 
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
+    implementation("io.micrometer:micrometer-registry-otlp")
     implementation("io.opentelemetry:opentelemetry-exporter-otlp")
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
 

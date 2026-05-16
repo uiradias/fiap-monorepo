@@ -6,13 +6,16 @@ import sys
 from typing import Any
 
 import structlog
-from opentelemetry import trace
+from opentelemetry import metrics, trace
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -40,6 +43,16 @@ def configure_logging(service_name: str) -> None:
     )
     log = structlog.get_logger("smart-service.boot")
     log.info("logging configured", service=service_name)
+
+
+def configure_metrics(settings: Settings) -> None:
+    resource = Resource.create({"service.name": settings.service_name})
+    reader = PeriodicExportingMetricReader(
+        OTLPMetricExporter(endpoint=settings.otel_exporter_otlp_endpoint, insecure=True),
+        export_interval_millis=10_000,
+    )
+    provider = MeterProvider(resource=resource, metric_readers=[reader])
+    metrics.set_meter_provider(provider)
 
 
 def configure_tracing(settings: Settings, app: Any, engine: Any) -> None:

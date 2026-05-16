@@ -46,6 +46,12 @@ management:
     tracing:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://otel-collector:4317}
       transport: ${OTEL_EXPORTER_OTLP_PROTOCOL:grpc}
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://otel-collector:4318/v1/metrics}
+        step: 10s
+        resourceAttributes:
+          service.name: gateway-service
 
 gateway:
   contracts-dir: ${GATEWAY_CONTRACTS_DIR:./infrastructure/contracts}

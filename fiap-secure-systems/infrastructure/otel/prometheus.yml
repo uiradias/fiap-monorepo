@@ -6,3 +6,16 @@ scrape_configs:
   - job_name: otel-collector
     static_configs:
       - targets: ["otel-collector:8889"]
+    # The collector's prometheus exporter writes the OTLP `service.name` resource
+    # attribute as a `job` label on every sample. Prometheus would normally overwrite
+    # that with this scrape's job_name ("otel-collector") and stash the original in
+    # `exported_job` — which hides the real service identity from dashboards that
+    # filter by `job`. honor_labels: true should fix this but doesn't reliably apply
+    # in v2.51.0 with timestamped OpenMetrics scrapes, so we rewrite explicitly.
+    metric_relabel_configs:
+      - source_labels: [exported_job]
+        regex: (.+)
+        target_label: job
+        replacement: $1
+      - regex: exported_job
+        action: labeldrop

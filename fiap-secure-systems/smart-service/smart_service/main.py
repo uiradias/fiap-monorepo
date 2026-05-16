@@ -13,6 +13,7 @@ from smart_service.config.settings import Settings
 from smart_service.config.wiring import build_components
 from smart_service.infrastructure.observability import (
     configure_logging,
+    configure_metrics,
     configure_tracing,
 )
 
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
             replayer=components.replayer,
         )
     )
+    configure_metrics(settings)
     configure_tracing(settings, app, components.engine)
     return app
 

@@ -67,11 +67,11 @@ flowchart TB
 
     User -->|HTTPS| Front
     Front -->|REST + WebSocket| GW
-    GW -->|REST (HMAC)| Orch
-    GW -->|session-events SQS| GW
+    GW -->|"REST (HMAC)"| Orch
+    GW -.->|session-events SQS poller| GW
     Orch -->|analysis-jobs SQS| Smart
     Smart -->|analysis-results SQS| Orch
-    Orch -->|session-events SNS → SQS| GW
+    Orch -->|"session-events SNS to SQS"| GW
 
     GW --- PG
     Orch --- PG

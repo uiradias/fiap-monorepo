@@ -21,16 +21,19 @@ public class AssetBundlesController {
     private final UploadAssetUseCase uploadAsset;
     private final FinalizeBundleUseCase finalizeBundle;
     private final GetBundleUseCase getBundle;
+    private final IssueAssetDownloadUrlUseCase issueAssetDownloadUrl;
 
     public AssetBundlesController(
             CreateBundleUseCase c,
             UploadAssetUseCase u,
             FinalizeBundleUseCase f,
-            GetBundleUseCase g) {
+            GetBundleUseCase g,
+            IssueAssetDownloadUrlUseCase issueAssetDownloadUrl) {
         this.createBundle = c;
         this.uploadAsset = u;
         this.finalizeBundle = f;
         this.getBundle = g;
+        this.issueAssetDownloadUrl = issueAssetDownloadUrl;
     }
 
     @PostMapping
@@ -74,5 +77,18 @@ public class AssetBundlesController {
         var view = getBundle.get(new BundleId(id), requester);
         return BundleResponse.of(
                 view.bundle(), view.assets().stream().map(AssetResponse::of).toList());
+    }
+
+    /**
+     * Short-lived HTTPS URL to GET the object from S3 (same authorization as {@link #getBundle}).
+     */
+    @GetMapping("/{bundleId}/assets/{assetId}/download-url")
+    public AssetDownloadUrlResponse assetDownloadUrl(
+            @AuthenticationPrincipal UserId requester,
+            @PathVariable UUID bundleId,
+            @PathVariable UUID assetId) {
+        return AssetDownloadUrlResponse.of(
+                issueAssetDownloadUrl.issue(
+                        new BundleId(bundleId), new AssetId(assetId), requester));
     }
 }

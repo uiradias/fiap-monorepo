@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { apiClient } from "../api/client";
-import type { ReportResponse, SessionState } from "../api/types";
+import type { BundleSummary, ReportResponse, SessionState } from "../api/types";
 import { ApiError } from "../api/types";
 import { getAccessToken } from "../auth/tokens";
 import {
@@ -22,6 +22,54 @@ export default function SessionPage() {
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
+  const [bundle, setBundle] = useState<BundleSummary | null>(null);
+  const [bundleError, setBundleError] = useState<string | null>(null);
+  const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
+
+  // Session id equals bundle id after finalize — load originals for this analysis.
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    setBundle(null);
+    setBundleError(null);
+    setAssetUrls({});
+    apiClient
+      .getBundle(sessionId)
+      .then((b) => {
+        if (!cancelled) setBundle(b);
+      })
+      .catch((e: unknown) => {
+        const msg =
+          e instanceof ApiError ? e.problem.detail || e.problem.title : String(e);
+        if (!cancelled) setBundleError(msg ?? "Could not load uploaded files");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || !bundle?.assets.length) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const pairs = await Promise.all(
+          bundle.assets.map(async (a) => {
+            const { url } = await apiClient.getAssetDownloadUrl(sessionId, a.id);
+            return [a.id, url] as const;
+          }),
+        );
+        if (!cancelled) setAssetUrls(Object.fromEntries(pairs));
+      } catch (e: unknown) {
+        const msg =
+          e instanceof ApiError ? e.problem.detail || e.problem.title : String(e);
+        if (!cancelled) setBundleError(msg ?? "Could not resolve file URLs");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, bundle]);
 
   // Open WebSocket on mount, tear down on unmount.
   useEffect(() => {
@@ -97,6 +145,62 @@ export default function SessionPage() {
         <p style={{ fontSize: 13, color: "#64748b", wordBreak: "break-all" }}>
           <strong>ID:</strong> {sessionId}
         </p>
+      )}
+
+      {bundleError && (
+        <div className="alert" style={{ marginTop: 12 }}>
+          {bundleError}
+        </div>
+      )}
+
+      {bundle && bundle.assets.length > 0 && (
+        <section style={{ marginTop: 20 }}>
+          <h2 style={{ fontSize: 16, marginBottom: 8 }}>Files analyzed</h2>
+          <p style={{ fontSize: 13, color: "#64748b", marginBottom: 12 }}>
+            These are the assets stored for this session (same ID as the upload bundle).
+          </p>
+          <ul className="session-assets-list">
+            {bundle.assets.map((a) => {
+              const href = assetUrls[a.id];
+              const showImage = a.contentType.startsWith("image/") && href;
+              return (
+                <li key={a.id} className="session-asset-card">
+                  <div className="session-asset-meta">
+                    <strong>{a.filename}</strong>
+                    <span className="session-asset-meta-detail">
+                      {(a.sizeBytes / 1024 / 1024).toFixed(2)} MiB · {a.contentType}
+                    </span>
+                  </div>
+                  {!href && (
+                    <span style={{ fontSize: 13, color: "#64748b" }}>Preparing link…</span>
+                  )}
+                  {href && (
+                    <>
+                      {showImage ? (
+                        <div className="session-asset-preview-wrap">
+                          <img src={href} alt={a.filename} loading="lazy" decoding="async" />
+                        </div>
+                      ) : null}
+                      <div className="session-asset-actions">
+                        <a
+                          className="session-asset-open-link"
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span className="session-asset-open-icon" aria-hidden>
+                            ↗
+                          </span>
+                          Open file
+                        </a>
+                      </div>
+                    </>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {currentState && (

@@ -26,6 +26,7 @@ import com.fiap.gateway.domain.port.out.TokenIssuerPort;
 import com.fiap.gateway.infrastructure.schema.ContractValidator;
 
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 @Configuration
@@ -67,8 +68,8 @@ public class CompositionConfig {
 
     @Bean
     public AssetStoragePort assetStorage(
-            S3Client s3, @Value("${gateway.s3.bucket}") String bucket) {
-        return new S3AssetStorageAdapter(s3, bucket);
+            S3Client s3, S3Presigner s3Presigner, @Value("${gateway.s3.bucket}") String bucket) {
+        return new S3AssetStorageAdapter(s3, s3Presigner, bucket);
     }
 
     @Bean

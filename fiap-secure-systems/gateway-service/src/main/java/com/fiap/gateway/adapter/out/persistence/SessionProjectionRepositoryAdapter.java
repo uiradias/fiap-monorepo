@@ -1,7 +1,10 @@
 package com.fiap.gateway.adapter.out.persistence;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,28 @@ public class SessionProjectionRepositoryAdapter implements SessionProjectionRepo
     @Transactional(readOnly = true)
     public Optional<SessionProjection> findById(SessionId id) {
         return repo.findById(id.value()).map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SessionSummary> listSummariesByUser(UserId userId, int limit) {
+        return repo.findSummaryRowsByUserId(userId.value(), PageRequest.of(0, limit)).stream()
+                .map(
+                        row -> {
+                            SessionProjectionEntity sp = (SessionProjectionEntity) row[0];
+                            int assetCount = row[1] instanceof Number n ? n.intValue() : 0;
+                            Instant createdAt = row[2] instanceof Instant t ? t : sp.lastEventAt;
+                            return new SessionSummary(
+                                    new SessionId(sp.id),
+                                    new UserId(sp.userId),
+                                    SessionState.valueOf(sp.state),
+                                    assetCount,
+                                    sp.failureReason,
+                                    createdAt,
+                                    sp.lastEventAt,
+                                    Optional.ofNullable(sp.reportId).map(ReportId::new));
+                        })
+                .toList();
     }
 
     private SessionProjection toDomain(SessionProjectionEntity e) {

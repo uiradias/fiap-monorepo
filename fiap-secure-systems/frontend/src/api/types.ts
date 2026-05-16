@@ -30,6 +30,12 @@ export interface AssetSummary {
   uploadedAt: string;
 }
 
+/** Short-lived HTTPS GET URL for the asset in S3 (gateway-issued). */
+export interface AssetDownloadUrlResponse {
+  url: string;
+  expiresInSeconds: number;
+}
+
 export interface FinalizeResponse {
   sessionId: string;
   state: SessionState;
@@ -50,6 +56,18 @@ export interface SessionResponse {
   state: SessionState;
   lastEventAt: string;
   failureReason: string | null;
+  reportId: string | null;
+}
+
+/** Row from `GET /api/v1/sessions` (gateway SessionSummaryResponse). */
+export interface SessionSummary {
+  id: string;
+  userId: string;
+  state: SessionState;
+  assetCount: number;
+  failureReason: string | null;
+  createdAt: string;
+  updatedAt: string;
   reportId: string | null;
 }
 

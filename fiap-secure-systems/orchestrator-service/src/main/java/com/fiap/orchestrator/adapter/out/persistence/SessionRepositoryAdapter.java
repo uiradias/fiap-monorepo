@@ -1,13 +1,16 @@
 package com.fiap.orchestrator.adapter.out.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import com.fiap.orchestrator.domain.model.Session;
 import com.fiap.orchestrator.domain.model.SessionEvent;
 import com.fiap.orchestrator.domain.model.SessionId;
+import com.fiap.orchestrator.domain.model.UserId;
 import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
 
 @Repository
@@ -65,5 +68,14 @@ public class SessionRepositoryAdapter implements SessionRepositoryPort {
     @Override
     public void appendEvent(SessionEvent event) {
         events.save(SessionEventEntity.from(event));
+    }
+
+    @Override
+    public List<Session> listByUserId(UserId userId, int limit) {
+        return sessions
+                .findByUserIdOrderByCreatedAtDesc(userId.value(), PageRequest.of(0, limit))
+                .stream()
+                .map(SessionEntity::toDomain)
+                .toList();
     }
 }

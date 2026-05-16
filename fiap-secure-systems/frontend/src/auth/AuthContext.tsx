@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { apiClient, configureTokenStore } from "../api/client";
 import {
@@ -21,9 +21,11 @@ const AuthCtx = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState<boolean>(isAuthenticated());
 
-  // Wire the apiClient to read tokens from this module on mount, so refresh-on-401
-  // sees the same storage as the rest of the SPA.
-  useEffect(() => {
+  // Wire apiClient to tokens synchronously on first render so the very first fetch
+  // after navigation (e.g. drag-drop on /upload) already sends Authorization.
+  const storeConfigured = useRef(false);
+  if (!storeConfigured.current) {
+    storeConfigured.current = true;
     configureTokenStore({
       getAccess: getAccessToken,
       getRefresh: getRefreshToken,
@@ -36,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthed(false);
       },
     });
-  }, []);
+  }
 
   const login = useCallback(async (email: string, password: string) => {
     const pair = await apiClient.login(email, password);

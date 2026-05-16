@@ -7,25 +7,40 @@ import com.fiap.gateway.domain.exception.ForbiddenException;
 import com.fiap.gateway.domain.exception.SessionNotFoundException;
 import com.fiap.gateway.domain.model.*;
 import com.fiap.gateway.domain.port.in.GetSessionUseCase;
+import com.fiap.gateway.domain.port.out.OrchestratorClientPort;
 import com.fiap.gateway.domain.port.out.SessionProjectionRepositoryPort;
 
 @Service
 public class GetSessionService implements GetSessionUseCase {
 
     private final SessionProjectionRepositoryPort projections;
+    private final OrchestratorClientPort orchestrator;
 
-    public GetSessionService(SessionProjectionRepositoryPort projections) {
+    public GetSessionService(
+            SessionProjectionRepositoryPort projections, OrchestratorClientPort orchestrator) {
         this.projections = projections;
+        this.orchestrator = orchestrator;
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public SessionProjection get(SessionId sessionId, UserId requester) {
-        SessionProjection p =
+        SessionProjection local =
                 projections
                         .findById(sessionId)
-                        .orElseThrow(() -> new SessionNotFoundException(sessionId));
-        if (!p.userId().equals(requester)) throw new ForbiddenException("session " + sessionId);
-        return p;
+                        .filter(p -> p.userId().equals(requester))
+                        .orElse(null);
+        if (local != null) {
+            return local;
+        }
+        SessionProjection fromOrch = orchestrator.getSession(sessionId);
+        if (fromOrch == null) {
+            throw new SessionNotFoundException(sessionId);
+        }
+        if (!fromOrch.userId().equals(requester)) {
+            throw new ForbiddenException("session " + sessionId);
+        }
+        projections.upsert(fromOrch);
+        return fromOrch;
     }
 }

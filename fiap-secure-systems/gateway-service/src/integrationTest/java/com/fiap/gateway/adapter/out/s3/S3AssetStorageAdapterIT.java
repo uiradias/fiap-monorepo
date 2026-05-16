@@ -3,6 +3,11 @@ package com.fiap.gateway.adapter.out.s3;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -44,5 +49,29 @@ class S3AssetStorageAdapterIT extends LocalStackTestcontainersBase {
                 s3.getObject(
                         GetObjectRequest.builder().bucket(Provisioning.bucket).key(key).build());
         assertThat(fetched.readAllBytes()).isEqualTo(body);
+    }
+
+    @Test
+    void presigned_get_url_allows_http_get() throws Exception {
+        BundleId bid = new BundleId(UUID.randomUUID());
+        AssetId aid = new AssetId(UUID.randomUUID());
+        byte[] body = "presign-body".getBytes();
+        String key =
+                storage.put(
+                        bid,
+                        aid,
+                        "p.png",
+                        ContentType.IMAGE_PNG,
+                        body.length,
+                        new ByteArrayInputStream(body));
+
+        URI uri = storage.presignedGetUrl(key, Duration.ofMinutes(5));
+        HttpResponse<byte[]> res =
+                HttpClient.newHttpClient()
+                        .send(
+                                HttpRequest.newBuilder(uri).GET().build(),
+                                HttpResponse.BodyHandlers.ofByteArray());
+        assertThat(res.statusCode()).isEqualTo(200);
+        assertThat(res.body()).isEqualTo(body);
     }
 }

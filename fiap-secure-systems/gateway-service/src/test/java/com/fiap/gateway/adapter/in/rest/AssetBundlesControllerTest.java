@@ -39,13 +39,19 @@ class AssetBundlesControllerTest {
     private final FinalizeBundleService finalizeBundle =
             new FinalizeBundleService(bundles, assets, orchestrator, projections, clock);
     private final GetBundleService getBundle = new GetBundleService(bundles, assets);
+    private final IssueAssetDownloadUrlService issueDownloadUrl =
+            new IssueAssetDownloadUrlService(bundles, assets, s3, 900);
 
     private final UserId userId = new UserId(UUID.randomUUID());
 
     private final MockMvc mvc =
             MockMvcBuilders.standaloneSetup(
                             new AssetBundlesController(
-                                    createBundle, uploadAsset, finalizeBundle, getBundle))
+                                    createBundle,
+                                    uploadAsset,
+                                    finalizeBundle,
+                                    getBundle,
+                                    issueDownloadUrl))
                     .setControllerAdvice(new GlobalExceptionHandler())
                     .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                     .build();
@@ -77,5 +83,27 @@ class AssetBundlesControllerTest {
         mvc.perform(get("/api/v1/asset-bundles/" + unknownId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("BUNDLE_NOT_FOUND"));
+    }
+
+    @Test
+    void asset_download_url_returns_presigned_response() throws Exception {
+        UUID bid = UUID.randomUUID();
+        UUID aid = UUID.randomUUID();
+        bundles.insert(AssetBundle.newBundle(new BundleId(bid), userId, clock.now()));
+        assets.insert(
+                new Asset(
+                        new AssetId(aid),
+                        new BundleId(bid),
+                        "sessions/" + bid + "/diagram.png",
+                        "diagram.png",
+                        ContentType.IMAGE_PNG,
+                        512L,
+                        "a".repeat(64),
+                        clock.now()));
+
+        mvc.perform(get("/api/v1/asset-bundles/" + bid + "/assets/" + aid + "/download-url"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").isString())
+                .andExpect(jsonPath("$.expiresInSeconds").value(900));
     }
 }

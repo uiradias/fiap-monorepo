@@ -65,6 +65,12 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND, "Bundle not found", e.getMessage(), "BUNDLE_NOT_FOUND");
     }
 
+    @ExceptionHandler(AssetNotFoundException.class)
+    public ProblemDetail assetNotFound(AssetNotFoundException e) {
+        return ProblemDetailFactory.of(
+                HttpStatus.NOT_FOUND, "Asset not found", e.getMessage(), "ASSET_NOT_FOUND");
+    }
+
     @ExceptionHandler(SessionNotFoundException.class)
     public ProblemDetail sessionNotFound(SessionNotFoundException e) {
         return ProblemDetailFactory.of(

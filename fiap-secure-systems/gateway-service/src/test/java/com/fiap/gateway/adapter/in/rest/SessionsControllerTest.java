@@ -29,14 +29,17 @@ class SessionsControllerTest {
     private final InMemoryFakes.FakeOrchestrator orchestrator =
             new InMemoryFakes.FakeOrchestrator();
 
-    private final GetSessionService getSession = new GetSessionService(projections);
-    private final GetReportService getReport = new GetReportService(projections, orchestrator);
-    private final CancelSessionService cancel = new CancelSessionService(projections, orchestrator);
+    private final GetSessionService getSession = new GetSessionService(projections, orchestrator);
+    private final GetReportService getReport = new GetReportService(getSession, orchestrator);
+    private final CancelSessionService cancel = new CancelSessionService(getSession, orchestrator);
+    private final ListUserSessionsService listUserSessions =
+            new ListUserSessionsService(projections);
 
     private final UserId userId = new UserId(UUID.randomUUID());
 
     private final MockMvc mvc =
-            MockMvcBuilders.standaloneSetup(new SessionsController(getSession, getReport, cancel))
+            MockMvcBuilders.standaloneSetup(
+                            new SessionsController(getSession, getReport, cancel, listUserSessions))
                     .setControllerAdvice(new GlobalExceptionHandler())
                     .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                     .build();
@@ -52,6 +55,21 @@ class SessionsControllerTest {
     @AfterEach
     void clearAuth() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void list_sessions_returns_200() throws Exception {
+        SessionId sessionId = new SessionId(UUID.randomUUID());
+        ReportId reportId = new ReportId(UUID.randomUUID());
+        projections.upsert(
+                new SessionProjection(
+                        sessionId, userId, SessionState.REPORT_READY, clock.now(), null, reportId));
+
+        mvc.perform(get("/api/v1/sessions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(sessionId.value().toString()))
+                .andExpect(jsonPath("$[0].state").value("REPORT_READY"))
+                .andExpect(jsonPath("$[0].reportId").value(reportId.value().toString()));
     }
 
     @Test

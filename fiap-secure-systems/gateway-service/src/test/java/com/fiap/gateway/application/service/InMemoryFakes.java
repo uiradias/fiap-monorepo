@@ -132,6 +132,26 @@ public final class InMemoryFakes {
         public Optional<SessionProjection> findById(SessionId id) {
             return Optional.ofNullable(byId.get(id));
         }
+
+        @Override
+        public List<SessionSummary> listSummariesByUser(UserId userId, int limit) {
+            return byId.values().stream()
+                    .filter(p -> p.userId().equals(userId))
+                    .sorted(Comparator.comparing(SessionProjection::lastEventAt).reversed())
+                    .limit(limit)
+                    .map(
+                            p ->
+                                    new SessionSummary(
+                                            p.id(),
+                                            p.userId(),
+                                            p.state(),
+                                            0,
+                                            p.failureReason(),
+                                            p.lastEventAt(),
+                                            p.lastEventAt(),
+                                            p.reportIdOpt()))
+                    .toList();
+        }
     }
 
     public static final class FakeEventLog implements SessionEventLogRepositoryPort {
@@ -171,6 +191,17 @@ public final class InMemoryFakes {
             writes.put(key, sizeBytes);
             return key;
         }
+
+        @Override
+        public java.net.URI presignedGetUrl(String s3Key, java.time.Duration ttl) {
+            return java.net.URI.create(
+                    "http://presigned.fake/"
+                            + java.util.Base64.getUrlEncoder()
+                                    .withoutPadding()
+                                    .encodeToString(
+                                            s3Key.getBytes(
+                                                    java.nio.charset.StandardCharsets.UTF_8)));
+        }
     }
 
     public static final class FakeOrchestrator implements OrchestratorClientPort {
@@ -186,6 +217,26 @@ public final class InMemoryFakes {
         @Override
         public SessionProjection getSession(SessionId sid) {
             return sessions.get(sid);
+        }
+
+        @Override
+        public List<SessionSummary> listSessions(UserId userId, int limit) {
+            return sessions.values().stream()
+                    .filter(p -> p.userId().equals(userId))
+                    .sorted(Comparator.comparing(SessionProjection::lastEventAt).reversed())
+                    .limit(limit)
+                    .map(
+                            p ->
+                                    new SessionSummary(
+                                            p.id(),
+                                            p.userId(),
+                                            p.state(),
+                                            0,
+                                            p.failureReason(),
+                                            p.lastEventAt(),
+                                            p.lastEventAt(),
+                                            p.reportIdOpt()))
+                    .toList();
         }
 
         @Override

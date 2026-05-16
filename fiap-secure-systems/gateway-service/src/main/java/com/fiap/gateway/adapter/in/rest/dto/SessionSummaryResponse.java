@@ -1,26 +1,21 @@
-package com.fiap.orchestrator.adapter.in.rest.dto;
+package com.fiap.gateway.adapter.in.rest.dto;
 
 import java.time.Instant;
 import java.util.UUID;
 
-import com.fiap.orchestrator.domain.model.Session;
+import com.fiap.gateway.domain.model.SessionSummary;
 
-public record SessionResponse(
-        UUID sessionId,
+public record SessionSummaryResponse(
+        UUID id,
         UUID userId,
         String state,
         int assetCount,
         String failureReason,
         Instant createdAt,
         Instant updatedAt,
-        long version,
         UUID reportId) {
-    public static SessionResponse from(Session s) {
-        return from(s, null);
-    }
-
-    public static SessionResponse from(Session s, UUID reportId) {
-        return new SessionResponse(
+    public static SessionSummaryResponse of(SessionSummary s) {
+        return new SessionSummaryResponse(
                 s.id().value(),
                 s.userId().value(),
                 s.state().name(),
@@ -28,7 +23,6 @@ public record SessionResponse(
                 s.failureReason(),
                 s.createdAt(),
                 s.updatedAt(),
-                s.version(),
-                reportId);
+                s.reportId().map(r -> r.value()).orElse(null));
     }
 }

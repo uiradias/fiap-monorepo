@@ -13,6 +13,7 @@ import com.fiap.orchestrator.domain.port.in.HandleAnalysisFailedUseCase;
 import com.fiap.orchestrator.domain.port.out.OutboxPort;
 import com.fiap.orchestrator.domain.port.out.ProcessedResultsPort;
 import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
+import com.fiap.orchestrator.infrastructure.observability.SessionMetrics;
 
 @Service
 public class HandleAnalysisFailedService implements HandleAnalysisFailedUseCase {
@@ -21,16 +22,19 @@ public class HandleAnalysisFailedService implements HandleAnalysisFailedUseCase 
     private final OutboxPort outbox;
     private final ProcessedResultsPort dedup;
     private final Clock clock;
+    private final SessionMetrics metrics;
 
     public HandleAnalysisFailedService(
             SessionRepositoryPort sessions,
             OutboxPort outbox,
             ProcessedResultsPort dedup,
-            Clock clock) {
+            Clock clock,
+            SessionMetrics metrics) {
         this.sessions = sessions;
         this.outbox = outbox;
         this.dedup = dedup;
         this.clock = clock;
+        this.metrics = metrics;
     }
 
     @Override
@@ -47,6 +51,7 @@ public class HandleAnalysisFailedService implements HandleAnalysisFailedUseCase 
         AnalysisFailure failure = outcome.failureOpt().orElseThrow();
         Session moved = s.withFailure(SessionState.FAILED, failure.code(), now);
         sessions.save(moved);
+        metrics.recordTransition(moved.state(), failure.code());
         SessionEvent ev =
                 SessionEvent.transition(
                         new EventId(UUID.randomUUID()),

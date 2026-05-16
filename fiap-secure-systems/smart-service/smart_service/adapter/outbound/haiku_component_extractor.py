@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+import time
 from typing import Any
 
 import anthropic
@@ -14,6 +15,7 @@ from smart_service.domain.graph import (
     GraphEdge,
 )
 from smart_service.domain.ports import AnalysisModelError
+from smart_service.infrastructure.metrics import record_anthropic_call_duration_ms
 
 _SYSTEM = """You analyse architecture diagrams. Call the submit_component_graph
 tool with EXACTLY what is visible. Use canonical kinds from the enum — never
@@ -82,6 +84,8 @@ class HaikuComponentExtractor:
                 "source": {"type": "base64", "media_type": media_type, "data": b64},
             })
 
+        started = time.monotonic()
+        status = "ok"
         try:
             resp = self._client.messages.create(  # type: ignore[call-overload]
                 model=self._model,
@@ -93,7 +97,12 @@ class HaikuComponentExtractor:
                 messages=[{"role": "user", "content": blocks}],
             )
         except anthropic.APIError as e:
+            status = "error"
             raise AnalysisModelError("EXTRACTOR_API_ERROR", str(e)) from e
+        finally:
+            record_anthropic_call_duration_ms(
+                (time.monotonic() - started) * 1000, self._model, status
+            )
 
         tool_call = next(
             (b for b in resp.content if getattr(b, "type", None) == "tool_use"),

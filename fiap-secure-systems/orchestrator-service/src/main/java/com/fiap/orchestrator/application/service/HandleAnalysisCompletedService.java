@@ -16,6 +16,9 @@ import com.fiap.orchestrator.domain.port.out.ReportRepositoryPort;
 import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
 import com.fiap.orchestrator.domain.statemachine.SessionStateMachine;
 import com.fiap.orchestrator.domain.statemachine.Transition;
+import com.fiap.orchestrator.infrastructure.observability.SessionMetrics;
+
+import java.time.Duration;
 
 @Service
 public class HandleAnalysisCompletedService implements HandleAnalysisCompletedUseCase {
@@ -25,6 +28,7 @@ public class HandleAnalysisCompletedService implements HandleAnalysisCompletedUs
     private final OutboxPort outbox;
     private final ProcessedResultsPort dedup;
     private final Clock clock;
+    private final SessionMetrics metrics;
     private final SessionStateMachine sm = new SessionStateMachine();
 
     public HandleAnalysisCompletedService(
@@ -32,12 +36,14 @@ public class HandleAnalysisCompletedService implements HandleAnalysisCompletedUs
             ReportRepositoryPort reports,
             OutboxPort outbox,
             ProcessedResultsPort dedup,
-            Clock clock) {
+            Clock clock,
+            SessionMetrics metrics) {
         this.sessions = sessions;
         this.reports = reports;
         this.outbox = outbox;
         this.dedup = dedup;
         this.clock = clock;
+        this.metrics = metrics;
     }
 
     @Override
@@ -54,6 +60,7 @@ public class HandleAnalysisCompletedService implements HandleAnalysisCompletedUs
         Transition tA = sm.next(s.state(), SessionStateMachine.Trigger.RECEIVE_RESULT_SUCCEEDED);
         Session sA = s.withState(tA.to(), now);
         sessions.save(sA);
+        metrics.recordTransition(sA.state(), null);
         SessionEvent evA =
                 SessionEvent.transition(
                         new EventId(UUID.randomUUID()),
@@ -91,6 +98,8 @@ public class HandleAnalysisCompletedService implements HandleAnalysisCompletedUs
         Transition tB = sm.next(sA.state(), SessionStateMachine.Trigger.REPORT_PERSISTED);
         Session sB = sA.withState(tB.to(), now);
         sessions.save(sB);
+        metrics.recordTransition(sB.state(), null);
+        metrics.recordSessionDuration(Duration.between(s.createdAt(), now));
         SessionEvent evB =
                 SessionEvent.transition(
                         new EventId(UUID.randomUUID()),

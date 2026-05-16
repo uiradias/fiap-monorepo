@@ -15,4 +15,6 @@ public interface OutboxJpaRepository extends JpaRepository<OutboxMessageEntity, 
             ORDER BY m.createdAt ASC
             """)
     List<OutboxMessageEntity> findUnpublished(Pageable pageable);
+
+    long countByPublishedAtIsNull();
 }

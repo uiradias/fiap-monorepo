@@ -39,7 +39,7 @@
       "gridPos": { "x": 4, "y": 0, "w": 10, "h": 8 },
       "targets": [
         {
-          "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{service=\"orchestrator-service\"}[1m]))",
+          "expr": "sum by (uri, status) (rate(http_server_requests_milliseconds_count{job=\"orchestrator-service\"}[1m]))",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "legendFormat": "{{uri}} ({{status}})"
         }
@@ -52,7 +52,7 @@
       "gridPos": { "x": 14, "y": 0, "w": 10, "h": 8 },
       "targets": [
         {
-          "expr": "fss_outbox_unpublished{service=\"orchestrator-service\"}",
+          "expr": "fss_outbox_unpublished{job=\"orchestrator-service\"}",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "legendFormat": "unpublished rows"
         }
@@ -65,12 +65,12 @@
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{service=\"orchestrator-service\",area=\"heap\"} / 1024 / 1024",
+          "expr": "sum(jvm_memory_used_bytes{job=\"orchestrator-service\",area=\"heap\"}) / 1024 / 1024",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "legendFormat": "used"
         },
         {
-          "expr": "jvm_memory_max_bytes{service=\"orchestrator-service\",area=\"heap\"} / 1024 / 1024",
+          "expr": "sum(jvm_memory_max_bytes{job=\"orchestrator-service\",area=\"heap\"}) / 1024 / 1024",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "legendFormat": "max"
         }

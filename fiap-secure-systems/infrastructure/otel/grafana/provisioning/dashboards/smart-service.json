@@ -39,9 +39,9 @@
       "gridPos": { "x": 4, "y": 0, "w": 10, "h": 8 },
       "targets": [
         {
-          "expr": "sum by (status) (rate(http_server_requests_seconds_count{service=\"smart-service\"}[1m]))",
+          "expr": "sum by (http_status_code) (rate(http_server_duration_milliseconds_count{job=\"smart-service\"}[1m]))",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "legendFormat": "{{status}}"
+          "legendFormat": "{{http_status_code}}"
         }
       ]
     },

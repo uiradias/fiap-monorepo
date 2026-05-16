@@ -16,6 +16,9 @@ import com.fiap.gateway.domain.model.SessionEventLogEntry;
 import com.fiap.gateway.domain.model.SessionId;
 import com.fiap.gateway.domain.port.out.SessionEventBroadcastPort;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+
 public class InProcessSessionEventBroadcaster implements SessionEventBroadcastPort {
 
     private static final Logger log =
@@ -25,8 +28,14 @@ public class InProcessSessionEventBroadcaster implements SessionEventBroadcastPo
             new ConcurrentHashMap<>();
     private final ObjectMapper mapper;
 
-    public InProcessSessionEventBroadcaster(ObjectMapper mapper) {
+    public InProcessSessionEventBroadcaster(ObjectMapper mapper, MeterRegistry meterRegistry) {
         this.mapper = mapper;
+        Gauge.builder(
+                        "fss_ws_subscribers",
+                        subscribers,
+                        m -> m.values().stream().mapToInt(List::size).sum())
+                .description("Open WebSocket subscriber count across all sessions")
+                .register(meterRegistry);
     }
 
     public void subscribe(SessionId sid, WebSocketSession ws) {

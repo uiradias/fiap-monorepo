@@ -19,6 +19,7 @@ import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
 import com.fiap.orchestrator.domain.statemachine.SessionStateMachine;
 import com.fiap.orchestrator.domain.statemachine.Transition;
 import com.fiap.orchestrator.infrastructure.config.OutboxRelayProperties;
+import com.fiap.orchestrator.infrastructure.observability.SessionMetrics;
 
 @Component
 public class OutboxRelay {
@@ -31,6 +32,7 @@ public class OutboxRelay {
     private final SessionRepositoryPort sessions;
     private final Clock clock;
     private final OutboxRelayProperties props;
+    private final SessionMetrics metrics;
     private final SessionStateMachine sm = new SessionStateMachine();
 
     public OutboxRelay(
@@ -39,13 +41,15 @@ public class OutboxRelay {
             SnsSessionEventPublisher eventsPublisher,
             SessionRepositoryPort sessions,
             Clock clock,
-            OutboxRelayProperties props) {
+            OutboxRelayProperties props,
+            SessionMetrics metrics) {
         this.outbox = outbox;
         this.jobsPublisher = jobsPublisher;
         this.eventsPublisher = eventsPublisher;
         this.sessions = sessions;
         this.clock = clock;
         this.props = props;
+        this.metrics = metrics;
     }
 
     @Scheduled(fixedDelayString = "${orchestrator.outbox.relay-interval-ms:500}")
@@ -98,6 +102,7 @@ public class OutboxRelay {
         Transition t = sm.next(s.state(), SessionStateMachine.Trigger.OUTBOX_JOB_PUBLISHED);
         Session moved = s.withState(t.to(), now);
         sessions.save(moved);
+        metrics.recordTransition(moved.state(), null);
         SessionEvent ev =
                 SessionEvent.transition(
                         new EventId(UUID.randomUUID()),

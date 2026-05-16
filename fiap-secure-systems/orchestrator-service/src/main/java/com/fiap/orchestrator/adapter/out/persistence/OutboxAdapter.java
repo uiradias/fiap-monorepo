@@ -71,4 +71,9 @@ public class OutboxAdapter implements OutboxPort {
         e.recordFailure(errorMessage);
         outbox.save(e);
     }
+
+    @Override
+    public long countUnpublished() {
+        return outbox.countByPublishedAtIsNull();
+    }
 }

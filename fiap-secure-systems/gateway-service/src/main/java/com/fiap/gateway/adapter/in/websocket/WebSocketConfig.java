@@ -12,6 +12,8 @@ import com.fiap.gateway.domain.port.out.SessionEventLogRepositoryPort;
 import com.fiap.gateway.domain.port.out.SessionProjectionRepositoryPort;
 import com.fiap.gateway.domain.port.out.TokenIssuerPort;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
@@ -20,6 +22,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     private final SessionProjectionRepositoryPort projections;
     private final SessionEventLogRepositoryPort eventLog;
     private final ObjectMapper mapper;
+    private final MeterRegistry meterRegistry;
     private final int snapshotEvents;
 
     public WebSocketConfig(
@@ -27,17 +30,19 @@ public class WebSocketConfig implements WebSocketConfigurer {
             SessionProjectionRepositoryPort projections,
             SessionEventLogRepositoryPort eventLog,
             ObjectMapper mapper,
+            MeterRegistry meterRegistry,
             @Value("${gateway.websocket.snapshot-events:50}") int snapshotEvents) {
         this.tokens = tokens;
         this.projections = projections;
         this.eventLog = eventLog;
         this.mapper = mapper;
+        this.meterRegistry = meterRegistry;
         this.snapshotEvents = snapshotEvents;
     }
 
     @Bean
     public InProcessSessionEventBroadcaster sessionEventBroadcaster() {
-        return new InProcessSessionEventBroadcaster(mapper);
+        return new InProcessSessionEventBroadcaster(mapper, meterRegistry);
     }
 
     @Bean

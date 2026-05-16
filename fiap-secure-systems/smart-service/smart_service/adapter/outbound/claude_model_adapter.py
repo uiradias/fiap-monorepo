@@ -15,6 +15,7 @@ from smart_service.adapter.schema.validation import (
     SchemaValidationError,
     validate_analysis_report,
 )
+from smart_service.infrastructure.metrics import record_anthropic_call_duration_ms
 from smart_service.domain.model import (
     AnalysisJob,
     Component,
@@ -108,6 +109,7 @@ class ClaudeModelAdapter:
                 })
 
         started = time.monotonic()
+        status = "ok"
         try:
             resp = self._client.messages.create(
                 model=self._model,
@@ -123,9 +125,15 @@ class ClaudeModelAdapter:
             )
         except anthropic.APIStatusError as e:
             code = "MODEL_RATE_LIMITED" if e.status_code == 429 else "MODEL_API_ERROR"
+            status = "rate_limited" if e.status_code == 429 else "error"
             raise AnalysisModelError(code, str(e)) from e
         except anthropic.APIError as e:
+            status = "error"
             raise AnalysisModelError("MODEL_API_ERROR", str(e)) from e
+        finally:
+            record_anthropic_call_duration_ms(
+                (time.monotonic() - started) * 1000, self._model, status
+            )
 
         elapsed_ms = int((time.monotonic() - started) * 1000)
         text = _extract_text(resp)

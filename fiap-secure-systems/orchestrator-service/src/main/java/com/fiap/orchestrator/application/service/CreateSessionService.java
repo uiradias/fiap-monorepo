@@ -10,6 +10,7 @@ import com.fiap.orchestrator.domain.model.*;
 import com.fiap.orchestrator.domain.port.in.CreateSessionUseCase;
 import com.fiap.orchestrator.domain.port.out.OutboxPort;
 import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
+import com.fiap.orchestrator.infrastructure.observability.SessionMetrics;
 
 @Service
 public class CreateSessionService implements CreateSessionUseCase {
@@ -17,11 +18,17 @@ public class CreateSessionService implements CreateSessionUseCase {
     private final SessionRepositoryPort sessions;
     private final OutboxPort outbox;
     private final Clock clock;
+    private final SessionMetrics metrics;
 
-    public CreateSessionService(SessionRepositoryPort sessions, OutboxPort outbox, Clock clock) {
+    public CreateSessionService(
+            SessionRepositoryPort sessions,
+            OutboxPort outbox,
+            Clock clock,
+            SessionMetrics metrics) {
         this.sessions = sessions;
         this.outbox = outbox;
         this.clock = clock;
+        this.metrics = metrics;
     }
 
     @Override
@@ -33,6 +40,7 @@ public class CreateSessionService implements CreateSessionUseCase {
         Instant now = clock.now();
         Session created = Session.newSession(sessionId, userId, assets.size(), now);
         sessions.insertIfAbsent(created);
+        metrics.recordTransition(created.state(), null);
 
         EventId evId = new EventId(UUID.randomUUID());
         SessionEvent ev =

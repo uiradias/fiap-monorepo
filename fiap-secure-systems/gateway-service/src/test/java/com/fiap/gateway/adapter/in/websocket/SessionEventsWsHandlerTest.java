@@ -17,11 +17,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.gateway.application.service.InMemoryFakes;
 import com.fiap.gateway.domain.model.*;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 class SessionEventsWsHandlerTest {
 
     private final InMemoryFakes.FakeEventLog log = new InMemoryFakes.FakeEventLog();
     private final InMemoryFakes.FakeProjections proj = new InMemoryFakes.FakeProjections();
     private final ObjectMapper mapper = new ObjectMapper();
+    private final MeterRegistry meterRegistry = new SimpleMeterRegistry();
 
     @Test
     void on_open_sends_snapshot_then_subscribes() throws Exception {
@@ -41,7 +45,8 @@ class SessionEventsWsHandlerTest {
                         Instant.now(),
                         Instant.now()));
 
-        InProcessSessionEventBroadcaster bcast = new InProcessSessionEventBroadcaster(mapper);
+        InProcessSessionEventBroadcaster bcast =
+                new InProcessSessionEventBroadcaster(mapper, meterRegistry);
         SessionEventsWsHandler handler = new SessionEventsWsHandler(bcast, log, proj, mapper, 50);
 
         WebSocketSession ws = mock(WebSocketSession.class);
@@ -61,7 +66,8 @@ class SessionEventsWsHandlerTest {
     void broadcasts_event_to_subscribed_sockets() throws Exception {
         SessionId sid = new SessionId(UUID.randomUUID());
         UserId uid = new UserId(UUID.randomUUID());
-        InProcessSessionEventBroadcaster bcast = new InProcessSessionEventBroadcaster(mapper);
+        InProcessSessionEventBroadcaster bcast =
+                new InProcessSessionEventBroadcaster(mapper, meterRegistry);
 
         WebSocketSession ws = mock(WebSocketSession.class);
         when(ws.isOpen()).thenReturn(true);

@@ -10,6 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.fiap.orchestrator.domain.model.*;
+import com.fiap.orchestrator.infrastructure.observability.SessionMetrics;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 class HandleAnalysisCompletedServiceTest {
 
@@ -18,11 +21,12 @@ class HandleAnalysisCompletedServiceTest {
     InMemoryFakes.OutboxFake outbox = new InMemoryFakes.OutboxFake();
     InMemoryFakes.ProcessedResultsFake dedup = new InMemoryFakes.ProcessedResultsFake();
     InMemoryFakes.TestClock clock = new InMemoryFakes.TestClock();
+    SessionMetrics metrics = new SessionMetrics(new SimpleMeterRegistry());
     HandleAnalysisCompletedService svc;
 
     @BeforeEach
     void setup() {
-        svc = new HandleAnalysisCompletedService(repo, reports, outbox, dedup, clock);
+        svc = new HandleAnalysisCompletedService(repo, reports, outbox, dedup, clock, metrics);
     }
 
     private static Map<String, Object> reportPayload(String summary) {

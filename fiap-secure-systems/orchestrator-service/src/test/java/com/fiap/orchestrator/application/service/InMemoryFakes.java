@@ -89,6 +89,11 @@ public class InMemoryFakes {
 
         @Override
         public void recordFailure(UUID id, String errorMessage) {}
+
+        @Override
+        public long countUnpublished() {
+            return rows.size();
+        }
     }
 
     public static class ProcessedResultsFake implements ProcessedResultsPort {

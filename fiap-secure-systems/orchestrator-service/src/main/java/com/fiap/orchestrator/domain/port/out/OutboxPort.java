@@ -36,4 +36,6 @@ public interface OutboxPort {
     void markPublished(UUID id, Instant now);
 
     void recordFailure(UUID id, String errorMessage);
+
+    long countUnpublished();
 }

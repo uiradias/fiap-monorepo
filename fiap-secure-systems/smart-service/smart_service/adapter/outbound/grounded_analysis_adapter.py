@@ -15,6 +15,7 @@ import anthropic
 import structlog
 
 from smart_service.domain.citation import Citation
+from smart_service.infrastructure.metrics import record_anthropic_call_duration_ms  # noqa: I001
 from smart_service.domain.corpus import PatternMatch
 from smart_service.domain.graph import CanonicalKind, ComponentGraph
 from smart_service.domain.model import (
@@ -274,6 +275,8 @@ class GroundedAnalysisAdapter:
             f"## Retrieved patterns (cite by doc_id + chunk_index)\n{retrieved_block}\n\n"
             f"Submit submit_analysis_report now."
         )
+        started = time.monotonic()
+        status = "ok"
         try:
             resp = self._client.messages.create(
                 model=self._model,
@@ -286,9 +289,15 @@ class GroundedAnalysisAdapter:
             )
         except anthropic.APIStatusError as e:
             code = "MODEL_RATE_LIMITED" if e.status_code == 429 else "MODEL_API_ERROR"
+            status = "rate_limited" if e.status_code == 429 else "error"
             raise AnalysisModelError(code, str(e)) from e
         except anthropic.APIError as e:
+            status = "error"
             raise AnalysisModelError("MODEL_API_ERROR", str(e)) from e
+        finally:
+            record_anthropic_call_duration_ms(
+                (time.monotonic() - started) * 1000, self._model, status
+            )
 
         tool_call = next(
             (b for b in resp.content if getattr(b, "type", None) == "tool_use"),

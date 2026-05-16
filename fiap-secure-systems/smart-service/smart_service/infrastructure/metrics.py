@@ -12,7 +12,7 @@ def _histogram() -> Histogram:
     if _anthropic_call_duration_ms is None:
         meter = metrics.get_meter("smart-service.app", "0.1.0")
         _anthropic_call_duration_ms = meter.create_histogram(
-            "anthropic_call_duration_ms",
+            "anthropic_call_duration",
             unit="ms",
             description="Wall-clock latency of Anthropic messages.create calls",
             explicit_bucket_boundaries_advisory=[

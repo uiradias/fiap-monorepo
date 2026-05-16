@@ -52,9 +52,9 @@
       "gridPos": { "x": 14, "y": 0, "w": 10, "h": 8 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(anthropic_call_duration_ms_bucket[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(anthropic_call_duration_milliseconds_bucket[5m])))",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "legendFormat": "p95"
+          "legendFormat": "p95 {{model}}"
         }
       ]
     }

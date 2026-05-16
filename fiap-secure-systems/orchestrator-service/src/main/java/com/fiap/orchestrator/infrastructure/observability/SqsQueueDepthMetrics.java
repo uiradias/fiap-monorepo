@@ -58,9 +58,7 @@ public class SqsQueueDepthMetrics {
                                         .attributeNames(
                                                 QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES)
                                         .build());
-                String v =
-                        resp.attributes()
-                                .get(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES);
+                String v = resp.attributes().get(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES);
                 depths.get(e.getKey()).set(v == null ? 0L : Long.parseLong(v));
             } catch (Exception ex) {
                 log.debug("queue depth poll failed for {}: {}", e.getKey(), ex.getMessage());

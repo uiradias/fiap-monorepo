@@ -13,7 +13,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
       "targets": [
         {
-          "expr": "up{job=\"orchestrator-service\"}",
+          "expr": "(count(application_started_time_milliseconds{job=\"orchestrator-service\"}) > bool 0) or vector(0)",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
       ],

@@ -1,5 +1,6 @@
 package com.fiap.orchestrator.application.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -17,8 +18,6 @@ import com.fiap.orchestrator.domain.port.out.SessionRepositoryPort;
 import com.fiap.orchestrator.domain.statemachine.SessionStateMachine;
 import com.fiap.orchestrator.domain.statemachine.Transition;
 import com.fiap.orchestrator.infrastructure.observability.SessionMetrics;
-
-import java.time.Duration;
 
 @Service
 public class HandleAnalysisCompletedService implements HandleAnalysisCompletedUseCase {

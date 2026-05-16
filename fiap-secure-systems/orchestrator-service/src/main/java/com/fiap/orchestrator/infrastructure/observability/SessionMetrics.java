@@ -20,8 +20,7 @@ public class SessionMetrics {
         this.registry = registry;
         this.sessionDuration =
                 Timer.builder("fss_session_duration")
-                        .description(
-                                "End-to-end session duration from creation to terminal state")
+                        .description("End-to-end session duration from creation to terminal state")
                         .publishPercentileHistogram()
                         .register(registry);
     }

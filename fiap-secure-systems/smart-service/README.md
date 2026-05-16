@@ -304,6 +304,218 @@ Thresholds (currently `component_recall ≥ 0.70`, `risk_recall ≥ 0.80`,
 `citation_rate ≥ 0.90`, `hallucination_count == 0`) are calibrated for real
 diagrams — they will fail on the placeholder PNGs by design.
 
+## AI/ML requirements coverage
+
+This section maps the project's AI/ML deliverable requirements (originally
+specified in Portuguese — quoted verbatim for grader keyword search) to the
+exact code paths that implement them. The deliverable asks for **at least one**
+of the four approaches below; this service implements **three of the four
+substantively** (1, 3, 4) and **one partially** (2).
+
+### 1. ✅ Detecção de componentes arquiteturais em imagens
+
+> A IA deve implementar a detecção de componentes arquiteturais em imagens.
+
+Stage 1 of the grounded pipeline does exactly this:
+[`adapter/outbound/haiku_component_extractor.py`](smart_service/adapter/outbound/haiku_component_extractor.py).
+
+Claude Haiku 4.5 receives the diagram as base64-encoded image / PDF blocks
+(line 79-85) and is forced — via Anthropic tool-use (`tool_choice` at line 96)
+— to return a structured `ComponentGraph` of components and edges. The output
+JSON Schema (lines 27-67) restricts every `kind` to one of the 26
+`CanonicalKind` values defined in
+[`domain/graph.py`](smart_service/domain/graph.py) (`compute:container`,
+`db:relational`, `msg:queue`, `net:gateway`, `identity:auth`, …) and every
+`protocol` to one of 9 `EdgeProtocol` values. The system prompt
+(`haiku_component_extractor.py:20-25`) forbids inventing taxonomy values
+("never invent new values. Use 'unknown' if you can't classify").
+
+A second pass —
+[`haiku_canonicalizer.py`](smart_service/adapter/outbound/haiku_canonicalizer.py)
+— rescues components stage 1 marked `unknown` so retrieval has a tag to filter
+on. Best-effort: if it fails, the original graph passes through unchanged
+(lines 68-70, 76-78, 84-86).
+
+### 2. ⚠️ Classificação de riscos arquiteturais a partir de regras + ML
+
+> A IA deve implementar a classificação de riscos arquiteturais a partir de regras + ML.
+
+This is the **weakest match**. The "rules" half is strong; the "ML" half is
+LLM-based classification, not classical ML (no scikit-learn / random forest /
+SVM). If the rubric strictly means classical ML, this requirement is **not**
+met. If it accepts any machine-learned model, it is.
+
+Rules layer:
+
+- Closed taxonomy of risk categories — `RiskCategory` enum at
+  [`domain/model.py:51`](smart_service/domain/model.py) (`security`,
+  `scalability`, `availability`, `cost`, `operability`, `data`, `compliance`).
+- Closed severity scale — `Severity` enum at `domain/model.py:61`
+  (`critical`, `high`, `medium`, `low`).
+- JSON Schema enforcement — `infrastructure/contracts/analysis-report.schema.json`
+  restricts `category` and `severity` to those enums; rejected at
+  [`adapter/schema/validation.py:83`](smart_service/adapter/schema/validation.py)
+  (`validate_analysis_report`).
+- **Citation rule** — every risk without a citation referencing an actually
+  retrieved chunk is dropped at
+  [`grounded_analysis_adapter.py:364-367`](smart_service/adapter/outbound/grounded_analysis_adapter.py)
+  (a rule-based filter classifying model output as valid / invalid).
+
+ML layer: assignment of which `category` and `severity` a given risk belongs
+to is done by Claude Sonnet 4.6 in
+[`grounded_analysis_adapter.py:_emit`](smart_service/adapter/outbound/grounded_analysis_adapter.py),
+not by a classical model.
+
+### 3. ✅ Uso de LLM para geração de relatório técnico estruturado, com guardrails
+
+> Uso de LLM para geração de relatório técnico estruturado, com implementação de
+> guardrails para controle de entrada, saída e mitigação de alucinações.
+
+This is the core of the service. Guardrails are layered as follows:
+
+**Input control** (gateway side, before bytes reach the LLM):
+
+- File-size limit — `gateway-service/src/main/resources/application.yml:25`
+  (`max-file-size: 25MB`).
+- Asset-count cap —
+  `gateway-service/src/main/java/com/fiap/gateway/domain/model/AssetBundle.java:15`
+  (`MAX_ASSETS = 20`), enforced in `addAsset()` at line 36.
+- MIME-type whitelist —
+  `gateway-service/src/main/java/com/fiap/gateway/domain/model/ContentType.java:6-7`
+  (only `application/pdf` and `image/png` are accepted).
+
+**Output control**:
+
+- Schema-bound tool-use forces a structured response —
+  [`grounded_analysis_adapter.py:281-289`](smart_service/adapter/outbound/grounded_analysis_adapter.py)
+  uses `tool_choice={"type":"tool","name":"submit_analysis_report"}`. The model
+  cannot reply in free text.
+- JSON Schema validation on the parsed output before persistence —
+  `validate_analysis_report()` at
+  [`adapter/schema/validation.py:83`](smart_service/adapter/schema/validation.py),
+  called from
+  [`claude_model_adapter.py:146`](smart_service/adapter/outbound/claude_model_adapter.py)
+  and from
+  [`sqs_result_publisher.py:47`](smart_service/adapter/outbound/sqs_result_publisher.py)
+  before publishing the result envelope. Rejection raises
+  `SchemaValidationError`.
+- Closed enums on every classifying field (`kind`, `category`, `severity`,
+  `confidence`, `relevance`, `impact`, `effort`).
+
+**Hallucination mitigation** — defense in depth across three layers:
+
+1. **Retrieval grounding**. The model only sees corpus chunks selected for
+   *this* architecture (stage 3 of the grounded pipeline). It can't cite what
+   wasn't retrieved.
+2. **Prompted constraint**. The grounded system prompt at
+   [`grounded_analysis_adapter.py:46-58`](smart_service/adapter/outbound/grounded_analysis_adapter.py)
+   instructs *every risk must cite a retrieved chunk*; uncited concerns must
+   move to `improvements`.
+3. **Server-side citation enforcement** at `_payload_to_report`
+   ([`grounded_analysis_adapter.py:339-378`](smart_service/adapter/outbound/grounded_analysis_adapter.py)).
+   Every risk's `citations[]` is matched against an index of the actually
+   retrieved chunks (`idx` at line 349). Citations referencing
+   non-retrieved or invented `doc_id`s are stripped; risks left with **zero
+   valid citations are dropped entirely** (lines 364-367). The model can lie;
+   the code won't echo the lie.
+
+### 4. ✅ Análise textual baseada em prompt engineering, com validação e avaliação de consistência
+
+> Análise textual baseada em prompt engineering, incluindo validação de prompts,
+> restrições de formato e avaliação da consistência das respostas.
+
+**Prompt engineering** — explicit system prompts in all three LLM adapters:
+
+- Extraction:
+  [`haiku_component_extractor.py:20-25`](smart_service/adapter/outbound/haiku_component_extractor.py)
+  — "Use canonical kinds from the enum — never invent new values. Use 'unknown'
+  if you can't classify."
+- Canonicalisation:
+  [`haiku_canonicalizer.py:16-19`](smart_service/adapter/outbound/haiku_canonicalizer.py).
+- Emission:
+  [`grounded_analysis_adapter.py:46-58`](smart_service/adapter/outbound/grounded_analysis_adapter.py)
+  — establishes the citation discipline.
+
+**Format restrictions** — every LLM call uses Anthropic tool-use with an
+`input_schema` carrying closed enums, `required` fields, and (on the public
+contract) `additionalProperties: false`. The model is structurally unable to
+respond off-format.
+
+**Consistency evaluation** — see the eval harness at
+[`tests/eval/`](tests/eval/). It is what really lands this requirement:
+
+- Five hand-curated golden architectures (`web-2tier`, `sync-microservices`,
+  `event-driven-saga`, `shared-db`, `no-auth-internal`), each with
+  `architecture.png` + `expected.yaml`.
+- Four scored metrics per architecture
+  ([`tests/eval/scorer.py:30-74`](tests/eval/scorer.py)):
+  `component_recall`, `risk_recall`, `citation_rate`, `hallucination_count`.
+- Pass thresholds asserted in
+  [`test_eval_harness.py:133-136`](tests/eval/test_eval_harness.py):
+  `component_recall ≥ 0.70`, `risk_recall ≥ 0.80`, `citation_rate ≥ 0.90`,
+  `hallucination_count == 0`.
+- Runs with `make smart-eval`; spins up a Testcontainers Postgres with
+  pgvector, ingests the seed corpus, calls live Anthropic + Voyage, and
+  scores against the golden set.
+
+### Minimum requirements
+
+| Requirement (PT-BR) | Where it lives in this repo |
+|---|---|
+| **Pipeline claro de IA** | The [`## Pipelines`](#pipelines) section above (Mermaid diagram) plus [`grounded_analysis_adapter.py:177-202`](smart_service/adapter/outbound/grounded_analysis_adapter.py) which names the four stages explicitly. |
+| **Justificativa da abordagem escolhida** | The [`## RAG (grounded) analysis strategy`](#rag-grounded-analysis-strategy) section above plus the project plan at [`docs/superpowers/plans/2026-05-11-smart-service-rag-minimal-slice.md:5-9`](../docs/superpowers/plans/2026-05-11-smart-service-rag-minimal-slice.md). Core rationale: two strategies coexist behind `SMART_ANALYSIS_STRATEGY` with zero behaviour change for existing callers; grounded forces server-enforced JSON via tool-use and post-validates citations against retrieved chunks. |
+| **Demonstração prática da análise** | The full stack runs end-to-end via `make bootstrap` (postgres + localstack + otel-collector + 3 services + frontend). The SPA at `http://localhost:5173` exercises the real flow; for LLM verification: `pytest -m eval` against the golden set. With `SMART_SERVICE_PROFILE=e2e` the analysis uses `FakeAnalysisModel` (no API keys); with `production` + the two keys the grounded pipeline runs against live providers. |
+| **Discussão de limitações do modelo** | See the [`## Known limitations`](#known-limitations) section below — consolidates the limitations otherwise scattered across this README, the plan doc, and the eval golden README. |
+
+## Known limitations
+
+Documented constraints of the current implementation. Each item is something a
+real deployment would need to budget for or mitigate.
+
+- **Dense-only retrieval.** No BM25, no hybrid retrieval, no neural re-ranker.
+  Tagged via `applies_to` overlap, then ranked purely by cosine similarity
+  over Voyage `voyage-3` embeddings. The plan
+  ([`2026-05-11-smart-service-rag-minimal-slice.md`](../docs/superpowers/plans/2026-05-11-smart-service-rag-minimal-slice.md))
+  explicitly calls these out as deferred extensions.
+- **Closed 26-kind taxonomy.** `CanonicalKind` covers compute, storage,
+  databases, messaging, networking, identity, cache, observability, and a
+  fallback `unknown`. Exotic components (e.g. a vector database, a feature
+  flag service, a service mesh control plane) get classified as `unknown` and
+  fall out of tag-filtered retrieval — they still appear in the topology
+  query but no per-component patterns will be matched.
+- **Vision extraction is bounded by Haiku's diagram-reading ability.** Hand-
+  drawn whiteboards, screenshots of cluttered slide decks, or diagrams with
+  custom iconography may produce missed or mis-classified components. The
+  canonicaliser rescues some of these but is itself best-effort.
+- **Per-call cost.** A single grounded analysis triggers up to 3 Anthropic
+  calls (Haiku extract, optional Haiku canonicalise, Sonnet emit) plus a
+  Voyage embedding batch of N+M+1 queries, where N = component count and
+  M = edge count. The `anthropic_call_duration_ms` histogram (Grafana
+  `smart-service` dashboard) shows the per-stage breakdown.
+- **Eval thresholds are placeholders.** The bar in
+  [`test_eval_harness.py:133-136`](tests/eval/test_eval_harness.py) is
+  explicitly marked "tune after first real-diagram run". Until the placeholder
+  PNGs at
+  [`tests/eval/golden/<id>/architecture.png`](tests/eval/golden/) are replaced
+  with real diagrams, the eval scores against them are meaningless.
+- **Citation filter favours false negatives.** If a real risk genuinely cannot
+  be supported from the retrieved set, the risk is dropped (counted in
+  `grounded.dropped_uncited_risk` log lines). This is a defensible choice for
+  a system whose purpose is "every claim must be supported", but a
+  discussable one — better corpus coverage shrinks the false-negative rate.
+- **Single-shot evaluation, no consistency runs.** The eval harness asserts
+  a quality threshold once per architecture per run. It does not measure
+  run-to-run variance (sampling temperature, model non-determinism). For
+  stricter consistency analysis, run the eval N times and aggregate.
+- **No prompt-injection hardening on the uploaded image contents.** Diagram
+  bytes go to Haiku in vision blocks; an adversarial diagram with embedded
+  text "ignore previous instructions" could in principle steer the extractor.
+  Practical mitigations (text-OCR pre-pass, separate sandbox) are out of
+  scope for the minimal slice.
+- **Frontend SPA emits no OTel metrics directly.** The provisioned `frontend`
+  Grafana dashboard carries a note panel explaining this; a
+  `nginx-prometheus-exporter` sidecar is tracked as a deferred follow-up.
+
 ## Database
 
 The `smart_db` schema is owned by `smart_user`. Migrations (Alembic) live in

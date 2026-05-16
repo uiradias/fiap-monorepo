@@ -103,6 +103,17 @@ The two paths share the same `analysis-report.schema.json` and SQS envelope;
 the optional `citations` field is populated on grounded outputs only. See
 [`smart-service/README.md`](smart-service/README.md) for diagrams and details.
 
+## AI/ML deliverable requirements
+
+The project's AI/ML requirements (specified in Portuguese) — *detecção de
+componentes em imagens, classificação de riscos, LLM com guardrails, prompt
+engineering com avaliação de consistência*, plus the four minimum requirements
+(*pipeline claro*, *justificativa*, *demonstração prática*, *discussão de
+limitações*) — are cross-referenced to the implementing code in
+[`smart-service/README.md` → "AI/ML requirements coverage"](smart-service/README.md#aiml-requirements-coverage).
+Known limitations are consolidated in
+[`smart-service/README.md` → "Known limitations"](smart-service/README.md#known-limitations).
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md).

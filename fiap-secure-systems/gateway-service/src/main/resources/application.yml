@@ -62,6 +62,11 @@ gateway:
     secret-key: ${AWS_SECRET_ACCESS_KEY:test}
   s3:
     bucket: ${S3_BUCKET:fiap-secure-systems-assets}
+    presign-ttl-seconds: ${GATEWAY_S3_PRESIGN_TTL_SECONDS:900}
+    # Presigned URLs are opened in the browser. When the gateway runs in Docker and
+    # AWS_ENDPOINT_URL uses a container-only hostname (e.g. http://localstack:4566), override
+    # this to the host:port reachable from the machine running the browser (often localhost).
+    presign-endpoint-url: ${GATEWAY_S3_PRESIGN_ENDPOINT_URL:${gateway.aws.endpoint-url}}
   sqs:
     session-events-url: ${SQS_SESSION_EVENTS_GATEWAY_URL:http://localhost:4566/000000000000/session-events-gateway}
     poll-wait-seconds: ${GATEWAY_SQS_SESSION_EVENTS_POLL_WAIT_SECONDS:10}

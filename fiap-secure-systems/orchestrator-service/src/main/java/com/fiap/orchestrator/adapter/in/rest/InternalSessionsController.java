@@ -16,6 +16,7 @@ import com.fiap.orchestrator.domain.model.*;
 import com.fiap.orchestrator.domain.port.in.CancelSessionUseCase;
 import com.fiap.orchestrator.domain.port.in.CreateSessionUseCase;
 import com.fiap.orchestrator.domain.port.in.GetSessionUseCase;
+import com.fiap.orchestrator.domain.port.in.ListUserSessionsUseCase;
 
 import jakarta.validation.Valid;
 
@@ -26,12 +27,17 @@ public class InternalSessionsController {
     private final CreateSessionUseCase create;
     private final CancelSessionUseCase cancel;
     private final GetSessionUseCase get;
+    private final ListUserSessionsUseCase listUserSessions;
 
     public InternalSessionsController(
-            CreateSessionUseCase create, CancelSessionUseCase cancel, GetSessionUseCase get) {
+            CreateSessionUseCase create,
+            CancelSessionUseCase cancel,
+            GetSessionUseCase get,
+            ListUserSessionsUseCase listUserSessions) {
         this.create = create;
         this.cancel = cancel;
         this.get = get;
+        this.listUserSessions = listUserSessions;
     }
 
     @PostMapping
@@ -52,6 +58,19 @@ public class InternalSessionsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(SessionResponse.from(s));
     }
 
+    @GetMapping(params = "userId")
+    public List<SessionResponse> listSessions(
+            @RequestParam("userId") UUID userId,
+            @RequestParam(value = "limit", defaultValue = "50") int limit) {
+        return listUserSessions.list(new UserId(userId), limit).stream()
+                .map(
+                        row ->
+                                SessionResponse.from(
+                                        row.session(),
+                                        row.reportId().map(rid -> rid.value()).orElse(null)))
+                .toList();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getSession(@PathVariable UUID id) {
         Optional<Session> s = get.findSession(new SessionId(id));
@@ -64,7 +83,12 @@ public class InternalSessionsController {
                                     "No session with id " + id,
                                     "SESSION_NOT_FOUND"));
         }
-        return ResponseEntity.ok(SessionResponse.from(s.get()));
+        Session session = s.get();
+        UUID reportId = null;
+        if (session.state() == SessionState.REPORT_READY) {
+            reportId = get.findReport(session.id()).map(r -> r.id().value()).orElse(null);
+        }
+        return ResponseEntity.ok(SessionResponse.from(session, reportId));
     }
 
     @PostMapping("/{id}/cancel")

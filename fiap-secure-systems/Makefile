@@ -149,8 +149,12 @@ gw-test-integration: ## (gateway-service) run integration tests (Docker required
 	./gradlew :gateway-service:integrationTest
 
 .PHONY: gw-up
-gw-up: env-check gen-jwt-keys ## (gateway-service) start full stack with gateway-service
+gw-up: env-check gen-jwt-keys ## (gateway-service) start full stack with gateway-service (does not rebuild image)
 	$(COMPOSE) up -d gateway-service
+
+.PHONY: gw-rebuild
+gw-rebuild: env-check gen-jwt-keys ## (gateway-service) rebuild image + recreate container (after Java changes)
+	$(COMPOSE) build gateway-service && $(COMPOSE) up -d gateway-service
 
 .PHONY: gw-logs
 gw-logs: ## (gateway-service) tail gateway-service logs
@@ -188,8 +192,12 @@ front-dev: ## (frontend) start Vite dev server (no docker)
 	cd frontend && npm install && npm run dev
 
 .PHONY: front-up
-front-up: env-check ## (frontend) start full stack with frontend container
+front-up: env-check ## (frontend) start frontend container (does not rebuild the image)
 	$(COMPOSE) up -d frontend
+
+.PHONY: front-rebuild
+front-rebuild: env-check ## (frontend) docker build ./frontend + recreate container (run after UI changes)
+	$(COMPOSE) build frontend && $(COMPOSE) up -d frontend
 
 .PHONY: front-logs
 front-logs: ## (frontend) tail frontend container logs

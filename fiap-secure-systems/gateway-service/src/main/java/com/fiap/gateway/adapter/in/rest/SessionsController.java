@@ -1,5 +1,6 @@
 package com.fiap.gateway.adapter.in.rest;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -18,11 +19,26 @@ public class SessionsController {
     private final GetSessionUseCase getSession;
     private final GetReportUseCase getReport;
     private final CancelSessionUseCase cancel;
+    private final ListUserSessionsUseCase listUserSessions;
 
-    public SessionsController(GetSessionUseCase g, GetReportUseCase gr, CancelSessionUseCase c) {
+    public SessionsController(
+            GetSessionUseCase g,
+            GetReportUseCase gr,
+            CancelSessionUseCase c,
+            ListUserSessionsUseCase listUserSessions) {
         this.getSession = g;
         this.getReport = gr;
         this.cancel = c;
+        this.listUserSessions = listUserSessions;
+    }
+
+    @GetMapping
+    public List<SessionSummaryResponse> list(
+            @AuthenticationPrincipal UserId requester,
+            @RequestParam(value = "limit", defaultValue = "50") int limit) {
+        return listUserSessions.list(requester, limit).stream()
+                .map(SessionSummaryResponse::of)
+                .toList();
     }
 
     @GetMapping("/{id}")

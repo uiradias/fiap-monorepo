@@ -84,4 +84,13 @@ describe("apiClient", () => {
     expect(headers["Content-Type"]).toBeUndefined();
     expect(init.body).toBeInstanceOf(FormData);
   });
+
+  it("listSessions GETs /api/v1/sessions with limit query", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(200, []));
+
+    await apiClient.listSessions(25);
+
+    const url = spy.mock.calls[0]?.[0] as string;
+    expect(url).toContain("/api/v1/sessions?limit=25");
+  });
 });

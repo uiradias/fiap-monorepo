@@ -1,4 +1,5 @@
 import type {
+  AssetDownloadUrlResponse,
   AssetSummary,
   BundleSummary,
   FinalizeResponse,
@@ -6,6 +7,7 @@ import type {
   RegisterResponse,
   ReportResponse,
   SessionResponse,
+  SessionSummary,
   TokenPair,
 } from "./types";
 import { ApiError } from "./types";
@@ -119,8 +121,17 @@ export const apiClient = {
   getBundle: (bundleId: string) =>
     request<BundleSummary>("GET", `/api/v1/asset-bundles/${bundleId}`),
 
+  getAssetDownloadUrl: (bundleId: string, assetId: string) =>
+    request<AssetDownloadUrlResponse>(
+      "GET",
+      `/api/v1/asset-bundles/${bundleId}/assets/${assetId}/download-url`,
+    ),
+
   getSession: (sessionId: string) =>
     request<SessionResponse>("GET", `/api/v1/sessions/${sessionId}`),
+
+  listSessions: (limit = 50) =>
+    request<SessionSummary[]>("GET", `/api/v1/sessions?limit=${encodeURIComponent(String(limit))}`),
 
   getReport: (sessionId: string) =>
     request<ReportResponse>("GET", `/api/v1/sessions/${sessionId}/report`),

@@ -1,14 +1,20 @@
 package com.fiap.gateway.adapter.out.http;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.LongSupplier;
 
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fiap.gateway.application.service.Clock;
@@ -79,20 +85,74 @@ public class OrchestratorRestClient implements OrchestratorClientPort {
     @CircuitBreaker(name = "orchestrator")
     @Override
     public SessionProjection getSession(SessionId sessionId) {
-        // Orchestrator's SessionResponse: sessionId, userId, state, assetCount, failureReason,
-        // createdAt, updatedAt, version
-        // (No lastEventAt or reportId — orchestrator owns canonical state, not the projection
-        // shape.)
         String path = "/internal/sessions/" + sessionId;
-        @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) sendJson("GET", path, null, Map.class);
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = (Map<String, Object>) sendJson("GET", path, null, Map.class);
+            return sessionProjectionFromOrchestratorBody(body);
+        } catch (RestClientResponseException e) {
+            if (e.getStatusCode().isSameCodeAs(HttpStatusCode.valueOf(404))) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    @Retry(name = "orchestrator")
+    @CircuitBreaker(name = "orchestrator")
+    @Override
+    public List<SessionSummary> listSessions(UserId userId, int limit) {
+        String signingPath = "/internal/sessions";
+        String uri = signingPath + "?userId=" + userId.value() + "&limit=" + limit;
+        byte[] bodyBytes = new byte[0];
+        long ts = clockSeconds.getAsLong();
+        String sig = signer.signature(ts, "GET", signingPath, bodyBytes);
+        List<Map<String, Object>> rows =
+                client.get()
+                        .uri(uri)
+                        .headers(h -> commonHeaders(h, ts, sig))
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+        if (rows == null) {
+            return List.of();
+        }
+        List<SessionSummary> out = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            out.add(sessionSummaryFromOrchestratorBody(row));
+        }
+        return out;
+    }
+
+    private static SessionProjection sessionProjectionFromOrchestratorBody(
+            Map<String, Object> body) {
+        ReportId reportId = parseReportId(body.get("reportId"));
         return new SessionProjection(
                 new SessionId(UUID.fromString((String) body.get("sessionId"))),
                 new UserId(UUID.fromString((String) body.get("userId"))),
                 SessionState.valueOf((String) body.get("state")),
-                java.time.Instant.parse((String) body.get("updatedAt")),
+                Instant.parse((String) body.get("updatedAt")),
                 (String) body.get("failureReason"),
-                null);
+                reportId);
+    }
+
+    private static SessionSummary sessionSummaryFromOrchestratorBody(Map<String, Object> body) {
+        int assetCount = body.get("assetCount") instanceof Number n ? n.intValue() : 0;
+        return new SessionSummary(
+                new SessionId(UUID.fromString((String) body.get("sessionId"))),
+                new UserId(UUID.fromString((String) body.get("userId"))),
+                SessionState.valueOf((String) body.get("state")),
+                assetCount,
+                (String) body.get("failureReason"),
+                Instant.parse((String) body.get("createdAt")),
+                Instant.parse((String) body.get("updatedAt")),
+                Optional.ofNullable(parseReportId(body.get("reportId"))));
+    }
+
+    private static ReportId parseReportId(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        return new ReportId(UUID.fromString(raw.toString()));
     }
 
     @Retry(name = "orchestrator")

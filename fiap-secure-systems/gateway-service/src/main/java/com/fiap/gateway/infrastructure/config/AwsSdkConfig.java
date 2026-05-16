@@ -15,6 +15,8 @@ import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 @Configuration
@@ -46,6 +48,23 @@ public class AwsSdkConfig {
                 .forcePathStyle(true)
                 .httpClient(UrlConnectionHttpClient.create())
                 .overrideConfiguration(c -> c.addExecutionInterceptor(awsSdkOtelInterceptor))
+                .build();
+    }
+
+    @Bean(destroyMethod = "close")
+    public S3Presigner s3Presigner(
+            @Value("${gateway.s3.presign-endpoint-url}") String presignEndpoint,
+            @Value("${gateway.aws.region}") String region,
+            @Value("${gateway.aws.access-key}") String accessKey,
+            @Value("${gateway.aws.secret-key}") String secretKey) {
+        return S3Presigner.builder()
+                .endpointOverride(URI.create(presignEndpoint))
+                .region(Region.of(region))
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKey, secretKey)))
+                .serviceConfiguration(
+                        S3Configuration.builder().pathStyleAccessEnabled(true).build())
                 .build();
     }
 

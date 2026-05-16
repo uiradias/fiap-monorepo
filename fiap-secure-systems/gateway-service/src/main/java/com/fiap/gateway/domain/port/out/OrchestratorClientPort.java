@@ -13,10 +13,10 @@ public interface OrchestratorClientPort {
      */
     void createSession(SessionId sessionId, UserId userId, int assetCount, List<Asset> assets);
 
-    SessionProjection getSession(
-            SessionId sessionId); // not currently used by gateway services, but useful for repair
+    /** Canonical session from orchestrator; {@code null} if not found (HTTP 404). */
+    SessionProjection getSession(SessionId sessionId);
 
-    // tooling
+    List<SessionSummary> listSessions(UserId userId, int limit);
 
     AnalysisReport getReport(SessionId sessionId);
 

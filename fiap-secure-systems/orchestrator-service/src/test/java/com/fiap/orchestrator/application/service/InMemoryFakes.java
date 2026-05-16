@@ -40,6 +40,15 @@ public class InMemoryFakes {
         public void appendEvent(SessionEvent event) {
             events.add(event);
         }
+
+        @Override
+        public List<Session> listByUserId(UserId userId, int limit) {
+            return store.values().stream()
+                    .filter(s -> s.userId().equals(userId))
+                    .sorted(Comparator.comparing(Session::createdAt).reversed())
+                    .limit(limit)
+                    .toList();
+        }
     }
 
     public static class ReportRepoFake implements ReportRepositoryPort {
@@ -54,6 +63,22 @@ public class InMemoryFakes {
         public AnalysisReport save(AnalysisReport r) {
             store.put(r.sessionId().value(), r);
             return r;
+        }
+
+        @Override
+        public Map<SessionId, ReportId> findReportIdsBySessionIds(
+                Collection<SessionId> sessionIds) {
+            if (sessionIds == null || sessionIds.isEmpty()) {
+                return Map.of();
+            }
+            Map<SessionId, ReportId> out = new LinkedHashMap<>();
+            for (SessionId sid : sessionIds) {
+                AnalysisReport r = store.get(sid.value());
+                if (r != null) {
+                    out.put(sid, r.id());
+                }
+            }
+            return out;
         }
     }
 
